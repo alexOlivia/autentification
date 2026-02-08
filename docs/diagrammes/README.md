@@ -51,7 +51,7 @@ NouvelleBase/
 | **Focus** | Comment implémenter ? | Qu'est-ce que le système fait ? |
 | **Technologies** | Fastify, Prisma, Redis, PostgreSQL | Agnostique |
 
-## 🎯 Contenu des diagrammes techniques
+##  Contenu des diagrammes techniques
 
 ### Diagrammes de Classes (classe.puml)
 
@@ -99,7 +99,7 @@ Chaque service contient un diagramme de classes technique complet incluant :
 - Scalabilité horizontale
 - Configuration déploiement
 
-## 🚀 Comment visualiser les diagrammes
+##  Comment visualiser les diagrammes
 
 ### Option 1 : VSCode avec PlantUML Extension (Recommandé)
 
@@ -141,7 +141,7 @@ chmod +x generate-diagrams.sh
 ./generate-diagrams.sh
 ```
 
-## 📋 Guide de lecture par service
+##  Guide de lecture par service
 
 ### 1. API Gateway (Port 3000)
 **Rôle :** Point d'entrée unique, routage, authentification, rate limiting
@@ -322,7 +322,7 @@ chmod +x generate-diagrams.sh
 
 ---
 
-## 🔗 Vue d'ensemble : Diagrammes globaux
+##  Vue d'ensemble : Diagrammes globaux
 
 ### Interopérabilité (`global/interoperabilite.puml`)
 **Architecture microservices complète**
@@ -374,7 +374,7 @@ Les diagrammes utilisent des couleurs pour différencier les types de composants
 
 ---
 
-## 📖 Conventions de notation
+##  Conventions de notation
 
 ### Diagrammes de Classes
 
@@ -426,7 +426,7 @@ enum NomEnum {
 
 ---
 
-## 🔍 Cas d'usage des diagrammes
+##  Cas d'usage des diagrammes
 
 ### Scénario 1 : Je veux comprendre comment fonctionne la création d'une réservation
 
@@ -514,8 +514,8 @@ Les diagrammes techniques ont été harmonisés avec les diagrammes conceptuels 
 - **Technologies explicites** : Fastify, Prisma ORM, PostgreSQL, Redis
 
 ### 10 services harmonisés à 100%
-✅ Auth Service • ✅ Resource Core • ✅ Restaurant • ✅ Accommodation • ✅ Service Provider
-✅ Transport • ✅ Booking • ✅ Payment • ✅ Notification • ✅ Global
+ Auth Service •  Resource Core •  Restaurant •  Accommodation •  Service Provider
+ Transport •  Booking •  Payment •  Notification •  Global
 
 ---
 

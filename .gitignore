@@ -1,0 +1,242 @@
+# ===================================
+# Booking System - .gitignore
+# ===================================
+
+# ===================================
+# Fichiers sensibles - NE JAMAIS COMMITTER
+# ===================================
+.env
+.env.*
+!.env.example
+secrets.json
+*.key
+*.pem
+*.p12
+*.pfx
+config/secrets.*
+credentials.json
+
+# ===================================
+# Node.js / TypeScript (Backend)
+# ===================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+.next/
+out/
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# TypeScript cache
+*.tsbuildinfo
+
+# ===================================
+# Flutter / Dart (Frontend Mobile)
+# ===================================
+# Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+pubspec.lock
+build/
+
+# Flutter
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.config.dart
+
+# Flutter/Dart specific
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Runner/GeneratedPluginRegistrant.*
+android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+
+# ===================================
+# IDEs et Éditeurs
+# ===================================
+# VSCode
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json
+!.vscode/launch.json.example
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+
+# Eclipse
+.project
+.classpath
+.settings/
+.metadata
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ===================================
+# Bases de données
+# ===================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Prisma
+prisma/migrations/migration_lock.toml
+prisma/*.db
+
+# PostgreSQL
+*.dump
+*.sql.gz
+
+# Redis
+dump.rdb
+
+# ===================================
+# Logs
+# ===================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pino-*.log
+combined.log
+error.log
+
+# ===================================
+# Tests
+# ===================================
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+junit.xml
+.coverage
+
+# ===================================
+# Docker
+# ===================================
+# Ne pas ignorer les Dockerfiles et docker-compose
+# Mais ignorer les données locales
+docker-compose.override.yml
+.docker/
+
+# Volumes data
+data/
+volumes/
+
+# ===================================
+# Kubernetes
+# ===================================
+# Ne pas ignorer les manifests
+# Mais ignorer les secrets et configs locaux
+**/secrets/*.yaml
+!**/secrets/*.example.yaml
+
+# ===================================
+# OS
+# ===================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.Trash-*
+
+# ===================================
+# Temporary files
+# ===================================
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.cache
+*.backup
+
+# ===================================
+# Documentation générée
+# ===================================
+docs/api/generated/
+docs/coverage/
+typedoc/
+
+# ===================================
+# SSL/TLS Certificates
+# ===================================
+*.crt
+*.cer
+*.pem
+*.key
+ssl/
+
+# ===================================
+# Uploads et fichiers utilisateurs (dev)
+# ===================================
+uploads/
+storage/
+public/uploads/
+
+# ===================================
+# Monitoring et APM
+# ===================================
+.newrelic.js
+newrelic_agent.log
+
+# ===================================
+# CI/CD
+# ===================================
+.gitlab-ci-local/
+
+# ===================================
+# Terraform (si utilisé)
+# ===================================
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# ===================================
+# Divers
+# ===================================
+.eslintcache
+.stylelintcache
+__pycache__/
+*.py[cod]
+*.so

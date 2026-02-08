@@ -252,10 +252,10 @@ note bottom of ResourceLayer
   **Isolation par domaine**
 
   Avantages nouvelle architecture:
-  ✅ Si Restaurant tombe → Accommodation fonctionne
-  ✅ Scalabilité indépendante par domaine
-  ✅ Déploiements sans risque global
-  ✅ Optimisation spécifique par type
+   Si Restaurant tombe → Accommodation fonctionne
+   Scalabilité indépendante par domaine
+   Déploiements sans risque global
+   Optimisation spécifique par type
 
   Resource Core:
   - Logique commune réutilisée
