@@ -1,0 +1,372 @@
+@startuml Service Provider - Modèle de Domaine
+
+title Service Provider - Modèle de Domaine Conceptuel
+
+' Styles
+skinparam class {
+    BackgroundColor Wheat
+    BorderColor SaddleBrown
+    ArrowColor SaddleBrown
+}
+
+package "Domaine Prestation de Services" {
+
+    ' ========== ENTITÉS ==========
+
+    class Etablissement <<entité>> {
+        + id: string
+        + commercantId: string
+        + typeService: TypeService
+        + nomEtablissement: string
+        + description: string
+        + capaciteSimultanee: number
+        + accepteRendezVousEnLigne: boolean
+        + delaiAnnulationHeures: number
+        + dateCreation: Date
+    }
+
+    class Prestataire <<entité>> {
+        + id: string
+        + etablissementId: string
+        + prenom: string
+        + nom: string
+        + specialite: string
+        + anneesExperience: number
+        + description: string
+        + urlPhoto: string
+        + noteGlobale: number
+        + nombreAvis: number
+        + estActif: boolean
+        + dateCreation: Date
+    }
+
+    class Service <<entité>> {
+        + id: string
+        + etablissementId: string
+        + nomService: string
+        + description: string
+        + categorieService: CategorieService
+        + dureeMinutes: number
+        + prixBase: number
+        + devise: string
+        + estActif: boolean
+        + dateCreation: Date
+    }
+
+    class CreneauDisponibilite <<entité>> {
+        + id: string
+        + prestataireId: string
+        + serviceId: string
+        + date: Date
+        + heureDebut: string
+        + heureFin: string
+        + statut: StatutCreneau
+        + capaciteMax: number
+        + placesReservees: number
+        + estRecurrent: boolean
+        + recurrencePattern: string
+    }
+
+    class Promotion <<entité>> {
+        + id: string
+        + etablissementId: string
+        + serviceId: string
+        + libelle: string
+        + typeReduction: TypeReduction
+        + valeurReduction: number
+        + dateDebut: Date
+        + dateFin: Date
+        + estActive: boolean
+    }
+
+    ' ========== ÉNUMÉRATIONS ==========
+
+    enum TypeService {
+        COIFFURE
+        BARBIER
+        ESTHETIQUE
+        SPA
+        MASSAGE
+        MANUCURE_PEDICURE
+        MAQUILLAGE
+        TRESSAGE
+        TATTOO_PIERCING
+        PHOTOGRAPHIE
+        VIDEOGRAPHIE
+        AUTRE
+    }
+
+    enum CategorieService {
+        COUPE_HOMME
+        COUPE_FEMME
+        COUPE_ENFANT
+        COLORATION
+        DEFRISAGE
+        TISSAGE
+        NATTES_AFRICAINES
+        TRESSES_SENEGALAISES
+        SOIN_VISAGE
+        SOIN_CORPS
+        EPILATION
+        MASSAGE_RELAXANT
+        MASSAGE_THERAPEUTIQUE
+        ONGLERIE
+        MAQUILLAGE_MARIEE
+        SEANCE_PHOTO
+        AUTRE
+    }
+
+    enum StatutCreneau {
+        DISPONIBLE
+        RESERVE
+        OCCUPE
+        TERMINE
+        ANNULE
+        BLOQUE
+        AUTRE
+    }
+
+    enum TypeReduction {
+        POURCENTAGE
+        MONTANT_FIXE
+        AUTRE
+    }
+}
+
+' ========== RELATIONS ==========
+
+Etablissement "1" -- "1" TypeService : offre >
+Etablissement "1" *-- "*" Prestataire : emploie >
+Etablissement "1" *-- "*" Service : propose >
+Etablissement "1" *-- "*" Promotion : offre >
+
+Prestataire "*" --> "1" Etablissement : travaille pour >
+Prestataire "1" -- "*" CreneauDisponibilite : a des créneaux >
+
+Service "*" --> "1" Etablissement : de >
+Service "1" -- "1" CategorieService : appartient à >
+Service "1" -- "*" CreneauDisponibilite : associé à >
+
+CreneauDisponibilite "1" -- "1" StatutCreneau : a un statut >
+CreneauDisponibilite "*" --> "1" Prestataire : assigné à >
+CreneauDisponibilite "*" --> "1" Service : pour >
+
+Promotion "*" --> "1" Etablissement : de >
+Promotion "*" --> "0..1" Service : sur >
+Promotion "1" -- "1" TypeReduction : type >
+
+' ========== NOTES MÉTIER ==========
+
+note right of Etablissement
+  **Établissement de services**
+
+  Salon de coiffure, spa, centre esthétique,
+  studio photo, etc.
+
+  **Types service contexte africain:**
+
+  - **COIFFURE/BARBIER:**
+    Salons très nombreux (rue, marché)
+    Coiffure afro spécialisée
+
+  - **ESTHETIQUE/SPA:**
+    Soins peau noire spécifiques
+    Massages traditionnels
+
+  - **TRESSAGE:**
+    Nattes africaines, tresses sénégalaises
+    Durée longue (3-8 heures)
+
+  - **MAQUILLAGE:**
+    Mariages, baptêmes (événements fréquents)
+    Maquillage peau noire
+
+  - **PHOTOGRAPHIE/VIDEOGRAPHIE:**
+    Shootings, événements familiaux
+    Forte demande (réseaux sociaux)
+
+  **Capacité simultanée:**
+  Nombre de clients pouvant être
+  servis en même temps (ex: 5 coiffeuses)
+
+  **Délai annulation:**
+  Heures min avant rendez-vous
+  pour annuler sans frais (ex: 24h)
+end note
+
+note right of Prestataire
+  **Prestataire/Personnel**
+
+  Coiffeur, esthéticienne, masseuse,
+  photographe, etc.
+
+  **Spécialité:**
+  - "Coiffure afro et tissages"
+  - "Nattes sénégalaises"
+  - "Massage relaxant aux huiles"
+  - "Maquillage mariée"
+  - "Portraits studio"
+
+  **Expérience:**
+  Années d'expérience professionnelle
+  (critère de choix client)
+
+  **Note globale:**
+  Moyenne avis clients (1-5 étoiles)
+  après prestations effectuées
+
+  **Statut:**
+  - estActif = true: accepte rendez-vous
+  - estActif = false: congés, maladie
+end note
+
+note bottom of Service
+  **Service/Prestation proposé(e)**
+
+  **Exemples catégories:**
+
+  **Coiffure homme:**
+  - Coupe classique (30min, 2000 XOF)
+  - Coupe + barbe (45min, 3000 XOF)
+  - Coloration (60min, 5000 XOF)
+
+  **Coiffure femme:**
+  - Coupe + brushing (60min, 5000 XOF)
+  - Défrisage (90min, 8000 XOF)
+  - Tissage (120min, 15000 XOF)
+
+  **Tressage africain:**
+  - Nattes collées (180min, 10000 XOF)
+  - Tresses sénégalaises (300min, 15000 XOF)
+  - Vanilles (240min, 12000 XOF)
+
+  **Esthétique:**
+  - Soin visage (60min, 8000 XOF)
+  - Épilation complète (90min, 10000 XOF)
+  - Manucure + pédicure (60min, 6000 XOF)
+
+  **Massage:**
+  - Massage relaxant (60min, 12000 XOF)
+  - Massage aux pierres chaudes (90min, 18000 XOF)
+
+  **Photographie:**
+  - Séance portrait (60min, 25000 XOF)
+  - Shooting événement (180min, 50000 XOF)
+
+  **Durée:**
+  Durée estimée en minutes
+  (utilisée pour calcul créneaux disponibles)
+
+  **Prix:**
+  Prix de base (peut varier selon prestataire,
+  promotions, demande spéciale)
+end note
+
+note right of CreneauDisponibilite
+  **Créneau de disponibilité**
+
+  Plage horaire pendant laquelle un
+  prestataire peut effectuer un service.
+
+  **Génération créneaux:**
+  Basée sur:
+  - Horaires ouverture établissement
+  - Disponibilité prestataire
+  - Durée service
+
+  **Exemple:**
+  Service "Coupe homme" (30min)
+  Prestataire disponible 9h-17h
+  → Créneaux: 9h, 9h30, 10h, 10h30, ... 16h30
+
+  **Statuts:**
+  - DISPONIBLE: créneau libre
+  - RESERVE: client a réservé
+  - OCCUPE: prestation en cours
+  - BLOQUE: indisponibilité (pause, absence)
+
+  **Capacité:**
+  - capaciteMax: nb clients simultanés possible
+  - placesReservees: nb réservations actuelles
+
+  Exemple: cours collectif 
+  capaciteMax = 15, placesReservees = 8
+  → encore 7 places disponibles
+
+  **Flexibilité africaine:**
+  - Tolérance retard client (15min)
+  - Ajustement durée si nécessaire
+  - Créneaux Flexible (sans rendez-vous)
+end note
+
+note bottom of Promotion
+  **Promotion commerciale**
+
+  **Types réduction:**
+
+  - **POURCENTAGE:**
+    Ex: -20% sur tous les services
+    valeurReduction = 20
+
+  - **MONTANT_FIXE:**
+    Ex: -2000 XOF sur tissages
+    valeurReduction = 2000
+
+  **Exemples promotions africaines:**
+
+  - "Happy Hours" (9h-12h): -30%
+  - "Promo étudiant" (lundi-mercredi): -15%
+  - "Forfait mariée" (maquillage + coiffure): -4000 XOF
+  - "Parrainage": 1 amie = -10% pour 2
+  - "Fête des Mères" (mai): -25%
+  - "Rentrée scolaire" (octobre): coupe enfant -50%
+
+  **Période validité:**
+  - dateDebut → dateFin
+  - estActive: activation manuelle
+
+  **Application:**
+  - Sur établissement entier: serviceId = null
+  - Sur service spécifique: serviceId renseigné
+
+  **Calcul prix final:**
+  prixFinal = prixBase - réduction
+  Si POURCENTAGE: réduction = prixBase × (valeur/100)
+  Si MONTANT_FIXE: réduction = valeur
+end note
+
+note as N1
+  **Flux réservation**
+
+  **Recherche:**
+  1. Client cherche service (coiffure, massage)
+  2. Filtre par ville, type service, prix
+  3. Affichage établissements disponibles
+
+  **Sélection:**
+  4. Client choisit établissement
+  5. Sélectionne service(s) souhaité(s)
+  6. Choisit prestataire (optionnel) ou "Pas de préférence"
+
+  **Créneaux:**
+  7. Système calcule créneaux disponibles
+     (basé sur durée service + dispo prestataire)
+  8. Client choisit date + heure
+
+  **Confirmation:**
+  9. Récapitulatif (service, prestataire, date/heure, prix)
+  10. Application promotion si applicable
+  11. Paiement (Mobile Money / Carte / Sur place)
+  12. Réservation confirmée → SMS/Email/Push
+
+  **Rappel:**
+  24h avant: notification rappel rendez-vous
+
+  **Jour J:**
+  - Client se présente à l'heure
+  - Prestataire scanne QR code réservation
+  - Prestation effectuée
+  - Client note prestataire (1-5 étoiles)
+end note
+
+@enduml

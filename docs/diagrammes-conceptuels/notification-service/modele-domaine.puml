@@ -1,0 +1,452 @@
+@startuml Notification Service - Modèle de Domaine
+
+title Notification Service - Modèle de Domaine Conceptuel
+
+' Styles
+skinparam class {
+    BackgroundColor Lavender
+    BorderColor Purple
+    ArrowColor Purple
+}
+
+package "Domaine Notification" {
+
+    ' ========== ENTITÉS ==========
+
+    class Notification <<entité>> {
+        + id: string
+        + destinataireId: string
+        + typeNotification: TypeNotification
+        + canal: CanalNotification
+        + priorite: PrioriteNotification
+        + titre: string
+        + message: string
+        + donneesJSON: string
+        + statut: StatutNotification
+        + dateCreation: Date
+        + dateEnvoi: Date
+        + dateLecture: Date
+        + nombreTentatives: number
+        + erreurDernier: string
+    }
+
+    class TemplateNotification <<entité>> {
+        + id: string
+        + code: string
+        + typeNotification: TypeNotification
+        + canal: CanalNotification
+        + langue: string
+        + sujet: string
+        + corpsTexte: string
+        + corpsHTML: string
+        + variables: string[]
+        + estActif: boolean
+        + dateCreation: Date
+    }
+
+    class PreferenceNotification <<entité>> {
+        + id: string
+        + utilisateurId: string
+        + typeNotification: TypeNotification
+        + canalEmail: boolean
+        + canalPush: boolean
+        + canalSMS: boolean
+        + estActive: boolean
+        + dateModification: Date
+    }
+
+    class TokenPush <<entité>> {
+        + id: string
+        + utilisateurId: string
+        + token: string
+        + plateforme: PlateformeMobile
+        + modeleAppareil: string
+        + versionApp: string
+        + estActif: boolean
+        + dateCreation: Date
+        + dateDerniereUtilisation: Date
+    }
+
+    class HistoriqueEnvoi <<entité>> {
+        + id: string
+        + notificationId: string
+        + canal: CanalNotification
+        + adresseDestination: string
+        + statut: StatutEnvoi
+        + codeReponseProvider: string
+        + messageErreur: string
+        + tempsTraitementMs: number
+        + dateEnvoi: Date
+    }
+
+    ' ========== ÉNUMÉRATIONS ==========
+
+    enum TypeNotification {
+        RESERVATION_CONFIRMEE
+        RESERVATION_ANNULEE
+        PAIEMENT_REUSSI
+        PAIEMENT_ECHOUE
+        RAPPEL_RESERVATION
+        DEMANDE_AVIS
+        NOUVEAU_MESSAGE
+        PROMOTION
+        ALERTE_PRIX
+        MISE_A_JOUR_STATUT
+        AUTRE
+    }
+
+    enum CanalNotification {
+        EMAIL
+        PUSH
+        SMS
+        IN_APP
+    }
+
+    enum PrioriteNotification {
+        BASSE
+        NORMALE
+        HAUTE
+        URGENTE
+    }
+
+    enum StatutNotification {
+        EN_ATTENTE
+        EN_COURS_ENVOI
+        ENVOYEE
+        LIVREE
+        ECHOUEE
+        LUE
+    }
+
+    enum StatutEnvoi {
+        SUCCES
+        ECHEC_TEMPORAIRE
+        ECHEC_PERMANENT
+    }
+
+    enum PlateformeMobile {
+        ANDROID
+        IOS
+        WEB
+    }
+}
+
+' ========== RELATIONS ==========
+
+Notification "1" -- "1" TypeNotification : est de type >
+Notification "1" -- "1" CanalNotification : utilise >
+Notification "1" -- "1" PrioriteNotification : a une priorité >
+Notification "1" -- "1" StatutNotification : a un statut >
+Notification "1" -- "*" HistoriqueEnvoi : génère >
+
+TemplateNotification "1" -- "1" TypeNotification : pour >
+TemplateNotification "1" -- "1" CanalNotification : sur >
+
+PreferenceNotification "*" --> "1" TypeNotification : pour >
+
+TokenPush "1" -- "1" PlateformeMobile : sur >
+
+HistoriqueEnvoi "1" -- "1" CanalNotification : par >
+HistoriqueEnvoi "1" -- "1" StatutEnvoi : a un statut >
+HistoriqueEnvoi "*" --> "1" Notification : de >
+
+' ========== NOTES MÉTIER ==========
+
+note right of Notification
+  **Notification utilisateur**
+
+  **Types notification:**
+
+  - **RESERVATION_CONFIRMEE:**
+    Confirmation réservation après paiement
+    (Priorité: HAUTE)
+
+  - **RESERVATION_ANNULEE:**
+    Annulation réservation (client/commerçant)
+    (Priorité: HAUTE)
+
+  - **PAIEMENT_REUSSI:**
+    Confirmation paiement effectué
+    (Priorité: HAUTE)
+
+  - **PAIEMENT_ECHOUE:**
+    Échec paiement, action requise
+    (Priorité: URGENTE)
+
+  - **RAPPEL_RESERVATION:**
+    Rappel J-7, J-1, H-2
+    (Priorité: NORMALE)
+
+  - **DEMANDE_AVIS:**
+    Demande évaluation après séjour
+    (Priorité: BASSE)
+
+  - **NOUVEAU_MESSAGE:**
+    Message commerçant ↔ client
+    (Priorité: NORMALE)
+
+  - **PROMOTION:**
+    Offre spéciale, réduction
+    (Priorité: BASSE)
+
+  - **ALERTE_PRIX:**
+    Baisse prix ressource suivie
+    (Priorité: NORMALE)
+
+  - **MISE_A_JOUR_STATUT:**
+    Changement statut réservation
+    (Priorité: NORMALE)
+
+  **Canaux:**
+  - EMAIL: pour détails complets
+  - PUSH: pour alertes temps réel
+  - SMS: pour confirmations importantes
+  - IN_APP: pour consultations ultérieures
+
+  **Données JSON:**
+  Métadonnées pour deep linking
+  Ex: {"reservationId": "abc123", "action": "view"}
+  → Clic notification ouvre app sur réservation
+end note
+
+note bottom of TemplateNotification
+  **Modèle de notification**
+
+  Templates réutilisables avec variables
+  dynamiques (personnalisation).
+
+  **Exemple template:**
+
+  **Code:** RESERVATION_CONFIRMEE_EMAIL_FR
+
+  **Sujet:**
+  "Réservation confirmée - {{nomEtablissement}}"
+
+  **Corps HTML:**
+  ```
+  Bonjour {{prenomClient}},
+
+  Votre réservation est confirmée !
+
+  📅 Date: {{dateReservation}}
+  🏨 Établissement: {{nomEtablissement}}
+  📍 Adresse: {{adresseEtablissement}}
+  💰 Montant payé: {{montantPaye}} {{devise}}
+  🔑 Code confirmation: {{codeConfirmation}}
+
+  Présentez ce code à votre arrivée.
+
+  [Voir les détails] [Annuler]
+
+  Cordialement,
+  L'équipe PING
+  ```
+
+  **Variables:**
+  - prenomClient
+  - dateReservation
+  - nomEtablissement
+  - adresseEtablissement
+  - montantPaye
+  - devise
+  - codeConfirmation
+
+  **Multi-langue:**
+  Templates dans plusieurs langues:
+  - Français (FR)
+  - Anglais (EN)
+  - Wolof (WO) - contexte Sénégal
+  - Bambara (BM) - contexte Mali
+
+  **Versions canal:**
+  Même notification, templates différents:
+  - EMAIL: HTML riche avec images
+  - SMS: texte court (160 caractères max)
+  - PUSH: titre + message court
+  - IN_APP: texte détaillé avec actions
+
+  **Gestion:**
+  Modifiables par admin sans redéploiement
+  A/B testing possible (variantes)
+end note
+
+note right of PreferenceNotification
+  **Préférences utilisateur**
+
+  Contrôle granulaire notifications reçues.
+
+  **Exemples préférences:**
+
+  **Client conservateur:**
+  - RESERVATION_CONFIRMEE: Email ✓ Push ✓ SMS ✓
+  - PAIEMENT_REUSSI: Email ✓ Push ✓ SMS ✗
+  - RAPPEL_RESERVATION: Email ✓ Push ✓ SMS ✗
+  - DEMANDE_AVIS: Email ✓ Push ✗ SMS ✗
+  - PROMOTION: Email ✗ Push ✗ SMS ✗
+
+  **Client minimaliste:**
+  - RESERVATION_CONFIRMEE: Email ✗ Push ✓ SMS ✗
+  - PAIEMENT_REUSSI: Email ✗ Push ✓ SMS ✗
+  - Tout le reste: désactivé
+
+  **Règles par défaut:**
+  Nouvellement inscrits:
+  - Notifications critiques: tous canaux ✓
+  - Notifications marketing: désactivées ✗
+
+  **RGPD:**
+  Opt-in explicite pour promotions
+  Opt-out facile (lien email)
+
+  **Contexte africain:**
+  - SMS coûteux → usage modéré
+  - Push privilégié (connexion internet)
+  - Email secondaire (faible consultation)
+
+  **Respect préférences:**
+  Système vérifie préférences avant envoi
+  Si tous canaux désactivés: notification non envoyée
+  Exception: notifications légales obligatoires
+end note
+
+note bottom of TokenPush
+  **Token notification push**
+
+  Jeton FCM (Firebase Cloud Messaging)
+  pour envoi notifications push.
+
+  **Fonctionnement:**
+  1. App mobile génère token FCM
+  2. Token envoyé à backend (registration)
+  3. Stockage token + métadonnées
+  4. Envoi notification via token
+
+  **Métadonnées:**
+  - Plateforme: Android ou iOS
+  - Modèle appareil: Samsung Galaxy S21, iPhone 13
+  - Version app: 1.2.3
+
+  **Multi-appareils:**
+  Utilisateur peut avoir plusieurs tokens
+  (téléphone + tablette + web)
+  → Notification envoyée sur tous appareils actifs
+
+  **Gestion tokens:**
+  - estActif = false si:
+    * App désinstallée
+    * Token expiré
+    * Utilisateur déconnecté
+
+  - Nettoyage automatique:
+    Tokens inactifs >90 jours supprimés
+
+  **Sécurité:**
+  - Token régénéré périodiquement (FCM)
+  - Mise à jour automatique côté app
+  - Chiffrement token au repos
+
+end note
+
+note right of HistoriqueEnvoi
+  **Historique envois**
+
+  Trace détaillée chaque tentative envoi
+  pour monitoring et debug.
+
+  **Informations collectées:**
+
+  - Canal utilisé (Email, Push, SMS)
+  - Adresse destination:
+    * Email: email@example.com
+    * Push: token FCM
+    * SMS: +221771234567
+
+  - Statut:
+    * SUCCES: livré
+    * ECHEC_TEMPORAIRE: retry possible
+    * ECHEC_PERMANENT: abandon
+
+  - Code réponse provider:
+    * SendGrid: 202 (accepted)
+    * Firebase: 200 (success)
+    * Twilio: 201 (created)
+
+  - Message erreur si échec:
+    * "Invalid email address"
+    * "Token not registered" (push)
+    * "Insufficient funds" (SMS)
+
+  - Temps traitement:
+    Durée envoi en millisecondes
+    (pour monitoring performance)
+
+  **Retry automatique:**
+  Si ECHEC_TEMPORAIRE (timeout, rate limit):
+  - Tentative 1: immédiate
+  - Tentative 2: +1 min
+  - Tentative 3: +5 min
+  - Tentative 4: +15 min
+  - Abandon après 4 échecs
+
+  **Utilité:**
+  - Détecter problèmes providers
+  - Statistiques délivrabilité
+  - Résolution incidents clients
+  - Analyse performance
+
+  **Conservation:**
+  - 90 jours (RGPD)
+  - Anonymisation après 90j
+end note
+
+note as N1
+  **Flux notification**
+
+  **1. Événement déclencheur:**
+  Service métier publie événement Redis:
+  - booking.confirmed
+  - payment.success
+  - booking.reminder
+
+  **2. Réception événement:**
+  Notification Service écoute (subscribe)
+  Identifie type notification à envoyer
+
+  **3. Vérification préférences:**
+  Lecture préférences utilisateur
+  Filtrage canaux autorisés
+
+  **4. Génération contenu:**
+  Sélection template approprié
+  (type + langue utilisateur)
+  Remplacement variables dynamiques
+
+  **5. Création notification:**
+  Enregistrement BD (statut: EN_ATTENTE)
+  Pour chaque canal autorisé
+
+  **6. Envoi multi-canal:**
+  - Email: SendGrid API
+  - Push: Firebase FCM API
+  - SMS: Twilio API (optionnel)
+  - In-app: WebSocket (temps réel)
+
+  **7. Traitement réponses:**
+  - Mise à jour statuts (ENVOYEE/ECHOUEE)
+  - Enregistrement historique
+  - Retry si échec temporaire
+
+  **8. Tracking:**
+  - Email: tracking ouverture (pixel)
+  - Push: Firebase analytics (livraison)
+  - SMS: delivery status (webhook Twilio)
+  - In-app: marquage LUE au clic
+
+  **Priorités:**
+  URGENTE: envoi immédiat
+  HAUTE: <1 min
+  NORMALE: <5 min
+  BASSE: batch horaire (optimisation coûts)
+end note
+
+@enduml

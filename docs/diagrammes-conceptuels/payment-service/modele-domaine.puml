@@ -1,0 +1,499 @@
+@startuml Payment Service - Modèle de Domaine
+
+title Payment Service - Modèle de Domaine Conceptuel
+
+' Styles
+skinparam class {
+    BackgroundColor PaleGreen
+    BorderColor DarkGreen
+    ArrowColor DarkGreen
+}
+
+package "Domaine Paiement" {
+
+    ' ========== ENTITÉS ==========
+
+    class Paiement <<entité>> {
+        + id: string
+        + reservationId: string
+        + clientId: string
+        + commercantId: string
+        + montant: number
+        + devise: string
+        + typePaiement: TypePaiement
+        + methodePaiement: MethodePaiement
+        + statut: StatutPaiement
+        + referenceExterne: string
+        + idTransactionProvider: string
+        + descriptionPaiement: string
+        + fraisTransaction: number
+        + montantNet: number
+        + dateCreation: Date
+        + dateConfirmation: Date
+        + dateEchec: Date
+        + motifEchec: string
+    }
+
+    class Remboursement <<entité>> {
+        + id: string
+        + paiementId: string
+        + montantRembourse: number
+        + devise: string
+        + raisonRemboursement: string
+        + statut: StatutRemboursement
+        + referenceExterne: string
+        + pourcentage: number
+        + dateCreation: Date
+        + dateTraitement: Date
+        + dateConfirmation: Date
+    }
+
+    class Facture <<entité>> {
+        + id: string
+        + paiementId: string
+        + numeroFacture: string
+        + clientNom: string
+        + clientAdresse: string
+        + commercantNom: string
+        + commercantAdresse: string
+        + lignesFacture: LigneFacture[]
+        + montantHT: number
+        + montantTVA: number
+        + montantTTC: number
+        + devise: string
+        + urlPDF: string
+        + dateEmission: Date
+    }
+
+    class LigneFacture <<value object>> {
+        + designation: string
+        + quantite: number
+        + prixUnitaire: number
+        + montantLigne: number
+    }
+
+    class TransactionMobileMoney <<entité>> {
+        + id: string
+        + paiementId: string
+        + operateur: OperateurMobileMoney
+        + numeroTelephone: string
+        + codeTransaction: string
+        + nomTitulaire: string
+        + statut: StatutTransaction
+        + dateInitiation: Date
+        + dateValidation: Date
+    }
+
+    class Transaction <<entité>> {
+        + id: string
+        + paiementId: string
+        + typeTransaction: TypeTransaction
+        + montant: number
+        + statut: StatutTransaction
+        + dateTraitement: Date
+    }
+
+    class WebhookEvent <<entité>> {
+        + id: string
+        + provider: string
+        + typeEvenement: string
+        + payloadJSON: string
+        + signatureRecue: string
+        + estValide: boolean
+        + estTraite: boolean
+        + dateReception: Date
+        + dateTraitement: Date
+    }
+
+    ' ========== ÉNUMÉRATIONS ==========
+
+    enum TypePaiement {
+        ACOMPTE
+        PAIEMENT_COMPLET
+        SOLDE
+        SUPPLEMENT
+        AUTRE
+    }
+
+    enum MethodePaiement {
+        CARTE_CREDIT
+        CARTE_DEBIT
+        CARTE_BANCAIRE
+        MOBILE_MONEY
+        ESPECES
+        VIREMENT
+        CHEQUE
+        AUTRE
+    }
+
+    enum StatutPaiement {
+        EN_ATTENTE
+        EN_COURS
+        REUSSI
+        ECHOUE
+        ANNULE
+        REMBOURSE
+        PARTIELLEMENT_REMBOURSE
+        AUTRE
+    }
+
+    enum StatutRemboursement {
+        DEMANDE
+        EN_ATTENTE
+        EN_COURS
+        REUSSI
+        EFFECTUE
+        ECHOUE
+        REFUSE
+        AUTRE
+    }
+
+    enum OperateurMobileMoney {
+        ORANGE_MONEY
+        MTN_MOBILE_MONEY
+        MOOV_MONEY
+        TELECEL_MONEY
+        WAVE
+        FREE_MONEY
+        AUTRE
+    }
+
+    enum StatutTransaction {
+        INITIEE
+        EN_ATTENTE
+        EN_ATTENTE_VALIDATION
+        TRAITE
+        VALIDEE
+        ECHOUE
+        ECHOUEE
+        EXPIREE
+        AUTRE
+    }
+
+    enum TypeTransaction {
+        PAIEMENT
+        REMBOURSEMENT
+        FRAIS
+        COMMISSION
+        AUTRE
+    }
+}
+
+' ========== RELATIONS ==========
+
+Paiement "1" -- "1" TypePaiement : est de type >
+Paiement "1" -- "1" MethodePaiement : utilise >
+Paiement "1" -- "1" StatutPaiement : a un statut >
+Paiement "1" -- "*" Remboursement : peut avoir >
+Paiement "1" -- "0..1" Facture : génère >
+Paiement "1" -- "*" Transaction : génère >
+Paiement "1" -- "0..1" TransactionMobileMoney : associé à >
+
+Remboursement "1" -- "1" StatutRemboursement : a un statut >
+Remboursement "*" --> "1" Paiement : de >
+
+Facture "*" --> "1" Paiement : de >
+Facture "1" *-- "*" LigneFacture : contient >
+
+Transaction "1" -- "1" TypeTransaction : est un >
+Transaction "1" -- "1" StatutTransaction : a un statut >
+Transaction "*" --> "1" Paiement : de >
+
+TransactionMobileMoney "1" -- "1" OperateurMobileMoney : utilise >
+TransactionMobileMoney "1" -- "1" StatutTransaction : a un statut >
+TransactionMobileMoney "*" --> "1" Paiement : pour >
+
+' ========== NOTES MÉTIER ==========
+
+note right of Paiement
+  **Transaction de paiement**
+
+  **Types paiement:**
+
+  - **ACOMPTE:**
+    Paiement partiel à la réservation (30-50%)
+    Garantit réservation
+
+  - **PAIEMENT_COMPLET:**
+    Paiement total en une fois
+    (petits montants, transport)
+
+  - **SOLDE:**
+    Paiement du reste après acompte
+    (check-in hôtel, fin prestation)
+
+  - **SUPPLEMENT:**
+    Frais additionnels
+    (minibar, room service, dépassement horaire)
+
+  **Méthodes paiement Afrique:**
+
+  - **MOBILE_MONEY:** (80% paiements)
+    Orange Money, MTN, Moov, Wave
+    Instantané, largement adopté
+
+  - **CARTE_BANCAIRE:** (15%)
+    Stripe, peu de cartes bancaires
+
+  - **ESPECES:** (5%)
+    Paiement sur place
+    (hôtel, restaurant)
+
+  - **VIREMENT/CHEQUE:**
+    Rare, grands montants B2B
+
+  **Frais transaction:**
+  - Mobile Money: 1-2% (opérateur)
+  - Carte: 2.9% + 100 XOF (Stripe)
+  - Espèces: 0%
+
+  **Montant net:**
+  Montant reçu par commerçant
+  = montant - fraisTransaction
+
+  **Référence externe:**
+  ID transaction chez provider
+  (Stripe: pi_xxxx, Orange: OMxxxx)
+end note
+
+note bottom of Remboursement
+  **Remboursement client**
+
+  **Raisons:**
+  - Annulation réservation (selon politique)
+  - Annulation par commerçant (force majeure)
+  - Erreur facturation
+  - Service non conforme (litige)
+  - Double paiement (erreur technique)
+
+  **Calcul montant:**
+  Selon politique annulation:
+  - >7j: 100% (si politique flexible)
+  - 3-7j: 50%
+  - <3j: 0%
+
+  Exemple:
+  Paiement: 50000 XOF
+  Annulation 5j avant: 50%
+  Remboursement: 25000 XOF
+
+  **Délais:**
+  - Mobile Money: 24-72h
+  - Carte bancaire: 5-10 jours
+  - Virement: 3-7 jours
+
+  **Statuts:**
+  - DEMANDE: client/système demande
+  - EN_COURS: traitement provider
+  - EFFECTUE: remboursé sur compte
+  - REFUSE: demande invalide
+
+  **Frais:**
+  Frais transaction NON remboursés
+  (coût provider non récupérable)
+
+  **Référence externe:**
+  ID remboursement chez provider
+  (Stripe: re_xxxx)
+
+  **Contexte africain:**
+  - Mobile Money: remboursement rapide
+  - Client préfère bon réduction
+    vs remboursement (fidélisation)
+end note
+
+note right of Facture
+  **Facture électronique**
+
+  **Génération:**
+  Automatique après paiement REUSSI
+  Format PDF téléchargeable
+
+  **Numéro facture:**
+  Format: FAC-{ANNEE}-{MOIS}-{SEQUENCE}
+  Ex: FAC-2025-02-00123
+
+  **Contenu:**
+  - Informations client
+  - Informations commerçant (SIRET si applicable)
+  - Date émission
+  - Lignes facture détaillées
+  - Montants HT, TVA, TTC
+  - Méthode paiement
+  - Conditions annulation
+
+  **Exemple lignes facture:**
+
+  Hôtel:
+  - Chambre Double (2 nuits × 35000) = 70000 XOF
+  - Petit-déjeuner (2 × 2500) = 5000 XOF
+  - Total TTC = 75000 XOF
+
+  Restaurant:
+  - Réservation table 8 personnes = 5000 XOF
+  - Total TTC = 5000 XOF
+
+  Transport:
+  - Billet Dakar-Saint-Louis (Classe confort) = 9100 XOF
+  - Total TTC = 9100 XOF
+
+  **TVA:**
+  - Taux variable selon pays/secteur
+  - Sénégal: 18% (standard)
+  - Certains services exemptés
+
+  **Stockage:**
+  PDF stocké AWS S3 / Cloudinary
+  Accessible 5 ans minimum (légal)
+
+  **Envoi:**
+  - Email client (PDF attaché)
+  - Téléchargement app mobile
+  - Impression sur place (hôtel)
+end note
+
+note bottom of TransactionMobileMoney
+  **Transaction Mobile Money**
+
+  **Opérateurs africains:**
+
+  - **ORANGE_MONEY:**
+    Leader Afrique Ouest (Sénégal, CI, Mali)
+    30M+ utilisateurs
+
+  - **MTN_MOBILE_MONEY:**
+    Leader Afrique Centrale/Est
+    40M+ utilisateurs
+
+  - **MOOV_MONEY:**
+    Maroc Telecom (Bénin, Togo, CI)
+
+  - **WAVE:**
+    Fintech mobile (Sénégal, CI)
+    0% frais transactions
+
+  - **FREE_MONEY:**
+    Sénégal (Free Sénégal)
+
+  **Flux paiement:**
+
+  1. Client initie paiement app
+  2. API provider contactée
+  3. Notification push sur téléphone client
+  4. Client saisit code PIN (validation)
+  5. Débit compte Mobile Money
+  6. Confirmation transaction
+  7. Crédit compte commerçant
+
+  **Code transaction:**
+  Référence unique opérateur
+  Ex: OM123456789 (Orange Money)
+
+  **Statuts:**
+  - INITIEE: demande envoyée opérateur
+  - EN_ATTENTE_VALIDATION: client doit confirmer PIN
+  - VALIDEE: paiement confirmé
+  - ECHOUEE: solde insuffisant, PIN incorrect
+  - EXPIREE: client n'a pas confirmé (timeout 5min)
+
+  **Avantages:**
+  - Pas besoin carte bancaire
+  - Instantané (10-30 secondes)
+  - Largement utilisé (>60% population)
+  - Interface simple (USSD *144# ou app)
+
+  **Limites:**
+  - Plafonds quotidiens (100k-500k XOF)
+  - Frais si montant élevé
+  - Dépend réseau mobile
+end note
+
+note bottom of WebhookEvent
+  **Événements webhook**
+
+  Notifications asynchrones des
+  providers de paiement (Stripe, etc.)
+
+  **Types événements:**
+
+  - payment_intent.succeeded
+  - payment_intent.failed
+  - payment_intent.canceled
+  - charge.refunded
+  - charge.dispute.created
+
+  **Payload JSON:**
+  Données complètes événement
+  (montant, statut, métadonnées)
+
+  **Signature:**
+  HMAC-SHA256 signature
+  Vérifie authenticité webhook
+  (évite attaques spoofing)
+
+  **Traitement:**
+  1. Réception webhook
+  2. Vérification signature
+  3. Si valide: traitement (mise à jour paiement)
+  4. Réponse HTTP 200 OK
+  5. Marquage estTraite = true
+
+  **Idempotence:**
+  Webhook peut arriver plusieurs fois
+  (retry automatique si timeout)
+  → Vérifier si déjà traité
+
+  **Sécurité:**
+  - HTTPS obligatoire
+  - IP whitelisting (optionnel)
+  - Timeout 30s max traitement
+
+  **Logging:**
+  Conservation 90 jours pour debug
+end note
+
+note as N1
+  **Flux de paiement complet**
+
+  **1. Initiation (Booking Service):**
+  - Réservation créée EN_ATTENTE_PAIEMENT
+  - Envoi requête Payment Service
+
+  **2. Création paiement:**
+  - Calcul montant (acompte/total)
+  - Création Paiement (statut: EN_ATTENTE)
+  - Génération PaymentIntent (Stripe) ou
+    demande Mobile Money (opérateur)
+
+  **3. Client paie:**
+  - Carte: formulaire Stripe (PCI compliant)
+  - Mobile Money: notification push → code PIN
+  - Espèces: marqué manuellement par commerçant
+
+  **4. Confirmation:**
+  - Webhook reçu (carte) ou
+    Callback API (Mobile Money)
+  - Paiement → REUSSI
+  - Notification Booking Service
+  - Réservation → CONFIRMEE
+
+  **5. Post-paiement:**
+  - Génération facture PDF
+  - Envoi email/SMS confirmation
+  - Mise à jour soldes commerçant
+
+  **En cas d'échec:**
+  - Paiement → ECHOUE (motif enregistré)
+  - Client notifié (message erreur)
+  - Possibilité réessayer
+  - Si expire (24h): Réservation → EXPIREE
+
+  **Remboursement:**
+  - Déclenchement automatique (annulation)
+    ou manuel (support)
+  - Création Remboursement
+  - API provider (refund)
+  - Confirmation → notification client
+end note
+
+@enduml

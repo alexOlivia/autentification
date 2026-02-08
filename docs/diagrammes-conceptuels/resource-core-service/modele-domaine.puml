@@ -1,0 +1,442 @@
+@startuml Resource Core Service - Modèle de Domaine
+
+title Resource Core Service - Modèle de Domaine Conceptuel
+
+' Styles
+skinparam class {
+    BackgroundColor LightYellow
+    BorderColor Orange
+    ArrowColor Orange
+}
+
+package "Domaine Ressources Centrales" {
+
+    ' ========== ENTITÉS ==========
+
+    class Commercant <<entité>> {
+        + id: string
+        + utilisateurId: string
+        + typeActivite: TypeActivite
+        + nomCommercial: string
+        + raisonSociale: string
+        + numeroSiret: string
+        + adresse: Adresse
+        + telephone: string
+        + email: string
+        + urlSiteWeb: string
+        + description: string
+        + logoUrl: string
+        + photoCouvertureUrl: string
+        + statut: StatutCommercant
+        + noteGlobale: number
+        + nombreAvis: number
+        + dateCreation: Date
+        + dateMiseAJour: Date
+        + dateValidation: Date
+    }
+
+    class Horaire <<entité>> {
+        + id: string
+        + commercantId: string
+        + jourSemaine: JourSemaine
+        + heureOuverture: string
+        + heureFermeture: string
+        + estFerme: boolean
+        + pauseDebutHeure: string
+        + pauseFinHeure: string
+    }
+
+    class ParametresCommercant <<entité>> {
+        + id: string
+        + commercantId: string
+        + fuseauHoraire: string
+        + devise: string
+        + langue: string
+        + politiqueAnnulation: string
+        + delaiAnnulationHeures: number
+        + pourcentageRemboursement: number
+        + acceptePaiementEnLigne: boolean
+        + acceptePaiementSurPlace: boolean
+    }
+
+    class Adresse <<value object>> {
+        + rue: string
+        + ville: string
+        + region: string
+        + pays: string
+        + codePostal: string
+        + latitude: number
+        + longitude: number
+    }
+
+    class JourFerie <<entité>> {
+        + id: string
+        + commercantId: string
+        + date: Date
+        + libelle: string
+        + estFerme: boolean
+        + heureOuvertureSpeciale: string
+        + heureFermetureSpeciale: string
+    }
+
+    class Avis <<entité>> {
+        + id: string
+        + commercantId: string
+        + clientId: string
+        + reservationId: string
+        + note: number
+        + commentaire: string
+        + reponseCommercant: string
+        + dateReponse: Date
+        + estVerifie: boolean
+        + estSignale: boolean
+        + dateCreation: Date
+    }
+
+    class MediaCommercant <<entité>> {
+        + id: string
+        + commercantId: string
+        + typeMedia: TypeMedia
+        + urlMedia: string
+        + legende: string
+        + ordre: number
+        + dateAjout: Date
+    }
+
+    class DocumentLegal <<entité>> {
+        + id: string
+        + commercantId: string
+        + typeDocument: TypeDocumentLegal
+        + urlDocument: string
+        + numeroDocument: string
+        + dateEmission: Date
+        + dateExpiration: Date
+        + estValide: boolean
+        + dateVerification: Date
+    }
+
+    ' ========== ÉNUMÉRATIONS ==========
+
+    enum TypeActivite {
+        RESTAURANT
+        HEBERGEMENT
+        SERVICE_PROVIDER
+        TRANSPORT
+        AUTRE
+    }
+
+    enum StatutCommercant {
+        EN_ATTENTE_VALIDATION
+        ACTIF
+        SUSPENDU
+        INACTIF
+        REJETE
+        AUTRE
+    }
+
+    enum JourSemaine {
+        LUNDI
+        MARDI
+        MERCREDI
+        JEUDI
+        VENDREDI
+        SAMEDI
+        DIMANCHE
+        AUTRE
+    }
+
+    enum TypeMedia {
+        PHOTO
+        VIDEO
+        LOGO
+        PHOTO_COUVERTURE
+        PHOTO_INTERIEUR
+        PHOTO_EXTERIEUR
+        PHOTO_CHAMBRE
+        PHOTO_SALLE
+        PHOTO_EQUIPEMENT
+        AUTRE
+    }
+
+    enum TypeDocumentLegal {
+        REGISTRE_COMMERCE
+        LICENCE_EXPLOITATION
+        ASSURANCE_RESPONSABILITE
+        CERTIFICAT_HYGIENE
+        PERMIS_TRANSPORT
+        AUTORISATION_MUNICIPALE
+        AUTRE
+    }
+}
+
+' ========== RELATIONS ==========
+
+Commercant "1" -- "1" TypeActivite : exerce >
+Commercant "1" -- "1" StatutCommercant : a un statut >
+Commercant "1" -- "1" Adresse : possède >
+Commercant "1" -- "1" ParametresCommercant : possède >
+Commercant "1" *-- "*" Horaire : définit >
+Commercant "1" *-- "*" JourFerie : gère >
+Commercant "1" -- "*" Avis : reçoit >
+Commercant "1" *-- "*" MediaCommercant : possède >
+Commercant "1" *-- "*" DocumentLegal : fournit >
+
+Horaire "1" -- "1" JourSemaine : pour jour >
+Horaire "*" --> "1" Commercant : de >
+
+JourFerie "*" --> "1" Commercant : de >
+
+Avis "*" --> "1" Commercant : pour >
+
+MediaCommercant "1" -- "1" TypeMedia : est de type >
+MediaCommercant "*" --> "1" Commercant : de >
+
+DocumentLegal "1" -- "1" TypeDocumentLegal : est de type >
+DocumentLegal "*" --> "1" Commercant : de >
+
+' ========== NOTES MÉTIER ==========
+
+note right of Commercant
+  **Commerçant/Établissement**
+
+  Entité centrale représentant
+  le propriétaire d'établissement.
+
+  **Types d'activité:**
+  - RESTAURANT: restauration
+  - HEBERGEMENT: hôtel, auberge
+  - SERVICE_PROVIDER: coiffure, spa
+  - TRANSPORT: bus, VTC
+
+  **Statuts:**
+  - EN_ATTENTE_VALIDATION:
+    Inscription complète, admin vérifie
+
+  - ACTIF:
+    Validé, peut recevoir réservations
+
+  - SUSPENDU:
+    Bloqué temporairement (problème)
+
+  - INACTIF:
+    Compte désactivé par commerçant
+
+  - REJETE:
+    Validation refusée (documents invalides)
+
+  **Géolocalisation:**
+  - Latitude/Longitude (Google Maps API)
+  - Permet recherche "Près de moi"
+  - Calcul distance client ↔ établissement
+
+  **Note globale:**
+  Moyenne notes avis clients (1-5 étoiles)
+  Recalculée après chaque nouvel avis
+
+  **Contexte africain:**
+  - SIRET optionnel (informel fréquent)
+  - Téléphone obligatoire (WhatsApp)
+  - Adresse textuelle (pas toujours GPS précis)
+end note
+
+note bottom of Horaire
+  **Horaires d'ouverture**
+
+  Horaires hebdomadaires réguliers
+  de l'établissement.
+
+  **Exemple restaurant africain:**
+  - Lundi-Jeudi: 12h-15h et 19h-23h
+  - Vendredi: 12h-15h et 19h-01h
+  - Samedi: 10h-02h (brunch + dîner)
+  - Dimanche: 10h-16h (brunch familial)
+
+  **Pause déjeuner:**
+  Certains établissements ferment
+  entre 15h-18h (repos personnel)
+
+  **Flexibilité africaine:**
+  - Horaires indicatifs (pas toujours respectés)
+  - Fermeture anticipée si peu de clients
+  - Ouverture prolongée si forte affluence
+  - "On ferme quand les clients partent"
+
+  **Jours fériés:**
+  Horaires spéciaux gérés via JourFerie
+end note
+
+note bottom of JourFerie
+  **Jours fériés et fermetures exceptionnelles**
+
+  **Jours fériés nationaux (exemples):**
+  - 1er janvier: Nouvel An
+  - 4 avril: Fête de l'Indépendance (Sénégal)
+  - 1er mai: Fête du Travail
+  - Tabaski (Aïd el-Kebir): date variable
+  - Korité (Aïd el-Fitr): date variable
+  - Magal de Touba: date variable
+  - 25 décembre: Noël
+
+  **Gestion:**
+  - estFerme = true: fermé toute la journée
+  - estFerme = false: ouvert avec horaires spéciaux
+
+  **Fermetures exceptionnelles:**
+  - Événements privés (mariage)
+  - Travaux/rénovations
+  - Congés annuels
+  - Jours de deuil national
+
+  **Planning:**
+  Définis à l'avance (min 1 semaine)
+  Clients notifiés si réservation touchée
+end note
+
+note right of Avis
+  **Avis clients**
+
+  **Note:**
+  - Échelle 1-5 étoiles
+  - 1 = très mauvais
+  - 5 = excellent
+
+  **Règles:**
+  - 1 seul avis par réservation
+  - Avis possible après séjour/repas
+  - Délai max: 30 jours après réservation
+
+  **Vérification:**
+  - estVerifie = true si réservation confirmée
+  - Badge "Avis vérifié" affiché
+
+  **Modération:**
+  - Signalement possible (langage offensant)
+  - Admin vérifie avis signalés
+  - Suppression si contrevient CGU
+
+  **Réponse commerçant:**
+  - Commerçant peut répondre publiquement
+  - Montre engagement SAV
+  - Améliore image si réponse constructive
+
+  **Impact:**
+  - Note globale mise à jour
+  - Affichage avis récents sur page établissement
+  - Filtre "Meilleurs avis" / "Plus récents"
+
+  **Contexte africain:**
+  - Culture orale forte → avis détaillés
+  - Notation généreuse (hospitalité)
+  - Critiques souvent constructives
+end note
+
+note bottom of MediaCommercant
+  **Médias établissement**
+
+  **Types:**
+  - **LOGO:** logo entreprise (carré)
+  - **PHOTO_COUVERTURE:** bannière page (16:9)
+  - **PHOTO_INTERIEUR:** salle, réception
+  - **PHOTO_EXTERIEUR:** façade, parking
+  - **PHOTO_CHAMBRE:** chambres hôtel
+  - **PHOTO_SALLE:** salles événements
+  - **PHOTO_EQUIPEMENT:** cuisine, piscine
+  - **VIDEO:** visite virtuelle (30s-2min)
+
+  **Ordre affichage:**
+  Attribut "ordre" définit séquence
+  dans galerie photos (1 = premier)
+
+  **Optimisation:**
+  - Images compressées (WebP)
+  - Résolution max: 1920x1080
+  - Stockage: AWS S3 / Cloudinary
+
+  **Importance:**
+  Photos de qualité augmentent taux
+  de réservation de +40%
+
+  **Contexte africain:**
+  - Photos prisent sur smartphone
+  - Lumière naturelle (soleil)
+  - Montrer espace, ambiance authentique
+end note
+
+note bottom of DocumentLegal
+  **Documents légaux**
+
+  **Types documents:**
+
+  - **REGISTRE_COMMERCE:**
+    Inscription officielle entreprise
+    (RCCM, NINEA, etc.)
+
+  - **LICENCE_EXPLOITATION:**
+    Autorisation exercer activité
+    (licence restaurant, hôtel)
+
+  - **ASSURANCE_RESPONSABILITE:**
+    Assurance civile professionnelle
+    (obligatoire pour hébergement)
+
+  - **CERTIFICAT_HYGIENE:**
+    Conformité normes sanitaires
+    (restaurants, hôtels)
+
+  - **PERMIS_TRANSPORT:**
+    Autorisation transport passagers
+    (compagnies bus, VTC)
+
+  - **AUTORISATION_MUNICIPALE:**
+    Permis exploitation délivré par mairie
+
+  **Vérification:**
+  - Admin plateforme vérifie documents
+  - Validation manuelle (photos/scans)
+  - Si valide: estValide = true
+
+  **Expiration:**
+  - Documents avec date expiration
+  - Alerte commerçant 30j avant expiration
+  - Statut commerçant → SUSPENDU si expiré
+
+  **Conformité:**
+  Garantit légalité établissements
+  sur plateforme (responsabilité légale)
+
+  **Contexte africain:**
+  - Démarches administratives longues
+  - Documents parfois papier (scan requis)
+  - Validité variable selon pays
+end note
+
+note as N1
+  **Validation commerçant**
+
+  **Processus inscription:**
+
+  1. Utilisateur crée compte (Auth Service)
+  2. Remplit profil commerçant (Resource Core)
+  3. Upload documents légaux
+  4. Définit horaires d'ouverture
+  5. Ajoute photos établissement
+  6. Soumet pour validation
+
+  **Vérification admin:**
+  - Cohérence informations
+  - Validité documents légaux
+  - Qualité photos
+  - Adresse réelle (Google Maps)
+
+  **Si OK:**
+  Statut → ACTIF
+  Commerçant peut créer ressources
+  (chambres, tables, véhicules)
+
+  **Si refus:**
+  Statut → REJETE
+  Email avec motifs refus
+  Peut resoumettre après corrections
+end note
+
+@enduml

@@ -1,0 +1,161 @@
+@startuml API Gateway - Diagramme de Classes
+
+title API Gateway - Diagramme de Classes
+
+' Styles
+skinparam class {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    ArrowColor DarkBlue
+}
+
+package "API Gateway" {
+    class ServeurGateway {
+        - application: FastifyInstance
+        - port: number
+        - services: RegistreServices
+        + demarrer(): Promise<void>
+        + arreter(): Promise<void>
+        + enregistrerRoutes(): void
+        + enregistrerMiddlewares(): void
+    }
+
+    class GestionnaireRoutes {
+        + traiterRequete(req: Requete, res: Reponse): Promise<void>
+        + routerVersService(urlService: string, req: Requete): Promise<any>
+        + gererErreur(erreur: Erreur, res: Reponse): void
+    }
+
+    class MiddlewareAuth {
+        - secretJWT: string
+        - urlServiceAuth: string
+        + validerToken(token: string): Promise<PayloadToken>
+        + verifierPermissions(utilisateur: Utilisateur, ressource: string, action: string): boolean
+        + authentifier(req: Requete, res: Reponse, suivant: Function): Promise<void>
+    }
+
+    class LimiteurDebit {
+        - redis: ClientRedis
+        - requetesMax: number
+        - fenetreMs: number
+        + verifierLimite(ip: string): Promise<boolean>
+        + incrementerCompteur(ip: string): Promise<void>
+        + reinitialiserCompteur(ip: string): Promise<void>
+    }
+
+    class CoupeCircuit <<pattern>> {
+        - urlService: string
+        - seuilEchec: number
+        - delaiReinitialisation: number
+        - etat: EtatCircuit
+        - nombreEchecs: number
+        + executer(requete: Function): Promise<any>
+        + surSucces(): void
+        + surEchec(): void
+        + definirEtat(etat: EtatCircuit): void
+        + estOuvert(): boolean
+    }
+
+    enum EtatCircuit {
+        FERME
+        OUVERT
+        SEMI_OUVERT
+    }
+
+    class RegistreServices {
+        - services: Map<string, ConfigService>
+        + enregistrerService(nom: string, config: ConfigService): void
+        + obtenirService(nom: string): ConfigService
+        + obtenirTousServices(): ConfigService[]
+        + verifierSante(nomService: string): Promise<boolean>
+    }
+
+    class ConfigService {
+        + nom: string
+        + url: string
+        + port: number
+        + timeout: number
+        + tentatives: number
+        + coupeCircuit: CoupeCircuit
+    }
+
+    class MiddlewareCORS {
+        - originesAutorisees: string[]
+        - methodesAutorisees: string[]
+        - entetesAutorises: string[]
+        + configurer(app: FastifyInstance): void
+        + validerOrigine(origine: string): boolean
+    }
+
+    class MiddlewareLogger {
+        + loguerRequete(req: Requete): void
+        + loguerReponse(res: Reponse, duree: number): void
+        + loguerErreur(erreur: Erreur, req: Requete): void
+    }
+
+    class ValidateurRequete {
+        + validerEntetes(entetes: Entetes): ResultatValidation
+        + validerParametresQuery(params: ParamsQuery): ResultatValidation
+        + validerCorps(corps: any, schema: Schema): ResultatValidation
+    }
+
+    class GestionnaireCache {
+        - redis: ClientRedis
+        + obtenir(cle: string): Promise<any>
+        + definir(cle: string, valeur: any, ttl: number): Promise<void>
+        + supprimer(cle: string): Promise<void>
+        + effacer(motif: string): Promise<void>
+    }
+
+    class EquilibreurCharge {
+        - strategie: StrategieEquilibrage
+        + selectionnerInstance(instances: InstanceService[]): InstanceService
+        + tourniquet(instances: InstanceService[]): InstanceService
+        + moinsDeConnexions(instances: InstanceService[]): InstanceService
+    }
+
+    enum StrategieEquilibrage {
+        TOURNIQUET
+        MOINS_DE_CONNEXIONS
+        ALEATOIRE
+    }
+}
+
+' Relations
+ServeurGateway "1" -- "1" RegistreServices : utilise >
+ServeurGateway "1" -- "1" GestionnaireRoutes : contient >
+ServeurGateway "1" -- "*" MiddlewareAuth : utilise >
+ServeurGateway "1" -- "1" LimiteurDebit : utilise >
+ServeurGateway "1" -- "1" MiddlewareCORS : utilise >
+ServeurGateway "1" -- "1" MiddlewareLogger : utilise >
+
+GestionnaireRoutes "1" -- "*" CoupeCircuit : utilise >
+GestionnaireRoutes "1" -- "1" ValidateurRequete : utilise >
+GestionnaireRoutes "1" -- "1" GestionnaireCache : utilise >
+GestionnaireRoutes "1" -- "1" EquilibreurCharge : utilise >
+
+RegistreServices "1" -- "*" ConfigService : gère >
+ConfigService "1" -- "1" CoupeCircuit : possède >
+
+CoupeCircuit "1" -- "1" EtatCircuit : a un état >
+EquilibreurCharge "1" -- "1" StrategieEquilibrage : utilise >
+
+LimiteurDebit "1" -- "1" GestionnaireCache : utilise Redis via >
+
+note right of CoupeCircuit
+  Pattern de résilience pour
+  gérer les défaillances des
+  microservices backend
+end note
+
+note right of LimiteurDebit
+  Protection contre les abus
+  100 req/15min par IP
+end note
+
+note right of RegistreServices
+  Registre dynamique des
+  microservices disponibles
+end note
+
+@enduml

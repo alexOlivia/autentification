@@ -1,0 +1,403 @@
+@startuml Booking Service - Cas d'Utilisation
+
+title Booking Service - Cas d'Utilisation (SERVICE CŒUR)
+
+left to right direction
+
+' Acteurs
+actor "Client" as Client
+actor "Commerçant" as Merchant
+actor "Administrateur" as Admin
+actor "Payment Service" as PaymentService
+actor "Notification Service" as NotificationService
+actor "Tâche Planifiée" as Cron
+actor "WebSocket Client" as WSClient
+
+' Package Booking Service
+rectangle "Booking Service" {
+    ' Cas d'utilisation principaux
+    usecase "Créer réservation" as UC1
+    usecase "Rechercher disponibilités" as UC2
+    usecase "Modifier réservation" as UC3
+    usecase "Annuler réservation" as UC4
+    usecase "Confirmer réservation" as UC5
+    usecase "Consulter réservations" as UC6
+    usecase "Gérer conflits" as UC7
+    usecase "Générer suggestions" as UC8
+    usecase "Optimiser occupation" as UC9
+    usecase "Diffuser mises à jour temps réel" as UC10
+
+    ' Sous-cas pour création
+    usecase "Valider données" as UC1_1
+    usecase "Vérifier disponibilité ressource" as UC1_2
+    usecase "Détecter conflits" as UC1_3
+    usecase "Calculer prix" as UC1_4
+    usecase "Générer code confirmation" as UC1_5
+    usecase "Créer en statut EN_ATTENTE" as UC1_6
+
+    ' Sous-cas pour recherche
+    usecase "Rechercher par type ressource" as UC2_1
+    usecase "Rechercher multi-types" as UC2_2
+    usecase "Filtrer par date/heure" as UC2_3
+    usecase "Filtrer par capacité" as UC2_4
+    usecase "Filtrer par prix" as UC2_5
+    usecase "Filtrer par localisation" as UC2_6
+    usecase "Trier résultats" as UC2_7
+
+    ' Sous-cas pour modification
+    usecase "Vérifier possibilité modification" as UC3_1
+    usecase "Changer dates" as UC3_2
+    usecase "Changer nombre personnes" as UC3_3
+    usecase "Changer ressource" as UC3_4
+    usecase "Reverifier conflits" as UC3_5
+
+    ' Sous-cas pour annulation
+    usecase "Vérifier délai annulation" as UC4_1
+    usecase "Calculer remboursement" as UC4_2
+    usecase "Marquer ANNULEE" as UC4_3
+    usecase "Libérer ressource" as UC4_4
+    usecase "Déclencher remboursement" as UC4_5
+
+    ' Sous-cas pour détection conflits
+    usecase "Vérifier chevauchement temporel" as UC7_1
+    usecase "Vérifier surcapacité" as UC7_2
+    usecase "Vérifier ressource disponible" as UC7_3
+    usecase "Logger conflit" as UC7_4
+    usecase "Bloquer création si conflit" as UC7_5
+
+    ' Sous-cas pour suggestions
+    usecase "Trouver ressources similaires" as UC8_1
+    usecase "Trouver créneaux proches" as UC8_2
+    usecase "Calculer scores" as UC8_3
+    usecase "Trier par pertinence" as UC8_4
+    usecase "Limiter à 10 suggestions" as UC8_5
+
+    ' Sous-cas pour optimisation
+    usecase "Analyser taux occupation" as UC9_1
+    usecase "Identifier périodes creuses" as UC9_2
+    usecase "Suggérer ajustements tarifs" as UC9_3
+    usecase "Prédire demande future" as UC9_4
+
+    ' Sous-cas pour WebSocket
+    usecase "Rejoindre salle ressource" as UC10_1
+    usecase "Diffuser nouvelle réservation" as UC10_2
+    usecase "Diffuser annulation" as UC10_3
+    usecase "Diffuser maj disponibilité" as UC10_4
+    usecase "Notifier clients abonnés" as UC10_5
+
+    ' Cas d'utilisation tâches planifiées
+    usecase "Marquer réservations terminées" as UC11
+    usecase "Détecter no-shows" as UC12
+    usecase "Envoyer rappels 24h avant" as UC13
+}
+
+' Relations acteurs -> cas d'utilisation
+Client --> UC1 : crée réservation
+Client --> UC2 : cherche disponibilités
+Client --> UC3 : modifie sa réservation
+Client --> UC4 : annule sa réservation
+Client --> UC6 : consulte historique
+WSClient --> UC10 : s'abonne updates
+
+Merchant --> UC6 : consulte toutes réservations
+Merchant --> UC9 : optimise planning
+Merchant --> UC4 : peut annuler (cas exceptionnel)
+
+Admin --> UC6 : consulte globalement
+Admin --> UC9 : analyse système
+
+PaymentService --> UC5 : confirme après paiement
+NotificationService --> UC13 : envoie rappels
+
+Cron --> UC11 : quotidiennement minuit
+Cron --> UC12 : quotidiennement
+Cron --> UC13 : quotidiennement 10h
+
+' Inclusions et extensions
+UC1 ..> UC1_1 : <<include>>
+UC1 ..> UC1_2 : <<include>>
+UC1 ..> UC1_3 : <<include>>
+UC1 ..> UC1_4 : <<include>>
+UC1 ..> UC1_5 : <<include>>
+UC1 ..> UC1_6 : <<include>>
+
+UC1 ..> UC7 : <<include>>
+UC1 ..> UC8 : <<extend>>\n[si conflit]
+
+UC2 ..> UC2_1 : <<extend>>
+UC2 ..> UC2_2 : <<extend>>
+UC2 ..> UC2_3 : <<include>>
+UC2 ..> UC2_4 : <<extend>>\n[si filtre]
+UC2 ..> UC2_5 : <<extend>>\n[si filtre]
+UC2 ..> UC2_6 : <<extend>>\n[si filtre]
+UC2 ..> UC2_7 : <<include>>
+
+UC3 ..> UC3_1 : <<include>>
+UC3 ..> UC3_2 : <<extend>>
+UC3 ..> UC3_3 : <<extend>>
+UC3 ..> UC3_4 : <<extend>>
+UC3 ..> UC3_5 : <<include>>
+
+UC4 ..> UC4_1 : <<include>>
+UC4 ..> UC4_2 : <<include>>
+UC4 ..> UC4_3 : <<include>>
+UC4 ..> UC4_4 : <<include>>
+UC4 ..> UC4_5 : <<extend>>\n[si payée]
+
+UC7 ..> UC7_1 : <<include>>
+UC7 ..> UC7_2 : <<include>>
+UC7 ..> UC7_3 : <<include>>
+UC7 ..> UC7_4 : <<include>>
+UC7 ..> UC7_5 : <<extend>>\n[si conflit détecté]
+
+UC8 ..> UC8_1 : <<include>>
+UC8 ..> UC8_2 : <<include>>
+UC8 ..> UC8_3 : <<include>>
+UC8 ..> UC8_4 : <<include>>
+UC8 ..> UC8_5 : <<include>>
+
+UC9 ..> UC9_1 : <<include>>
+UC9 ..> UC9_2 : <<include>>
+UC9 ..> UC9_3 : <<extend>>
+UC9 ..> UC9_4 : <<extend>>
+
+UC10 ..> UC10_1 : <<include>>
+UC10 ..> UC10_2 : <<extend>>
+UC10 ..> UC10_3 : <<extend>>
+UC10 ..> UC10_4 : <<extend>>
+UC10 ..> UC10_5 : <<include>>
+
+' Notes explicatives
+note right of UC1
+  Processus création réservation:
+
+  1. Client soumet demande
+  2. Validation données (dates, capacité)
+  3. Vérification disponibilité
+  4. Détection conflits
+  5. Si conflit → Suggestions
+  6. Si OK → Création EN_ATTENTE
+  7. Génération code confirmation
+  8. Attente paiement (15min timeout)
+  9. Confirmation ou expiration
+
+  Données requises:
+  - Type ressource (TABLE, CHAMBRE, CRENEAU)
+  - Ressource ID
+  - Date/heure début et fin
+  - Nombre personnes
+  - Demandes spéciales (optionnel)
+
+  Code confirmation:
+  - Format: PING-XXXXXX
+  - 6 caractères aléatoires
+  - Unique par réservation
+  - Utilisé pour check-in
+end note
+
+note right of UC2
+  Recherche disponibilités avancée:
+
+  Scénarios:
+  1. Recherche simple:
+     - Restaurant à Dakar
+     - 15 mars 19h00
+     - 4 personnes
+     → Tables disponibles
+
+  2. Recherche multi-types:
+     - Hébergement OU Prestation
+     - 20-25 mars
+     - 2 personnes
+     → Chambres + Créneaux spa
+
+  3. Recherche flexible:
+     - Restaurant
+     - "Vendredi soir"
+     - 6 personnes
+     - Prix max: 30000 XOF
+     → Toutes options matchant
+
+  Performance:
+  - Appels parallèles domain services
+  - Circuit breaker si service down
+  - Cache Redis 5-10min
+  - Pagination 20 résultats/page
+end note
+
+note bottom of UC7
+  Système anti-double-booking:
+
+  Niveaux de protection:
+
+  1. Vérification application:
+     - Avant création
+     - Détection conflits
+
+  2. Lock base de données:
+     - SELECT FOR UPDATE
+     - Transaction SERIALIZABLE
+
+  3. Lock distribué Redis:
+     - SETNX resource:<id>:lock
+     - TTL 30 secondes
+     - Libéré après création
+
+  4. Validation finale:
+     - Recheck après commit
+     - Rollback si conflit race
+
+  Cas edge gérés:
+  - Requêtes simultanées (race)
+  - Panne serveur mid-transaction
+  - Timeout réseau
+  - Retry automatique
+
+  Garantie: AUCUN double-booking
+end note
+
+note right of UC8
+  Suggestions intelligentes:
+
+  Contexte: Table restaurant indisponible
+
+  Suggestions générées:
+  1. Même table, créneaux ±1h:
+     - 17:00-19:00 (2h avant)
+     - 18:00-20:00 (1h avant)
+     - 21:00-23:00 (2h après)
+     Score: 0.9 (haute priorité)
+
+  2. Tables similaires, même heure:
+     - Table voisine même zone
+     - Capacité équivalente
+     Score: 0.85
+
+  3. Restaurants proches:
+     - Rayon 2km
+     - Même type cuisine
+     - Note ≥4.5/5
+     Score: 0.7
+
+  4. Jour suivant:
+     - Même table
+     - Même heure
+     - Samedi au lieu vendredi
+     Score: 0.6
+
+  Présentation:
+  - Triées par score
+  - Max 10 affichées
+  - Infos complètes (prix, distance)
+  - Réservation en 1 clic
+end note
+
+note left of UC9
+  Optimisation occupation:
+
+  Métriques calculées:
+  - Taux occupation global
+  - Taux par ressource
+  - Taux par période (jour/semaine)
+  - Revenu par ressource
+  - Durée moyenne utilisation
+
+  Analyses:
+  - Heures de pointe (peak hours)
+  - Périodes creuses (off-peak)
+  - Ressources sous-utilisées
+  - Ressources sur-demandées
+
+  Recommandations:
+  - "Augmenter tarifs 19h-21h (+30%)"
+  - "Promotion créneaux 14h-16h (-20%)"
+  - "Ajouter tables zone terrasse"
+  - "Réduire créneaux lundi matin"
+
+  Visualisation:
+  - Graphiques occupation
+  - Heatmap disponibilités
+  - Courbes revenus
+  - Prédictions ML (post-MVP)
+end note
+
+note right of UC10
+  WebSocket temps réel:
+
+  Architecture:
+  - Socket.io server
+  - Redis adapter (multi-instances)
+  - Rooms par ressource/utilisateur
+
+  Client s'abonne:
+  socket.emit('join-resource', {resourceId})
+
+  Client reçoit:
+  - booking.created
+  - booking.confirmed
+  - booking.cancelled
+  - availability.changed
+
+  Use cases:
+  - Dashboard merchant live
+  - Recherche client synchronisée
+  - Notifications instantanées
+  - Calendrier collaboratif
+
+  Scalabilité:
+  - Redis Pub/Sub entre instances
+  - Load balancing sticky sessions
+  - Reconnexion automatique
+end note
+
+note bottom of UC11
+  Tâches planifiées quotidiennes:
+
+  MARQUER TERMINÉES (00:01):
+  - SELECT reservations
+    WHERE status = 'CONFIRMEE'
+    AND date_fin < NOW()
+  - UPDATE status = 'TERMINEE'
+  - Publish event 'booking.completed'
+
+  DETECTER NO-SHOWS (00:05):
+  - SELECT reservations
+    WHERE status = 'CONFIRMEE'
+    AND date_debut < NOW() - 2h
+    AND date_fin < NOW()
+  - UPDATE status = 'NO_SHOW'
+  - Notifier commerçant
+  - Appliquer pénalité client (optionnel)
+
+  ENVOYER RAPPELS (10:00):
+  - SELECT reservations
+    WHERE status = 'CONFIRMEE'
+    AND date_debut BETWEEN
+        NOW() + 23h AND NOW() + 25h
+  - Publish 'booking.reminder'
+  - Notification Service envoie email/push
+
+  NETTOYER EN_ATTENTE EXPIRÉES (00:15):
+  - DELETE FROM bookings
+    WHERE status = 'EN_ATTENTE'
+    AND created_at < NOW() - 15min
+  - Libérer ressources
+end note
+
+' Contraintes
+note "Réservation requiert\npaiement sous 15min" as N1
+UC1 .. N1
+
+note "Modification possible uniquement\nsi délai >= 24h et max 1 fois" as N2
+UC3 .. N2
+
+note "Annulation remboursement selon\npolitique commerçant" as N3
+UC4 .. N3
+
+note "Conflit bloque création\net génère suggestions" as N4
+UC7 .. N4
+
+note "Suggestions limitées à 10\ntriées par score pertinence" as N5
+UC8 .. N5
+
+@enduml

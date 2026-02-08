@@ -1,0 +1,184 @@
+@startuml Resource Core Service - Diagramme de Séquence
+
+title Resource Core Service - Création d'un commerçant et configuration
+
+actor "Commerçant" as Merchant
+participant "API Gateway" as Gateway
+participant "ControleurCommercant" as Controleur
+participant "ValidateurCommercant" as Validateur
+participant "ServiceCommercant" as Service
+participant "ServiceImages" as Images
+participant "DepotCommercant" as Depot
+participant "DepotParametres" as DepotParams
+participant "DepotHoraire" as DepotHoraire
+database "PostgreSQL" as DB
+database "Redis" as Redis
+
+== Création d'un commerçant ==
+Merchant -> Gateway : POST /merchants\n{businessName, type, address, phone, logo}
+activate Gateway
+
+Gateway -> Controleur : creerCommercant(req, res)
+activate Controleur
+
+Controleur -> Validateur : validerNomEntreprise(nomEntreprise)
+activate Validateur
+Validateur -> Validateur : vérifier longueur > 3 chars
+Validateur -> Validateur : vérifier caractères autorisés
+Validateur --> Controleur : {valide: true}
+deactivate Validateur
+
+Controleur -> Validateur : validerAdresse(adresse)
+activate Validateur
+Validateur -> Validateur : vérifier champs obligatoires
+Validateur -> Validateur : valider format pays (ISO 3166)
+Validateur --> Controleur : {valide: true}
+deactivate Validateur
+
+alt Logo fourni
+    Controleur -> Images : uploaderImage(fichierLogo, utilisateurId)
+    activate Images
+    Images -> Images : redimensionner(300x300)
+    Images -> Images : optimiser(qualité: 85%)
+    Images --> Controleur : urlLogo
+    deactivate Images
+end
+
+Controleur -> Service : creer(donneesCommercant)
+activate Service
+
+Service -> Depot : trouverParUtilisateur(utilisateurId)
+activate Depot
+Depot -> DB : SELECT * FROM merchants\nWHERE user_id = ?
+DB --> Depot : null (aucun commerce existant)
+Depot --> Service : null
+deactivate Depot
+
+Service -> Depot : creer(donnees)
+activate Depot
+Depot -> DB : INSERT INTO merchants\n(user_id, business_name, type, ...)
+DB --> Depot : commercant créé
+Depot --> Service : commercant
+deactivate Depot
+
+Service -> DepotParams : creer(commercantId, parametresParDefaut)
+activate DepotParams
+DepotParams -> DB : INSERT INTO merchant_settings\n(merchant_id, timezone, currency, ...)
+DB --> DepotParams : paramètres créés
+DepotParams --> Service : parametres
+deactivate DepotParams
+
+Service -> Redis : set("merchant:" + commercantId, donnees, ttl: 3600)
+activate Redis
+Redis --> Service : OK
+deactivate Redis
+
+Service --> Controleur : commercant
+deactivate Service
+
+Controleur --> Gateway : 201 Created\n{commercantId, nomEntreprise, ...}
+deactivate Controleur
+
+Gateway --> Merchant : 201 Created\n{merchant}
+deactivate Gateway
+
+== Configuration des horaires d'ouverture ==
+Merchant -> Gateway : POST /merchants/:id/schedules\n[{jour: "LUNDI", ouverture: "09:00", fermeture: "18:00"}]
+activate Gateway
+
+Gateway -> Controleur : creerHoraire(req, res)
+activate Controleur
+
+Controleur -> Service : obtenirPourCommercant(commercantId)
+activate Service
+Service -> DepotHoraire : trouverParCommercant(commercantId)
+activate DepotHoraire
+DepotHoraire -> DB : SELECT * FROM schedules\nWHERE merchant_id = ?
+DB --> DepotHoraire : horaires existants
+DepotHoraire --> Service : horaires
+deactivate DepotHoraire
+
+Service -> Validateur : validerNonChevauchement(nouveauxHoraires, horairesExistants)
+activate Validateur
+
+loop Pour chaque nouveau horaire
+    Validateur -> Validateur : vérifier pas de conflit même jour
+    Validateur -> Validateur : valider heureOuverture < heureFermeture
+    Validateur -> Validateur : valider plage horaire raisonnable (max 24h)
+end
+
+Validateur --> Service : {valide: true}
+deactivate Validateur
+
+Service -> DepotHoraire : creerMultiple(commercantId, horaires)
+activate DepotHoraire
+
+loop Pour chaque horaire
+    DepotHoraire -> DB : INSERT INTO schedules\n(merchant_id, day_of_week, open_time, close_time)
+    DB --> DepotHoraire : horaire créé
+end
+
+DepotHoraire --> Service : horaires créés
+deactivate DepotHoraire
+
+Service -> Redis : del("merchant:" + commercantId + ":schedules")
+activate Redis
+Redis --> Service : OK (cache invalidé)
+deactivate Redis
+
+Service --> Controleur : horaires
+deactivate Service
+
+Controleur --> Gateway : 201 Created\n{schedules}
+deactivate Controleur
+
+Gateway --> Merchant : 201 Created\n{schedules}
+deactivate Gateway
+
+== Validation de ressource (appelé par domain services) ==
+participant "Restaurant Service" as RestaurantService
+
+RestaurantService -> Gateway : POST /validate-resource\n{nom, description, capacite, type: "TABLE"}
+activate Gateway
+
+Gateway -> ControleurValidation : validerRessource(req, res)
+activate ControleurValidation
+
+ControleurValidation -> ServiceValidation : validerRessource(donnees)
+activate ServiceValidation
+
+ServiceValidation -> ServiceValidation : validerAttributsCommuns(nom, description)
+ServiceValidation -> ServiceValidation : validerCapacite(capacite: 4, type: "TABLE")
+
+alt Capacité valide pour type TABLE (1-20 personnes)
+    ServiceValidation --> ControleurValidation : {valide: true}
+    ControleurValidation --> Gateway : 200 OK\n{valid: true}
+    Gateway --> RestaurantService : 200 OK
+
+else Capacité invalide
+    ServiceValidation --> ControleurValidation : {valide: false, erreurs: ["Capacité max 20"]}
+    ControleurValidation --> Gateway : 400 Bad Request
+    Gateway --> RestaurantService : 400 Bad Request
+end
+
+deactivate ServiceValidation
+deactivate ControleurValidation
+deactivate Gateway
+
+note right of ServiceValidation
+  Règles de validation partagées:
+  - Nom: 3-100 chars
+  - Description: max 1000 chars
+  - Capacité: selon type ressource
+  - Images: max 5, formats autorisés
+end note
+
+note right of Redis
+  Cache des commerçants:
+  - Clé: merchant:<id>
+  - TTL: 1 heure
+  - Invalidation sur UPDATE/DELETE
+  - Améliore performance
+end note
+
+@enduml

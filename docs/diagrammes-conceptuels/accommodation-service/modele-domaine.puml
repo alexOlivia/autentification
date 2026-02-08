@@ -1,0 +1,572 @@
+@startuml Accommodation Service - Modèle de Domaine
+
+title Accommodation Service - Modèle de Domaine Conceptuel
+
+' Styles
+skinparam class {
+    BackgroundColor LightCyan
+    BorderColor DarkBlue
+    ArrowColor DarkBlue
+}
+
+package "Domaine Hébergement" {
+
+    ' ========== ENTITÉS ==========
+
+    class Hebergement <<entité>> {
+        + id: string
+        + commercantId: string
+        + typeEtablissement: TypeEtablissement
+        + nombreChambresTotal: number
+        + nombreEtages: number
+        + classementEtoiles: number
+        + anneConstruction: number
+        + surfaceTotale: number
+        + pays: string
+        + ville: string
+        + telephone: string
+        + email: string
+        + siteWeb: string
+        + description: string
+        + urlLogo: string
+        + estActif: boolean
+        + heureCheckIn: string
+        + heureCheckOut: string
+        + politiquePetitDejeuner: boolean
+        + prixPetitDejeuner: number
+        + accepteAnimaux: boolean
+        + acceptePaiementMobileMoney: boolean
+        + dateCreation: Date
+    }
+
+    class Chambre <<entité>> {
+        + id: string
+        + hebergementId: string
+        + numeroChambre: string
+        + typeChambre: TypeChambre
+        + etage: number
+        + nombreLits: number
+        + typeLits: TypeLit[]
+        + superficie: number
+        + vueType: TypeVue
+        + statut: StatutChambre
+    }
+
+    class Salle <<entité>> {
+        + id: string
+        + hebergementId: string
+        + nomSalle: string
+        + typeSalle: TypeSalle
+        + capacitePersonnes: number
+        + superficie: number
+        + dispositionPossible: DispositionSalle[]
+        + statut: StatutRessource
+    }
+
+    class Jardin <<entité>> {
+        + id: string
+        + hebergementId: string
+        + nomJardin: string
+        + superficie: number
+        + capaciteMaxPersonnes: number
+        + typeSol: TypeSol
+        + statut: StatutRessource
+    }
+
+    class Piscine <<entité>> {
+        + id: string
+        + hebergementId: string
+        + nomPiscine: string
+        + longueur: number
+        + largeur: number
+        + profondeurMin: number
+        + profondeurMax: number
+        + typeUsage: TypeUsagePiscine
+        + capacitePersonnes: number
+        + statut: StatutRessource
+    }
+
+    class Equipement <<entité>> {
+        + id: string
+        + typeRessource: TypeRessource
+        + ressourceId: string
+        + typeEquipement: TypeEquipement
+        + description: string
+        + estFonctionnel: boolean
+    }
+
+    class RegleTarif <<entité>> {
+        + id: string
+        + hebergementId: string
+        + nom: string
+        + typeRessource: TypeRessource
+        + ressourceId: string
+        + modeFacturation: ModeFacturation
+        + prixBase: number
+        + coefficient: number
+        + dateDebut: Date
+        + dateFin: Date
+        + joursApplicables: JourSemaine[]
+        + reductionLongDuree: number
+        + devise: string
+        + estActive: boolean
+        + description: string
+    }
+
+    ' ========== ÉNUMÉRATIONS ==========
+
+    enum TypeRessource {
+        CHAMBRE
+        SALLE
+        JARDIN
+        PISCINE
+    }
+
+    enum ModeFacturation {
+        NUITEE
+        HEURE
+        JOURNEE
+        CRENEAU
+        FORFAIT
+        AUTRE
+    }
+
+    enum TypeEtablissement {
+        HOTEL
+        AUBERGE
+        GUESTHOUSE
+        MOTEL
+        RESORT
+        HOSTEL
+        LOCATION_SAISONNIERE
+        CAMPING
+        AUTRE
+    }
+
+    enum TypeChambre {
+        SIMPLE
+        DOUBLE
+        TWIN
+        TRIPLE
+        SUITE
+        FAMILIALE
+        DORTOIR
+        AUTRE
+    }
+
+    enum StatutChambre {
+        DISPONIBLE
+        OCCUPEE
+        RESERVEE
+        MAINTENANCE
+        NETTOYAGE
+        HORS_SERVICE
+    }
+
+    enum TypeLit {
+        SIMPLE
+        DOUBLE
+        QUEEN
+        KING
+        SUPERPOSE
+        AUTRE
+    }
+
+    enum TypeVue {
+        MER
+        MONTAGNE
+        JARDIN
+        RUE
+        INTERIEUR
+        PISCINE
+        AUTRE
+    }
+
+    enum TypeEquipement {
+        ' -- Chambre --
+        CLIMATISATION
+        WIFI
+        TELEVISION
+        MINIBAR
+        COFFRE_FORT
+        BALCON
+        SALLE_BAIN_PRIVEE
+        EAU_CHAUDE
+        VENTILATEUR
+        MOUSTIQUAIRE
+        ' -- Salle --
+        PROJECTEUR
+        ECRAN
+        MICROPHONE
+        SONORISATION
+        TABLEAU_BLANC
+        ' -- Jardin --
+        COUVERTURE
+        ECLAIRAGE
+        SCENE
+        ' -- Piscine --
+        CHAUFFAGE
+        BAR_PISCINE
+        VESTIAIRE
+        ' -- Générique --
+        PARKING
+        AUTRE
+    }
+
+    enum TypeSalle {
+        REUNION
+        BANQUET
+        CONFERENCE
+        SEMINAIRE
+        FORMATION
+        COCKTAIL
+        AUTRE
+    }
+
+    enum DispositionSalle {
+        THEATRE
+        CLASSE
+        U_SHAPE
+        CABARET
+        BANQUET_ROND
+        COCKTAIL_DEBOUT
+        AUTRE
+    }
+
+    enum StatutRessource {
+        DISPONIBLE
+        RESERVEE
+        OCCUPEE
+        MAINTENANCE
+        HORS_SERVICE
+    }
+
+    enum TypeSol {
+        GAZON
+        DALLE
+        TERRE_BATTUE
+        BETON
+        CARRELAGE
+        AUTRE
+    }
+
+    enum TypeUsagePiscine {
+        PRIVE_EXCLUSIF
+        PARTAGE
+        COURS_NATATION
+        AQUAGYM
+        EVENEMENT
+        AUTRE
+    }
+
+    enum JourSemaine {
+        LUNDI
+        MARDI
+        MERCREDI
+        JEUDI
+        VENDREDI
+        SAMEDI
+        DIMANCHE
+    }
+}
+
+' ========== RELATIONS ==========
+
+Hebergement "1" *-- "*" Chambre : possède >
+Hebergement "1" *-- "*" Salle : possède >
+Hebergement "1" *-- "*" Jardin : possède >
+Hebergement "1" *-- "*" Piscine : possède >
+Hebergement "1" *-- "*" RegleTarif : applique >
+
+Hebergement "1" -- "1" TypeEtablissement : est de type >
+
+Chambre "1" -- "1" TypeChambre : est de type >
+Chambre "1" -- "1" StatutChambre : a un statut >
+Chambre "1" -- "1" TypeVue : a une vue >
+Chambre "1" -- "*" TypeLit : contient >
+
+Salle "1" -- "1" TypeSalle : est de type >
+Salle "1" -- "1" StatutRessource : a un statut >
+Salle "1" -- "*" DispositionSalle : permet disposition >
+
+Jardin "1" -- "1" TypeSol : a un type de sol >
+Jardin "1" -- "1" StatutRessource : a un statut >
+
+Piscine "1" -- "1" TypeUsagePiscine : a un type usage >
+Piscine "1" -- "1" StatutRessource : a un statut >
+
+' Equipement générique → toute ressource
+Chambre "1" -- "*" Equipement : a des équipements >
+Salle "1" -- "*" Equipement : a des équipements >
+Jardin "1" -- "*" Equipement : a des équipements >
+Piscine "1" -- "*" Equipement : a des équipements >
+Equipement "1" -- "1" TypeEquipement : est de type >
+Equipement "1" -- "1" TypeRessource : associé à >
+
+' RegleTarif générique → toute ressource
+RegleTarif "1" -- "1" TypeRessource : cible >
+RegleTarif "1" -- "1" ModeFacturation : facture par >
+RegleTarif "1" -- "*" JourSemaine : applicable les >
+
+' ========== NOTES MÉTIER ==========
+
+note right of Hebergement
+  **Entité racine du domaine**
+
+  Représente l'établissement d'hébergement
+  avec toutes ses ressources réservables.
+
+  **Types établissement:**
+  - Hôtel: service complet, standing élevé
+  - Auberge: familial, convivial, local
+  - Guesthouse: maison d'hôtes, petit format
+  - Resort: complexe avec loisirs
+
+  **Contexte africain:**
+  - Mobile Money obligatoire (Orange, MTN, Moov)
+  - Check-in flexible (retards fréquents)
+  - Générateurs électriques (coupures)
+  - Eau chaude = valeur ajoutée
+end note
+
+note right of Chambre
+  **Chambre d'hébergement**
+
+  **Types:**
+  - Simple: 1 personne, 1 lit
+  - Double: 2 personnes, 1 lit double
+  - Twin: 2 personnes, 2 lits simples
+  - Triple: 3 personnes
+  - Suite: chambre + salon
+  - Familiale: 4-6 personnes
+  - Dortoir: 8-12 personnes 
+
+  **Équipements prioritaires:**
+  - Climatisation (chaleur)
+  - Eau chaude (confort)
+  - WiFi (connectivité)
+
+  **Règles:**
+  - Check-in: 14h-22h
+  - Check-out: 8h-12h
+  - Durée min: 1 nuit
+  - Durée max: 30 nuits
+end note
+
+note right of Salle
+  **Salles événementielles**
+
+  **Types & Capacités:**
+  - REUNION: 10-50 personnes (tables, projecteur)
+  - BANQUET: 50-300 personnes (mariage, baptême)
+  - CONFERENCE: 100-500 personnes (séminaire)
+  - SEMINAIRE: 20-100 personnes (formation)
+  - FORMATION: 15-50 personnes (cours, atelier)
+  - COCKTAIL: 50-200 personnes (debout)
+
+  **Dispositions possibles:**
+  - Théâtre: rangées face à scène
+  - Classe: tables avec chaises
+  - U-Shape: réunion
+  - Cabaret: tables rondes 4-6 personnes
+  - Banquet rond: tables 8-10 personnes
+  - Cocktail debout: sans sièges
+
+  **Tarification:**
+  - Par heure (réunion courte 2-3h)
+  - Par journée (séminaire 8h-17h)
+  - Forfait événement (mariage, baptême)
+
+  **Équipements standard:**
+  - Projecteur, écran, microphones
+  - Sonorisation, éclairage modulable
+  - Climatisation obligatoire
+  - WiFi haut débit
+  - Tableau blanc/paperboard
+end note
+
+note bottom of Jardin
+  **Espaces extérieurs pour événements**
+
+  **Usages contexte africain:**
+  - Mariages en plein air (100-300 invités)
+  - Réceptions cocktail (entreprises)
+  - Cérémonies traditionnelles
+  - Team building, séminaires extérieurs
+  - Baptêmes, anniversaires
+
+  **Caractéristiques:**
+  - Superficie: 200-2000 m²
+  - Capacité: 50-500 personnes
+  - Sol: gazon (événements), dalle (danse)
+  - Couverture: pergola, tente, chapiteau
+  - Éclairage nocturne (guirlandes, spots)
+  - Scène amovible (animations)
+
+  **Avantages climat africain:**
+  - Températures agréables le soir
+  - Événements extérieurs privilégiés
+  - Espace pour grandes réceptions
+  - Animations traditionnelles possibles
+    (griots, sabar, djembé, danse)
+
+  **Tarification:**
+  - Par heure (4h minimum)
+  - Par journée/soirée (forfait)
+  - Forfait weekend complet
+  - Supplément installation/nettoyage
+end note
+
+note bottom of Piscine
+  **Piscine réservable par créneaux**
+
+  **Types d'usage:**
+
+  **PRIVE_EXCLUSIF:**
+  - Location totale de la piscine
+  - Événement privé (anniversaire, pool party)
+  - Aucun autre client présent
+  - Tarif forfaitaire journée/soirée
+
+  **PARTAGE:**
+  - Créneaux horaires individuels (1-2h)
+  - Plusieurs clients simultanés
+  - Respect capacité maximale
+  - Tarif par personne/créneau
+
+  **COURS_NATATION:**
+  - Leçons privées ou semi-privées
+  - École de natation (enfants/adultes)
+  - Maître-nageur obligatoire
+  - Créneaux 45min-1h
+
+  **AQUAGYM:**
+  - Cours collectifs fitness aquatique
+  - Animateur sportif
+  - 10-20 participants
+  - Créneaux 1h (matin/soir)
+
+  **EVENEMENT:**
+  - Soirée piscine, pool party
+  - Animation DJ, cocktails
+  - Location exclusive soirée
+  - Bar piscine actif
+
+  **Caractéristiques:**
+  - Dimensions (ex: 25m × 12m)
+  - Profondeur min/max (sécurité)
+  - Bar piscine intégré
+  - Capacité max personnes (réglementation)
+
+  **Sécurité:**
+  - Maître-nageur obligatoire (cours)
+
+end note
+
+note right of Equipement
+  **Équipement générique**
+
+  S'applique à TOUTE ressource:
+  Chambre, Salle, Jardin, Piscine
+
+  **Exemples par ressource:**
+
+  **Chambre:**
+  CLIMATISATION, WIFI, TV, MINIBAR,
+  COFFRE_FORT, BALCON, EAU_CHAUDE,
+  VENTILATEUR, MOUSTIQUAIRE
+
+  **Salle:**
+  CLIMATISATION, WIFI, PROJECTEUR,
+  ECRAN, MICROPHONE, SONORISATION,
+  TABLEAU_BLANC
+
+  **Jardin:**
+  COUVERTURE, ECLAIRAGE, SCENE,
+  PARKING
+
+  **Piscine:**
+  CHAUFFAGE, BAR_PISCINE, VESTIAIRE,
+  ECLAIRAGE
+
+  **estFonctionnel:**
+  Permet signaler panne sans
+  retirer l'équipement de la liste.
+end note
+
+note bottom of RegleTarif
+  **Tarification générique**
+
+  S'applique à TOUTE ressource
+  via typeRessource + ressourceId.
+
+  **ModeFacturation par ressource:**
+  - CHAMBRE → NUITEE
+  - SALLE → HEURE / JOURNEE / FORFAIT
+  - JARDIN → HEURE / JOURNEE / FORFAIT
+  - PISCINE → CRENEAU / FORFAIT
+
+  **prixBase:**
+  Prix unitaire selon le mode:
+  - NUITEE: 35000 XOF/nuit
+  - HEURE: 15000 XOF/h
+  - JOURNEE: 80000 XOF/jour
+  - CRENEAU: 5000 XOF/créneau 1h
+  - FORFAIT: 200000 XOF/événement
+
+  **coefficient:**
+  Multiplicateur contextuel:
+  - 1.0 = tarif normal (semaine)
+  - 1.2 = weekend
+  - 1.5 = haute saison
+  - 0.8 = basse saison (promotion)
+
+  **Calcul prix final:**
+  prixFinal = prixBase × coefficient
+  Si reductionLongDuree applicable:
+  prixFinal = prixFinal × (1 - reduction%)
+
+  **Exemple Chambre Double:**
+  - prixBase: 35000, mode: NUITEE
+  - Weekend (coeff 1.2): 42000 XOF/nuit
+  - Haute saison (coeff 1.5): 52500 XOF/nuit
+  - 7+ nuits: -10% → 31500 XOF/nuit
+
+  **Exemple Salle Banquet:**
+  - prixBase: 80000, mode: JOURNEE
+  - Weekend (coeff 1.3): 104000 XOF/jour
+
+  **Exemple Piscine:**
+  - prixBase: 5000, mode: CRENEAU
+  - Forfait exclusif: 150000 XOF
+
+  **Haute saison Afrique de l'Ouest:**
+  - Décembre-Janvier (diaspora, fêtes)
+  - Juillet-Août (vacances scolaires)
+
+  **Basse saison:**
+  - Avril-Mai (chaleur intense)
+  - Septembre-Octobre (pluies)
+end note
+
+note as N1
+  **Règles de disponibilité**
+
+  **Chambre disponible si:**
+  - Statut = DISPONIBLE
+  - Aucune réservation confirmée sur période
+  - Pas en maintenance
+  - Check-in/check-out respectés
+
+  **Salle/Jardin/Piscine disponibles si:**
+  - Statut = DISPONIBLE
+  - Aucune réservation sur créneau demandé
+  - Capacité suffisante (partage piscine)
+  - Équipements fonctionnels
+
+  **Gestion conflits:**
+  - Réservation exclusive = bloque ressource entière
+  - Réservation partagée = vérifie capacité restante
+end note
+
+@enduml

@@ -1,0 +1,682 @@
+@startuml Accommodation Service - Diagramme de Classes
+
+title Accommodation Service - Diagramme de Classes
+
+' Styles
+skinparam class {
+    BackgroundColor LightCyan
+    BorderColor DarkCyan
+    ArrowColor DarkCyan
+}
+
+package "Accommodation Service" {
+    class ServeurHebergement {
+        - application: FastifyInstance
+        - port: number
+        - db: PrismaClient
+        - redis: ClientRedis
+        + demarrer(): Promise<void>
+        + arreter(): Promise<void>
+        + enregistrerRoutes(): void
+    }
+
+    class ControleurHebergement {
+        + creerHebergement(req: Requete, res: Reponse): Promise<void>
+        + obtenirHebergement(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourHebergement(req: Requete, res: Reponse): Promise<void>
+        + listerHebergements(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurChambre {
+        + creerChambre(req: Requete, res: Reponse): Promise<void>
+        + obtenirChambre(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourChambre(req: Requete, res: Reponse): Promise<void>
+        + supprimerChambre(req: Requete, res: Reponse): Promise<void>
+        + listerChambres(req: Requete, res: Reponse): Promise<void>
+        + verifierDisponibilite(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurSalle {
+        + creerSalle(req: Requete, res: Reponse): Promise<void>
+        + obtenirSalle(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourSalle(req: Requete, res: Reponse): Promise<void>
+        + supprimerSalle(req: Requete, res: Reponse): Promise<void>
+        + listerSalles(req: Requete, res: Reponse): Promise<void>
+        + verifierDisponibilite(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurEspaceExterieur {
+        + creerEspace(req: Requete, res: Reponse): Promise<void>
+        + obtenirEspace(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourEspace(req: Requete, res: Reponse): Promise<void>
+        + verifierDisponibilite(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurEquipement {
+        + ajouterEquipement(req: Requete, res: Reponse): Promise<void>
+        + retirerEquipement(req: Requete, res: Reponse): Promise<void>
+        + listerEquipements(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurTarification {
+        + creerRegleTarif(req: Requete, res: Reponse): Promise<void>
+        + calculerTarif(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourTarif(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ServiceHebergement {
+        - depotHebergement: DepotHebergement
+        - clientResourceCore: ClientResourceCore
+        - validateur: ValidateurHebergement
+        + creer(commercantId: string, donnees: DonneesHebergement): Promise<Hebergement>
+        + trouverParId(id: string): Promise<Hebergement>
+        + trouverParCommercant(commercantId: string): Promise<Hebergement>
+        + mettreAJour(id: string, donnees: any): Promise<Hebergement>
+        + lister(filtres: FiltresHebergement): Promise<Hebergement[]>
+    }
+
+    class ServiceChambre {
+        - depotChambre: DepotChambre
+        - serviceDisponibilite: ServiceDisponibilite
+        - validateur: ValidateurChambre
+        + creer(hebergementId: string, donnees: DonneesChambre): Promise<Chambre>
+        + trouverParId(id: string): Promise<Chambre>
+        + lister(hebergementId: string, filtres: any): Promise<Chambre[]>
+        + mettreAJour(id: string, donnees: any): Promise<Chambre>
+        + supprimer(id: string): Promise<void>
+        + verifierNumeroUnique(hebergementId: string, numeroChambre: string): Promise<boolean>
+    }
+
+    class ServiceDisponibilite {
+        - depotChambre: DepotChambre
+        - clientBookingService: ClientBookingService
+        - cache: GestionnaireCache
+        + verifierDisponibilite(chambreId: string, dateArrivee: Date, dateDepart: Date): Promise<boolean>
+        + obtenirNuitsDisponibles(chambreId: string, mois: number, annee: number): Promise<Date[]>
+        + calculerOccupation(hebergementId: string, periode: Periode): Promise<StatistiquesOccupation>
+        + bloquerChambre(chambreId: string, dates: PlageDate): Promise<void>
+    }
+
+    class ServiceEquipement {
+        - depotEquipement: DepotEquipement
+        + ajouterEquipement(typeRessource: TypeRessource, ressourceId: string, equipement: TypeEquipement): Promise<void>
+        + retirerEquipement(equipementId: string): Promise<void>
+        + lister(typeRessource: TypeRessource, ressourceId: string): Promise<Equipement[]>
+        + listerEquipementsStandard(typeRessource: TypeRessource): Promise<TypeEquipement[]>
+    }
+
+    class ServiceTarification {
+        - depotRegleTarif: DepotRegleTarif
+        + creerRegle(hebergementId: string, regle: DonneesRegleTarif): Promise<RegleTarif>
+        + calculerTarif(typeRessource: TypeRessource, ressourceId: string, dateDebut: Date, dateFin: Date): Promise<CalculTarif>
+        + obtenirReglesActives(typeRessource: TypeRessource, ressourceId: string, date: Date): Promise<RegleTarif[]>
+        + calculerPrixFinal(prixBase: number, regles: RegleTarif[]): number
+    }
+
+    class DepotHebergement {
+        - db: PrismaClient
+        + creer(donnees: DonneesHebergement): Promise<Hebergement>
+        + trouverParId(id: string): Promise<Hebergement | null>
+        + trouverParCommercant(commercantId: string): Promise<Hebergement | null>
+        + mettreAJour(id: string, donnees: any): Promise<Hebergement>
+        + lister(filtres: any): Promise<Hebergement[]>
+    }
+
+    class DepotChambre {
+        - db: PrismaClient
+        + creer(donnees: DonneesChambre): Promise<Chambre>
+        + trouverParId(id: string): Promise<Chambre | null>
+        + trouverParNumero(hebergementId: string, numero: string): Promise<Chambre | null>
+        + lister(hebergementId: string, filtres: any): Promise<Chambre[]>
+        + mettreAJour(id: string, donnees: any): Promise<Chambre>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotEquipement {
+        - db: PrismaClient
+        + ajouter(typeRessource: TypeRessource, ressourceId: string, equipement: TypeEquipement): Promise<Equipement>
+        + lister(typeRessource: TypeRessource, ressourceId: string): Promise<Equipement[]>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotRegleTarif {
+        - db: PrismaClient
+        + creer(donnees: DonneesRegleTarif): Promise<RegleTarif>
+        + trouverParHebergement(hebergementId: string): Promise<RegleTarif[]>
+        + trouverPourRessource(typeRessource: TypeRessource, ressourceId: string): Promise<RegleTarif[]>
+        + trouverReglesActives(typeRessource: TypeRessource, ressourceId: string, date: Date): Promise<RegleTarif[]>
+        + mettreAJour(id: string, donnees: any): Promise<RegleTarif>
+    }
+
+    class Hebergement <<entite>> {
+        + id: string
+        + commercantId: string
+        + typeEtablissement: TypeEtablissement
+        + nombreChambresTotal: number
+        + nombreEtages: number
+        + classementEtoiles: number
+        + anneConstruction: number
+        + surfaceTotale: number
+        + pays: string
+        + ville: string
+        + telephone: string
+        + email: string
+        + siteWeb: string
+        + description: string
+        + urlLogo: string
+        + estActif: boolean
+        + heureCheckIn: string
+        + heureCheckOut: string
+        + politiquePetitDejeuner: boolean
+        + prixPetitDejeuner: number
+        + accepteAnimaux: boolean
+        + acceptePaiementMobileMoney: boolean
+        + dateCreation: Date
+    }
+
+    class Chambre <<entite>> {
+        + id: string
+        + hebergementId: string
+        + numeroChambre: string
+        + typeChambre: TypeChambre
+        + etage: number
+        + nombreLits: number
+        + typeLits: TypeLit[]
+        + superficie: number
+        + vueType: TypeVue
+        + statut: StatutChambre
+    }
+
+    class Salle <<entite>> {
+        + id: string
+        + hebergementId: string
+        + nomSalle: string
+        + typeSalle: TypeSalle
+        + capacitePersonnes: number
+        + superficie: number
+        + dispositionPossible: DispositionSalle[]
+        + statut: StatutRessource
+    }
+
+    class Jardin <<entite>> {
+        + id: string
+        + hebergementId: string
+        + nomJardin: string
+        + superficie: number
+        + capaciteMaxPersonnes: number
+        + typeSol: TypeSol
+        + statut: StatutRessource
+    }
+
+    class Piscine <<entite>> {
+        + id: string
+        + hebergementId: string
+        + nomPiscine: string
+        + longueur: number
+        + largeur: number
+        + profondeurMin: number
+        + profondeurMax: number
+        + typeUsage: TypeUsagePiscine
+        + capacitePersonnes: number
+        + statut: StatutRessource
+    }
+
+    class Equipement <<entite>> {
+        + id: string
+        + typeRessource: TypeRessource
+        + ressourceId: string
+        + typeEquipement: TypeEquipement
+        + description: string
+        + estFonctionnel: boolean
+    }
+
+    class RegleTarif <<entite>> {
+        + id: string
+        + hebergementId: string
+        + nom: string
+        + typeRessource: TypeRessource
+        + ressourceId: string
+        + modeFacturation: ModeFacturation
+        + prixBase: number
+        + coefficient: number
+        + dateDebut: Date
+        + dateFin: Date
+        + joursApplicables: JourSemaine[]
+        + reductionLongDuree: number
+        + devise: string
+        + estActive: boolean
+        + description: string
+    }
+
+    enum TypeRessource {
+        CHAMBRE
+        SALLE
+        JARDIN
+        PISCINE
+    }
+
+    enum ModeFacturation {
+        NUITEE
+        HEURE
+        JOURNEE
+        CRENEAU
+        FORFAIT
+        AUTRE
+    }
+
+    enum JourSemaine {
+        LUNDI
+        MARDI
+        MERCREDI
+        JEUDI
+        VENDREDI
+        SAMEDI
+        DIMANCHE
+    }
+
+    enum TypeEtablissement {
+        HOTEL
+        AUBERGE
+        GUESTHOUSE
+        MOTEL
+        RESORT
+        HOSTEL
+        LOCATION_SAISONNIERE
+        CAMPING
+        AUTRE
+    }
+
+    enum TypeChambre {
+        SIMPLE
+        DOUBLE
+        TWIN
+        TRIPLE
+        SUITE
+        FAMILIALE
+        DORTOIR
+        AUTRE
+    }
+
+    enum TypeLit {
+        SIMPLE
+        DOUBLE
+        QUEEN
+        KING
+        SUPERPOSE
+        AUTRE
+    }
+
+    enum TypeVue {
+        MER
+        MONTAGNE
+        JARDIN
+        RUE
+        INTERIEUR
+        PISCINE
+        AUTRE
+    }
+
+    enum StatutChambre {
+        DISPONIBLE
+        OCCUPEE
+        RESERVEE
+        MAINTENANCE
+        NETTOYAGE
+        HORS_SERVICE
+    }
+
+    enum TypeEquipement {
+        ' -- Chambre --
+        CLIMATISATION
+        WIFI
+        TELEVISION
+        MINIBAR
+        COFFRE_FORT
+        BALCON
+        SALLE_BAIN_PRIVEE
+        EAU_CHAUDE
+        VENTILATEUR
+        MOUSTIQUAIRE
+        ' -- Salle --
+        PROJECTEUR
+        ECRAN
+        MICROPHONE
+        SONORISATION
+        TABLEAU_BLANC
+        ' -- Jardin --
+        COUVERTURE
+        ECLAIRAGE
+        SCENE
+        ' -- Piscine --
+        CHAUFFAGE
+        BAR_PISCINE
+        VESTIAIRE
+        ' -- Générique --
+        PARKING
+        AUTRE
+    }
+
+    enum TypeSalle {
+        REUNION
+        BANQUET
+        CONFERENCE
+        SEMINAIRE
+        FORMATION
+        COCKTAIL
+        AUTRE
+    }
+
+    enum DispositionSalle {
+        THEATRE
+        CLASSE
+        U_SHAPE
+        CABARET
+        BANQUET_ROND
+        COCKTAIL_DEBOUT
+        AUTRE
+    }
+
+    enum StatutRessource {
+        DISPONIBLE
+        RESERVEE
+        OCCUPEE
+        MAINTENANCE
+        HORS_SERVICE
+    }
+
+    enum TypeSol {
+        GAZON
+        DALLE
+        TERRE_BATTUE
+        BETON
+        CARRELAGE
+        AUTRE
+    }
+
+    enum TypeUsagePiscine {
+        PRIVE_EXCLUSIF
+        PARTAGE
+        COURS_NATATION
+        AQUAGYM
+        EVENEMENT
+        AUTRE
+    }
+
+    class ClientResourceCore {
+        - urlBase: string
+        + validerRessource(donnees: any): Promise<ResultatValidation>
+        + obtenirCommercant(id: string): Promise<Commercant>
+    }
+
+    class ClientBookingService {
+        - urlBase: string
+        + obtenirReservations(chambreId: string, plage: PlageDate): Promise<Reservation[]>
+    }
+
+    class ValidateurHebergement {
+        + validerTypeEtablissement(type: TypeEtablissement): boolean
+        + validerClassement(etoiles: number): boolean
+        + validerHeuresCheckInOut(checkIn: string, checkOut: string): boolean
+    }
+
+    class ValidateurChambre {
+        + validerNumeroChambre(numero: string): boolean
+        + validerTypeChambre(type: TypeChambre): boolean
+        + validerSuperficie(superficie: number): boolean
+        + validerPrix(prix: number): boolean
+    }
+
+    class GestionnaireCache {
+        - redis: ClientRedis
+        + obtenirDisponibilite(chambreId: string, dates: PlageDate): Promise<any>
+        + cacherDisponibilite(chambreId: string, dates: PlageDate, donnees: any): Promise<void>
+        + invaliderCache(chambreId: string): Promise<void>
+    }
+
+    class CalculTarif <<dto>> {
+        + prixTotal: number
+        + prixParNuit: number
+        + nombreNuits: number
+        + majorationWeekend: number
+        + reductionLongSejour: number
+        + fraisService: number
+        + detail: DetailTarif[]
+    }
+
+    class StatistiquesOccupation <<dto>> {
+        + tauxOccupation: number
+        + nombreNuitsReservees: number
+        + nombreNuitsDisponibles: number
+        + revenuTotal: number
+        + revenuMoyen: number
+    }
+
+    class PlageDate <<value object>> {
+        + dateDebut: Date
+        + dateFin: Date
+        + nombreNuits(): number
+        + contient(date: Date): boolean
+    }
+}
+
+' Relations
+ServeurHebergement "1" -- "1" ControleurHebergement : contient >
+ServeurHebergement "1" -- "1" ControleurChambre : contient >
+ServeurHebergement "1" -- "1" ControleurSalle : contient >
+ServeurHebergement "1" -- "1" ControleurEspaceExterieur : contient >
+ServeurHebergement "1" -- "1" ControleurEquipement : contient >
+ServeurHebergement "1" -- "1" ControleurTarification : contient >
+
+ControleurHebergement "1" -- "1" ServiceHebergement : utilise >
+ControleurChambre "1" -- "1" ServiceChambre : utilise >
+ControleurEquipement "1" -- "1" ServiceEquipement : utilise >
+ControleurTarification "1" -- "1" ServiceTarification : utilise >
+
+ServiceHebergement "1" -- "1" DepotHebergement : utilise >
+ServiceHebergement "1" -- "1" ClientResourceCore : utilise >
+ServiceHebergement "1" -- "1" ValidateurHebergement : utilise >
+
+ServiceChambre "1" -- "1" DepotChambre : utilise >
+ServiceChambre "1" -- "1" ServiceDisponibilite : utilise >
+ServiceChambre "1" -- "1" ValidateurChambre : utilise >
+
+ServiceDisponibilite "1" -- "1" ClientBookingService : utilise >
+ServiceDisponibilite "1" -- "1" GestionnaireCache : utilise >
+
+ServiceEquipement "1" -- "1" DepotEquipement : utilise >
+ServiceTarification "1" -- "1" DepotRegleTarif : utilise >
+
+DepotHebergement "1" -- "*" Hebergement : gère >
+DepotChambre "1" -- "*" Chambre : gère >
+DepotEquipement "1" -- "*" Equipement : gère >
+DepotRegleTarif "1" -- "*" RegleTarif : gère >
+
+Hebergement "1" -- "1" TypeEtablissement : est un >
+Hebergement "1" -- "*" Chambre : possède >
+Hebergement "1" -- "*" Salle : possède >
+Hebergement "1" -- "*" Jardin : possède >
+Hebergement "1" -- "*" Piscine : possède >
+Hebergement "1" -- "*" RegleTarif : possède >
+
+Chambre "1" -- "1" TypeChambre : est un >
+Chambre "1" -- "1" StatutChambre : a un >
+Chambre "1" -- "1" TypeVue : a une >
+Chambre "1" -- "*" TypeLit : contient >
+
+Salle "1" -- "1" TypeSalle : est un >
+Salle "1" -- "1" StatutRessource : a un >
+Salle "1" -- "*" DispositionSalle : permet >
+
+Jardin "1" -- "1" TypeSol : a un >
+Jardin "1" -- "1" StatutRessource : a un >
+
+Piscine "1" -- "1" TypeUsagePiscine : a un >
+Piscine "1" -- "1" StatutRessource : a un >
+
+' Equipement générique → toute ressource
+Chambre "1" -- "*" Equipement : a des équipements >
+Salle "1" -- "*" Equipement : a des équipements >
+Jardin "1" -- "*" Equipement : a des équipements >
+Piscine "1" -- "*" Equipement : a des équipements >
+Equipement "1" -- "1" TypeEquipement : est un >
+Equipement "1" -- "1" TypeRessource : associé à >
+
+' RegleTarif générique
+RegleTarif "1" -- "1" TypeRessource : cible >
+RegleTarif "1" -- "1" ModeFacturation : facture par >
+
+ServiceTarification ..> CalculTarif : retourne >
+ServiceDisponibilite ..> StatistiquesOccupation : calcule >
+
+note right of Hebergement
+  Entité hébergement (hôtel, auberge)
+  Données spécifiques:
+  - Type établissement
+  - Nombre chambres total
+  - Classement étoiles (1-5)
+  - Heures check-in/out
+  - Services inclus
+end note
+
+note right of Chambre
+  Chambre d'hôtel avec:
+  - Numéro unique
+  - Type et capacité
+  - Équipements
+  - Tarification
+  - Position (étage)
+  - Vue et superficie
+end note
+
+note bottom of TypeEquipement
+  Équipements adaptés contexte africain:
+
+  Essentiels:
+  - Climatisation (climat chaud)
+  - Eau chaude (pas toujours disponible)
+  - Moustiquaire (paludisme)
+  - Ventilateur (backup clim)
+
+  Confort:
+  - WiFi, TV, Minibar
+  - Coffre-fort
+  - Balcon, Salle bain privée
+end note
+
+note right of ServiceTarification
+  Calcul tarifaire intelligent:
+
+  Facteurs:
+  - Saison (haute/basse)
+  - Jour semaine vs weekend (+20%)
+  - Durée séjour (réduction ≥7 nuits)
+  - Occupation (tarif dynamique)
+  - Événements locaux
+
+  Devise: XOF (Franc CFA)
+  Prix min: 5000 XOF/nuit (~8€)
+end note
+
+note right of ServiceDisponibilite
+  Gestion disponibilité:
+
+  - Calendrier par chambre
+  - Vérification chevauchements
+  - Calcul taux occupation
+  - Suggestions alternatives
+  - Cache Redis (15min)
+
+  Règles:
+  - Check-in: 14h-22h
+  - Check-out: 8h-12h
+  - Durée min: 1 nuit
+  - Durée max: 30 nuits
+end note
+
+note right of Salle
+  **Salles événementielles**
+
+  Types:
+  - REUNION: 10-50 personnes (tables, projecteur)
+  - BANQUET: 50-300 personnes (mariage, baptême)
+  - CONFERENCE: 100-500 personnes (séminaire)
+  - SEMINAIRE: 20-100 personnes (formation)
+  - COCKTAIL: 50-200 personnes (debout)
+
+  Dispositions:
+  - Théâtre (rangées face à scène)
+  - Classe (tables avec chaises)
+  - U-Shape (fer à cheval, réunion)
+  - Cabaret (tables rondes 4-6)
+  - Banquet rond (tables 8-10)
+
+  Tarification:
+  - Par heure (réunion courte)
+  - Par journée (séminaire, formation)
+  - Forfait événement (mariage)
+
+  Équipements:
+  - Projecteur, écran, micro
+  - Sonorisation, éclairage
+  - Climatisation obligatoire
+  - WiFi haut débit
+end note
+
+note bottom of Jardin
+  **Espaces extérieurs pour événements**
+
+  Usages:
+  - Mariages en plein air
+  - Réceptions cocktail
+  - Cérémonies traditionnelles
+  - Team building entreprise
+
+  Caractéristiques:
+  - Superficie 200-2000 m²
+  - Capacité 50-500 personnes
+  - Sol gazon/dalle/béton
+  - Couvert partiel/total (pergola, tente)
+  - Éclairage nocturne
+  - Scène amovible
+
+  Contexte africain:
+  - Climat favorable événements extérieurs
+  - Préférence cérémonies en plein air
+  - Grand nombre invités (100-300)
+  - Animations traditionnelles (griots, danse)
+
+  Tarification:
+  - Par heure (4h minimum)
+  - Par journée/soirée
+  - Forfait weekend
+end note
+
+note bottom of Piscine
+  **Piscine réservable par créneaux**
+
+  Types usage:
+  - PRIVE_EXCLUSIF: Location totale (événement privé)
+  - PARTAGE: Créneaux individuels
+  - COURS_NATATION: École de natation
+  - AQUAGYM: Cours collectifs
+  - EVENEMENT: Soirée piscine, pool party
+
+  Réservation:
+  - Par créneau 1-2h (usage partagé)
+  - Par demi-journée (4h privé)
+  - Par journée (événement)
+
+  Caractéristiques:
+  - Dimensions (longueur × largeur)
+  - Profondeur min/max
+  - Chauffée (oui/non)
+  - Bar piscine intégré
+  - Capacité max personnes
+
+  Sécurité:
+  - Maître-nageur obligatoire (cours)
+  - Règlement affiché
+  - Vestiaires/douches
+end note
+
+@enduml

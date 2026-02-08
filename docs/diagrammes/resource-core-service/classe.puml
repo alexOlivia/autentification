@@ -1,0 +1,407 @@
+@startuml Resource Core Service - Diagramme de Classes
+
+title Resource Core Service - Diagramme de Classes
+
+' Styles
+skinparam class {
+    BackgroundColor LightYellow
+    BorderColor DarkOrange
+    ArrowColor DarkOrange
+}
+
+package "Resource Core Service" {
+    class ServeurResourceCore {
+        - application: FastifyInstance
+        - port: number
+        - db: PrismaClient
+        + demarrer(): Promise<void>
+        + arreter(): Promise<void>
+        + enregistrerRoutes(): void
+    }
+
+    class ControleurCommercant {
+        + creerCommercant(req: Requete, res: Reponse): Promise<void>
+        + obtenirCommercant(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourCommercant(req: Requete, res: Reponse): Promise<void>
+        + supprimerCommercant(req: Requete, res: Reponse): Promise<void>
+        + listerCommercants(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurHoraire {
+        + creerHoraire(req: Requete, res: Reponse): Promise<void>
+        + obtenirHorairesCommercant(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourHoraire(req: Requete, res: Reponse): Promise<void>
+        + supprimerHoraire(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurValidation {
+        + validerRessource(req: Requete, res: Reponse): Promise<void>
+        + validerAttributsCommuns(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ServiceCommercant {
+        - depotCommercant: DepotCommercant
+        - depotParametres: DepotParametresCommercant
+        - validateur: ValidateurCommercant
+        + creer(donnees: DonneesCommercant): Promise<Commercant>
+        + trouverParId(id: string): Promise<Commercant>
+        + trouverParUtilisateur(utilisateurId: string): Promise<Commercant>
+        + mettreAJour(id: string, donnees: any): Promise<Commercant>
+        + supprimer(id: string): Promise<void>
+        + lister(filtres: FiltresCommercant): Promise<Commercant[]>
+    }
+
+    class ServiceHoraire {
+        - depotHoraire: DepotHoraire
+        - validateur: ValidateurHoraire
+        + creer(commercantId: string, donnees: DonneesHoraire): Promise<Horaire>
+        + obtenirPourCommercant(commercantId: string): Promise<Horaire[]>
+        + mettreAJour(id: string, donnees: DonneesHoraire): Promise<Horaire>
+        + supprimer(id: string): Promise<void>
+        + verifierOuvert(commercantId: string, dateHeure: Date): Promise<boolean>
+    }
+
+    class ServiceValidation {
+        + validerRessource(ressource: DonneesRessource): ResultatValidation
+        + validerAttributsCommuns(attributs: AttributsCommuns): ResultatValidation
+        + validerCapacite(capacite: number, typeRessource: string): boolean
+        + validerHoraires(horaires: Horaire[]): ResultatValidation
+    }
+
+    class ServiceImages {
+        - stockage: StockageImages
+        + uploaderImage(fichier: Fichier, commercantId: string): Promise<string>
+        + supprimerImage(url: string): Promise<void>
+        + redimensionner(fichier: Fichier, largeur: number, hauteur: number): Promise<Buffer>
+        + optimiser(fichier: Fichier): Promise<Buffer>
+    }
+
+    class DepotCommercant {
+        - db: PrismaClient
+        + creer(donnees: DonneesCommercant): Promise<Commercant>
+        + trouverParId(id: string): Promise<Commercant | null>
+        + trouverParUtilisateur(utilisateurId: string): Promise<Commercant | null>
+        + mettreAJour(id: string, donnees: any): Promise<Commercant>
+        + supprimer(id: string): Promise<void>
+        + lister(filtres: any): Promise<Commercant[]>
+    }
+
+    class DepotParametresCommercant {
+        - db: PrismaClient
+        + creer(commercantId: string, parametres: DonneesParametres): Promise<ParametresCommercant>
+        + trouverParCommercant(commercantId: string): Promise<ParametresCommercant>
+        + mettreAJour(id: string, parametres: any): Promise<ParametresCommercant>
+    }
+
+    class DepotHoraire {
+        - db: PrismaClient
+        + creer(donnees: DonneesHoraire): Promise<Horaire>
+        + trouverParCommercant(commercantId: string): Promise<Horaire[]>
+        + trouverParJour(commercantId: string, jour: JourSemaine): Promise<Horaire[]>
+        + mettreAJour(id: string, donnees: DonneesHoraire): Promise<Horaire>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotJourFerie {
+        - db: PrismaClient
+        + creer(donnees: DonneesJourFerie): Promise<JourFerie>
+        + trouverParCommercant(commercantId: string): Promise<JourFerie[]>
+        + trouverParDate(commercantId: string, date: Date): Promise<JourFerie | null>
+        + mettreAJour(id: string, donnees: DonneesJourFerie): Promise<JourFerie>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotAvis {
+        - db: PrismaClient
+        + creer(donnees: DonneesAvis): Promise<Avis>
+        + trouverParCommercant(commercantId: string): Promise<Avis[]>
+        + trouverParId(id: string): Promise<Avis | null>
+        + mettreAJour(id: string, donnees: any): Promise<Avis>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotMediaCommercant {
+        - db: PrismaClient
+        + creer(donnees: DonneesMedia): Promise<MediaCommercant>
+        + trouverParCommercant(commercantId: string): Promise<MediaCommercant[]>
+        + mettreAJour(id: string, donnees: any): Promise<MediaCommercant>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotDocumentLegal {
+        - db: PrismaClient
+        + creer(donnees: DonneesDocument): Promise<DocumentLegal>
+        + trouverParCommercant(commercantId: string): Promise<DocumentLegal[]>
+        + trouverParId(id: string): Promise<DocumentLegal | null>
+        + mettreAJour(id: string, donnees: any): Promise<DocumentLegal>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class Commercant <<entite>> {
+        + id: string
+        + utilisateurId: string
+        + typeActivite: TypeActivite
+        + nomCommercial: string
+        + raisonSociale: string
+        + numeroSiret: string
+        + adresse: Adresse
+        + telephone: string
+        + email: string
+        + urlSiteWeb: string
+        + description: string
+        + logoUrl: string
+        + photoCouvertureUrl: string
+        + statut: StatutCommercant
+        + noteGlobale: number
+        + nombreAvis: number
+        + dateCreation: Date
+        + dateMiseAJour: Date
+        + dateValidation: Date
+    }
+
+    class ParametresCommercant <<entite>> {
+        + id: string
+        + commercantId: string
+        + fuseauHoraire: string
+        + devise: string
+        + langue: string
+        + politiqueAnnulation: string
+        + delaiAnnulationHeures: number
+        + pourcentageRemboursement: number
+        + acceptePaiementEnLigne: boolean
+        + acceptePaiementSurPlace: boolean
+    }
+
+    class Horaire <<entite>> {
+        + id: string
+        + commercantId: string
+        + jourSemaine: JourSemaine
+        + heureOuverture: string
+        + heureFermeture: string
+        + estFerme: boolean
+        + pauseDebutHeure: string
+        + pauseFinHeure: string
+    }
+
+    class Adresse <<value object>> {
+        + rue: string
+        + ville: string
+        + region: string
+        + pays: string
+        + codePostal: string
+        + latitude: number
+        + longitude: number
+    }
+
+    class JourFerie <<entite>> {
+        + id: string
+        + commercantId: string
+        + date: Date
+        + libelle: string
+        + estFerme: boolean
+        + heureOuvertureSpeciale: string
+        + heureFermetureSpeciale: string
+    }
+
+    class Avis <<entite>> {
+        + id: string
+        + commercantId: string
+        + clientId: string
+        + reservationId: string
+        + note: number
+        + commentaire: string
+        + reponseCommercant: string
+        + dateReponse: Date
+        + estVerifie: boolean
+        + estSignale: boolean
+        + dateCreation: Date
+    }
+
+    class MediaCommercant <<entite>> {
+        + id: string
+        + commercantId: string
+        + typeMedia: TypeMedia
+        + urlMedia: string
+        + legende: string
+        + ordre: number
+        + dateAjout: Date
+    }
+
+    class DocumentLegal <<entite>> {
+        + id: string
+        + commercantId: string
+        + typeDocument: TypeDocumentLegal
+        + urlDocument: string
+        + numeroDocument: string
+        + dateEmission: Date
+        + dateExpiration: Date
+        + estValide: boolean
+        + dateVerification: Date
+    }
+
+    enum TypeActivite {
+        RESTAURANT
+        HEBERGEMENT
+        SERVICE_PROVIDER
+        TRANSPORT
+        AUTRE
+    }
+
+    enum StatutCommercant {
+        EN_ATTENTE_VALIDATION
+        ACTIF
+        SUSPENDU
+        INACTIF
+        REJETE
+        AUTRE
+    }
+
+    enum JourSemaine {
+        LUNDI
+        MARDI
+        MERCREDI
+        JEUDI
+        VENDREDI
+        SAMEDI
+        DIMANCHE
+        AUTRE
+    }
+
+    class ValidateurCommercant {
+        + validerNomEntreprise(nom: string): boolean
+        + validerEmail(email: string): boolean
+        + validerTelephone(tel: string): boolean
+        + validerAdresse(adresse: Adresse): ResultatValidation
+    }
+
+    class ValidateurHoraire {
+        + validerPlageHoraire(debut: string, fin: string): boolean
+        + validerNonChevauchement(horaires: Horaire[]): boolean
+        + validerJourSemaine(jour: JourSemaine): boolean
+    }
+
+    enum StockageImages {
+        LOCAL
+        S3
+        CLOUDINARY
+        AUTRE
+    }
+
+    enum TypeMedia {
+        PHOTO
+        VIDEO
+        LOGO
+        PHOTO_COUVERTURE
+        PHOTO_INTERIEUR
+        PHOTO_EXTERIEUR
+        PHOTO_CHAMBRE
+        PHOTO_SALLE
+        PHOTO_EQUIPEMENT
+        AUTRE
+    }
+
+    enum TypeDocumentLegal {
+        REGISTRE_COMMERCE
+        LICENCE_EXPLOITATION
+        ASSURANCE_RESPONSABILITE
+        CERTIFICAT_HYGIENE
+        PERMIS_TRANSPORT
+        AUTORISATION_MUNICIPALE
+        AUTRE
+    }
+
+    class AttributsCommuns <<dto>> {
+        + nom: string
+        + description: string
+        + urlsImages: string[]
+        + capacite: number
+        + estActif: boolean
+    }
+
+    class ResultatValidation <<dto>> {
+        + valide: boolean
+        + erreurs: string[]
+    }
+}
+
+' Relations
+ServeurResourceCore "1" -- "1" ControleurCommercant : contient >
+ServeurResourceCore "1" -- "1" ControleurHoraire : contient >
+ServeurResourceCore "1" -- "1" ControleurValidation : contient >
+
+ControleurCommercant "1" -- "1" ServiceCommercant : utilise >
+ControleurHoraire "1" -- "1" ServiceHoraire : utilise >
+ControleurValidation "1" -- "1" ServiceValidation : utilise >
+
+ServiceCommercant "1" -- "1" DepotCommercant : utilise >
+ServiceCommercant "1" -- "1" DepotParametresCommercant : utilise >
+ServiceCommercant "1" -- "1" ValidateurCommercant : utilise >
+ServiceCommercant "1" -- "1" ServiceImages : utilise >
+
+ServiceHoraire "1" -- "1" DepotHoraire : utilise >
+ServiceHoraire "1" -- "1" ValidateurHoraire : utilise >
+
+DepotCommercant "1" -- "*" Commercant : gère >
+DepotParametresCommercant "1" -- "*" ParametresCommercant : gère >
+DepotHoraire "1" -- "*" Horaire : gère >
+DepotJourFerie "1" -- "*" JourFerie : gère >
+DepotAvis "1" -- "*" Avis : gère >
+DepotMediaCommercant "1" -- "*" MediaCommercant : gère >
+DepotDocumentLegal "1" -- "*" DocumentLegal : gère >
+
+Commercant "1" -- "1" TypeActivite : exerce >
+Commercant "1" -- "1" StatutCommercant : a un statut >
+Commercant "1" -- "1" Adresse : possède >
+Commercant "1" -- "1" ParametresCommercant : possède >
+Commercant "1" *-- "*" Horaire : définit >
+Commercant "1" *-- "*" JourFerie : gère >
+Commercant "1" -- "*" Avis : reçoit >
+Commercant "1" *-- "*" MediaCommercant : possède >
+Commercant "1" *-- "*" DocumentLegal : fournit >
+
+Horaire "1" -- "1" JourSemaine : pour jour >
+Horaire "*" --> "1" Commercant : de >
+
+JourFerie "*" --> "1" Commercant : de >
+
+Avis "*" --> "1" Commercant : pour >
+
+MediaCommercant "1" -- "1" TypeMedia : est de type >
+MediaCommercant "*" --> "1" Commercant : de >
+
+DocumentLegal "1" -- "1" TypeDocumentLegal : est de type >
+DocumentLegal "*" --> "1" Commercant : de >
+
+ServiceImages "1" -- "1" StockageImages : utilise >
+
+note right of Commercant
+  Entité centrale représentant
+  un commerçant (restaurant,
+  hôtel, prestataire)
+end note
+
+note right of ParametresCommercant
+  Configuration spécifique:
+  - Fuseau horaire (Afrique/Dakar)
+  - Devise (XOF, EUR, USD)
+  - Politique d'annulation
+  - Modes de paiement acceptés
+end note
+
+note bottom of Horaire
+  Gère les horaires d'ouverture:
+  - Horaires réguliers (Lun-Dim)
+  - Jours fériés
+  - Fermetures exceptionnelles
+  - Plages horaires multiples/jour
+end note
+
+note right of ServiceValidation
+  Service partagé utilisé par:
+  - Restaurant Service
+  - Accommodation Service
+  - Service Provider Service
+  Pour valider attributs communs
+end note
+
+@enduml

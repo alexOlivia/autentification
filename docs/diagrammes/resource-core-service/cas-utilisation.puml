@@ -1,0 +1,180 @@
+@startuml Resource Core Service - Cas d'Utilisation
+
+title Resource Core Service - Cas d'Utilisation
+
+left to right direction
+
+' Acteurs
+actor "Commerçant" as Merchant
+actor "Administrateur" as Admin
+actor "Restaurant Service" as RestaurantService
+actor "Accommodation Service" as AccommodationService
+actor "Service Provider Service" as ProviderService
+actor "Booking Service" as BookingService
+
+' Package Resource Core Service
+rectangle "Resource Core Service" {
+    ' Cas d'utilisation principaux
+    usecase "Gérer les commerçants" as UC1
+    usecase "Configurer les horaires" as UC2
+    usecase "Gérer les paramètres" as UC3
+    usecase "Valider les ressources" as UC4
+    usecase "Gérer les images" as UC5
+
+    ' Sous-cas pour gestion commerçants
+    usecase "Créer commerçant" as UC1_1
+    usecase "Consulter commerçant" as UC1_2
+    usecase "Modifier commerçant" as UC1_3
+    usecase "Supprimer commerçant" as UC1_4
+    usecase "Lister commerçants" as UC1_5
+    usecase "Rechercher commerçant" as UC1_6
+
+    ' Sous-cas pour horaires
+    usecase "Définir horaires réguliers" as UC2_1
+    usecase "Ajouter jours fériés" as UC2_2
+    usecase "Définir fermetures exceptionnelles" as UC2_3
+    usecase "Vérifier si ouvert" as UC2_4
+    usecase "Valider non-chevauchement" as UC2_5
+
+    ' Sous-cas pour paramètres
+    usecase "Configurer fuseau horaire" as UC3_1
+    usecase "Définir devise" as UC3_2
+    usecase "Définir politique annulation" as UC3_3
+    usecase "Configurer modes paiement" as UC3_4
+    usecase "Configurer langue" as UC3_5
+
+    ' Sous-cas pour validation ressources
+    usecase "Valider attributs communs" as UC4_1
+    usecase "Valider capacité" as UC4_2
+    usecase "Valider nom/description" as UC4_3
+    usecase "Valider format images" as UC4_4
+
+    ' Sous-cas pour images
+    usecase "Uploader image" as UC5_1
+    usecase "Redimensionner image" as UC5_2
+    usecase "Optimiser image" as UC5_3
+    usecase "Supprimer image" as UC5_4
+}
+
+' Relations acteurs -> cas d'utilisation
+Merchant --> UC1
+Merchant --> UC2
+Merchant --> UC3
+Merchant --> UC5
+
+Admin --> UC1
+Admin --> UC1_5 : peut consulter tous
+
+RestaurantService --> UC4 : avant création table
+AccommodationService --> UC4 : avant création chambre
+ProviderService --> UC4 : avant création créneau
+
+BookingService --> UC2_4 : vérifier disponibilité
+
+' Inclusions et extensions
+UC1 ..> UC1_1 : <<extend>>
+UC1 ..> UC1_2 : <<extend>>
+UC1 ..> UC1_3 : <<extend>>
+UC1 ..> UC1_4 : <<extend>>
+UC1 ..> UC1_5 : <<extend>>
+UC1 ..> UC1_6 : <<extend>>
+
+UC2 ..> UC2_1 : <<extend>>
+UC2 ..> UC2_2 : <<extend>>
+UC2 ..> UC2_3 : <<extend>>
+UC2 ..> UC2_4 : <<include>>
+UC2 ..> UC2_5 : <<include>>
+
+UC3 ..> UC3_1 : <<extend>>
+UC3 ..> UC3_2 : <<extend>>
+UC3 ..> UC3_3 : <<extend>>
+UC3 ..> UC3_4 : <<extend>>
+UC3 ..> UC3_5 : <<extend>>
+
+UC4 ..> UC4_1 : <<include>>
+UC4 ..> UC4_2 : <<include>>
+UC4 ..> UC4_3 : <<include>>
+UC4 ..> UC4_4 : <<extend>>\n[si images fournies]
+
+UC5 ..> UC5_1 : <<extend>>
+UC5 ..> UC5_2 : <<include>>
+UC5 ..> UC5_3 : <<include>>
+UC5 ..> UC5_4 : <<extend>>
+
+' Notes explicatives
+note right of UC1
+  CRUD complet pour commerçants
+  Validation stricte:
+  - Nom entreprise unique
+  - Email professionnel
+  - Téléphone valide
+  - Adresse complète
+end note
+
+note right of UC2
+  Horaires flexibles:
+  - 7 jours/semaine
+  - Plages multiples/jour
+  - Jours fériés (liste pays)
+  - Fermetures exceptionnelles
+
+  Exemples:
+  - Restaurant: 12h-14h, 19h-22h
+  - Hôtel: 24h/24
+  - Salon: 9h-18h (Lun-Sam)
+end note
+
+note bottom of UC3
+  Paramètres adaptés Afrique:
+
+  Fuseau horaire:
+  - Africa/Dakar (GMT)
+  - Africa/Abidjan (GMT)
+  - Africa/Lagos (GMT+1)
+
+  Devises:
+  - XOF (Franc CFA Ouest)
+  - XAF (Franc CFA Central)
+  - NGN (Naira Nigeria)
+  - EUR, USD
+
+  Politique annulation:
+  - >24h: 100% remboursé
+  - 12-24h: 50% remboursé
+  - <12h: 0% remboursé
+end note
+
+note right of UC4
+  Validation centralisée pour
+  garantir cohérence entre
+  tous les domain services
+
+  Règles communes:
+  - Nom: 3-100 chars
+  - Description: max 1000 chars
+  - Capacité: 1-100 selon type
+  - Images: max 5, JPG/PNG, <5MB
+end note
+
+note left of UC5
+  Gestion images:
+  - Upload: multipart/form-data
+  - Formats: JPEG, PNG, WebP
+  - Taille max: 5 MB par image
+  - Redimension: 300x300 (thumb),
+    800x600 (medium), 1920x1080 (full)
+  - Optimisation: compression 85%
+  - Stockage: local ou S3
+end note
+
+' Contraintes
+note "Un utilisateur ne peut avoir\nqu'un seul commerce" as N1
+UC1_1 .. N1
+
+note "Horaires ne doivent pas\nse chevaucher pour un même jour" as N2
+UC2 .. N2
+
+note "Devise doit correspondre\nau pays du commerçant" as N3
+UC3_2 .. N3
+
+@enduml

@@ -1,0 +1,272 @@
+@startuml Service Provider Service - Diagramme de Séquence
+
+title Service Provider Service - Génération créneaux et réservation
+
+actor "Commerçant Prestataire" as Merchant
+actor "Client" as Client
+participant "API Gateway" as Gateway
+participant "ControleurCreneau" as Controleur
+participant "ServiceCreneau" as ServiceCreneau
+participant "GenerateurCreneaux" as Generateur
+participant "ServiceDisponibilite" as ServiceDispo
+participant "ClientBookingService" as BookingClient
+participant "DepotCreneau" as Depot
+participant "DepotPersonnel" as DepotPersonnel
+participant "GestionnaireCache" as Cache
+database "PostgreSQL" as DB
+database "Redis" as Redis
+
+== Génération automatique de créneaux ==
+Merchant -> Gateway : POST /service-providers/:id/generate-slots\n{personnelId, typeServiceId, dateDebut, dateFin, config}
+activate Gateway
+
+Gateway -> Controleur : genererCreneaux(req, res)
+activate Controleur
+
+Controleur -> ServiceCreneau : genererCreneauxAutomatiques(personnelId, config)
+activate ServiceCreneau
+
+ServiceCreneau -> DepotPersonnel : trouverParId(personnelId)
+activate DepotPersonnel
+DepotPersonnel -> DB : SELECT * FROM staff WHERE id = ?
+DB --> DepotPersonnel : personnel {nom: "Dr. Diallo", role: MEDECIN}
+DepotPersonnel --> ServiceCreneau : personnel
+deactivate DepotPersonnel
+
+ServiceCreneau -> Generateur : generer(dateDebut, dateFin, config)
+activate Generateur
+
+note right of Generateur
+  Configuration:
+  - Horaires: 9h00-18h00
+  - Durée créneau: 30min
+  - Pause entre: 5min
+  - Pause déjeuner: 13h-14h
+  - Jours: Lun-Ven
+  - Période: 01-31 Mars 2026
+end note
+
+loop Pour chaque jour (Lun-Ven de Mars)
+    Generateur -> Generateur : genererPourJour(date, config)
+
+    Generateur -> Generateur : calculerCreneauxMatin(9h-13h, duree: 30min, pause: 5min)
+    note right
+      9h00-9h30
+      9h35-10h05
+      10h10-10h40
+      10h45-11h15
+      11h20-11h50
+      11h55-12h25
+      12h30-13h00
+    end note
+
+    Generateur -> Generateur : ajouterPauseDejeuner(13h-14h)
+
+    Generateur -> Generateur : calculerCreneauxApresMidi(14h-18h, duree: 30min, pause: 5min)
+    note right
+      14h00-14h30
+      14h35-15h05
+      15h10-15h40
+      15h45-16h15
+      16h20-16h50
+      16h55-17h25
+      17h30-18h00
+    end note
+end
+
+Generateur --> ServiceCreneau : [560 créneaux générés]
+note right: 23 jours × 14 créneaux/jour × 1 personnel
+
+deactivate Generateur
+
+ServiceCreneau -> ServiceCreneau : verifierCreneauxExistants(personnelId, periode)
+ServiceCreneau -> Depot : listerParPersonnel(personnelId, dateDebut, dateFin)
+activate Depot
+Depot -> DB : SELECT * FROM time_slots\nWHERE staff_id = ? AND date BETWEEN ? AND ?
+DB --> Depot : [120 créneaux existants]
+Depot --> ServiceCreneau : creneauxExistants
+deactivate Depot
+
+ServiceCreneau -> ServiceCreneau : filtrerDoublons(nouveauxCreneaux, existants)
+note right: Garder seulement nouveaux créneaux (440)
+
+loop Pour chaque nouveau créneau
+    ServiceCreneau -> Depot : creer(donneesCreneau)
+    activate Depot
+    Depot -> DB : INSERT INTO time_slots\n(staff_id, service_type_id, date, start_time, end_time, status)
+    DB --> Depot : créneau créé
+    Depot --> ServiceCreneau : creneau
+    deactivate Depot
+end
+
+ServiceCreneau -> Redis : publish("slots.generated", {personnelId, nombre: 440})
+activate Redis
+Redis --> ServiceCreneau : OK
+deactivate Redis
+
+ServiceCreneau --> Controleur : {nombreCreneauxGeneres: 440}
+deactivate ServiceCreneau
+
+Controleur --> Gateway : 201 Created\n{created: 440, total: 560}
+deactivate Controleur
+
+Gateway --> Merchant : 201 Created\n{slotsGenerated: 440}
+deactivate Gateway
+
+== Recherche de créneaux disponibles ==
+Client -> Gateway : GET /slots/available\n?typeServiceId=&date=2026-03-15&personnelId=
+activate Gateway
+
+Gateway -> Controleur : obtenirCreneauxDisponibles(req, res)
+activate Controleur
+
+Controleur -> ServiceCreneau : obtenirDisponibles(filtres)
+activate ServiceCreneau
+
+ServiceCreneau -> ServiceDispo : obtenirCreneauxLibres(personnelId, date, typeServiceId)
+activate ServiceDispo
+
+ServiceDispo -> Cache : obtenirCreneaux(personnelId, date)
+activate Cache
+Cache -> Redis : GET "slots:" + personnelId + ":2026-03-15"
+Redis --> Cache : null (cache miss)
+Cache --> ServiceDispo : null
+deactivate Cache
+
+ServiceDispo -> Depot : listerParPersonnel(personnelId, date)
+activate Depot
+Depot -> DB : SELECT * FROM time_slots\nWHERE staff_id = ? AND date = ? AND service_type_id = ?
+DB --> Depot : [14 créneaux pour ce jour]
+Depot --> ServiceDispo : creneaux
+deactivate Depot
+
+ServiceDispo -> BookingClient : GET /bookings?personnelId=&date=2026-03-15&status=CONFIRMED
+activate BookingClient
+BookingClient --> ServiceDispo : [3 réservations confirmées]
+deactivate BookingClient
+
+ServiceDispo -> ServiceDispo : filtrerCreneauxReserves(creneaux, reservations)
+
+ServiceDispo -> ServiceDispo : marquerStatuts(creneaux)
+note right
+  9h00-9h30: DISPONIBLE
+  9h35-10h05: RESERVE (réservation existante)
+  10h10-10h40: DISPONIBLE
+  10h45-11h15: RESERVE
+  11h20-11h50: DISPONIBLE
+  ...
+end note
+
+ServiceDispo -> Cache : cacherCreneaux(personnelId, date, creneauxDisponibles)
+activate Cache
+Cache -> Redis : SETEX "slots:..." 600 {...}
+note right: TTL 10 minutes
+Redis --> Cache : OK
+deactivate Cache
+
+ServiceDispo --> ServiceCreneau : [11 créneaux disponibles sur 14]
+deactivate ServiceDispo
+
+ServiceCreneau --> Controleur : creneauxDisponibles
+deactivate ServiceCreneau
+
+Controleur --> Gateway : 200 OK\n{slots: [...], disponibles: 11, total: 14}
+deactivate Controleur
+
+Gateway --> Client : 200 OK\n{availableSlots: 11}
+deactivate Gateway
+
+== Vérification conflit personnel ==
+participant "ServicePersonnel" as ServicePersonnel
+
+Merchant -> Gateway : POST /slots\n{personnelId, date: "2026-03-15", heureDebut: "14:00", heureFin: "15:30"}
+activate Gateway
+
+Gateway -> Controleur : creerCreneau(req, res)
+activate Controleur
+
+Controleur -> ServiceCreneau : creer(donnees)
+activate ServiceCreneau
+
+ServiceCreneau -> ServicePersonnel : verifierDisponibilite(personnelId, creneau)
+activate ServicePersonnel
+
+ServicePersonnel -> Depot : listerParPersonnel(personnelId, date)
+activate Depot
+Depot -> DB : SELECT * FROM time_slots\nWHERE staff_id = ? AND date = ?
+DB --> Depot : [créneaux du jour]
+Depot --> ServicePersonnel : creneaux
+deactivate Depot
+
+ServicePersonnel -> ServicePersonnel : verifierChevauchement(nouveauCreneau, creneauxExistants)
+
+alt Aucun chevauchement
+    ServicePersonnel --> ServiceCreneau : {disponible: true}
+
+    ServiceCreneau -> Depot : creer(donnees)
+    activate Depot
+    Depot -> DB : INSERT INTO time_slots (...)
+    DB --> Depot : créneau créé
+    Depot --> ServiceCreneau : creneau
+    deactivate Depot
+
+    ServiceCreneau -> Cache : invaliderCache(personnelId)
+    activate Cache
+    Cache -> Redis : DEL "slots:" + personnelId + ":*"
+    Redis --> Cache : OK
+    deactivate Cache
+
+    ServiceCreneau --> Controleur : creneau
+    Controleur --> Gateway : 201 Created\n{slot}
+    Gateway --> Merchant : 201 Created
+
+else Chevauchement détecté
+    ServicePersonnel --> ServiceCreneau : {disponible: false, conflit: {...}}
+    ServiceCreneau --> Controleur : throw ConflictError("Personnel déjà occupé 14:00-15:00")
+    Controleur --> Gateway : 409 Conflict\n{message: "Personnel déjà occupé", creneauConflictuel: {...}}
+    Gateway --> Merchant : 409 Conflict
+end
+
+deactivate ServicePersonnel
+deactivate ServiceCreneau
+deactivate Controleur
+deactivate Gateway
+
+note right of ServiceDispo
+  Algorithme chevauchement:
+
+  Conflit SI:
+  (nouveauCreneau.heureDebut < existant.heureFin) ET
+  (nouveauCreneau.heureFin > existant.heureDebut)
+
+  Exemples:
+  - Nouveau: 14h00-15h30
+  - Existant: 14h30-15h00
+  → CONFLIT ✗
+
+  - Nouveau: 14h00-15h00
+  - Existant: 15h00-16h00
+  → OK ✓ (pas de chevauchement)
+end note
+
+note bottom of Generateur
+  Génération intelligente:
+
+  Avantages:
+  - Gain temps prestataire
+  - Cohérence planning
+  - Optimisation occupation
+
+  Options:
+  - Récurrence (quotidien, hebdo)
+  - Exceptions (jours fériés)
+  - Horaires variables (été/hiver)
+  - Créneaux bloqués (formation)
+
+  Production:
+  - 1 mois de créneaux en 2-3s
+  - Transaction atomique
+  - Rollback si erreur
+end note
+
+@enduml

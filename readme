@@ -1,0 +1,18 @@
+BookingSysteme/
+├── backend/
+│   └── services/
+│       ├── auth-service/           (Port 3001)
+│       ├── booking-service/        (Port 3003)
+│       ├── accommodation-service/  (Port 3009)
+│       ├── restaurant-service/     (Port 3008)
+│       ├── transport-service/      (Port 3011)
+│       ├── payment-service/        (Port 3004)
+│       ├── notification-service/   (Port 3005)
+│       ├── service-provider/       (Port 3010)
+│       └── resource-core-service/  (Port 3002)
+├── frontend/
+│   └── mobile/                     (Flutter)
+├── infrastructure/
+│   ├── docker/
+│   └── kubernetes/
+└── docs/

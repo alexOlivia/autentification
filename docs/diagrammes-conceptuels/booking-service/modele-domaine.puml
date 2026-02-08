@@ -1,0 +1,438 @@
+@startuml Booking Service - Modèle de Domaine
+
+title Booking Service - Modèle de Domaine Conceptuel
+
+' Styles
+skinparam class {
+    BackgroundColor LightSalmon
+    BorderColor DarkRed
+    ArrowColor DarkRed
+}
+
+package "Domaine Réservation" {
+
+    ' ========== ENTITÉS ==========
+
+    class Reservation <<entité>> {
+        + id: string
+        + numeroReservation: string
+        + utilisateurId: string
+        + commercantId: string
+        + ressourceId: string
+        + typeRessource: TypeRessource
+        + statut: StatutReservation
+        + dateDebut: Date
+        + dateFin: Date
+        + heureDebut: string
+        + heureFin: string
+        + nombrePersonnes: number
+        + montantTotal: number
+        + montantAcompte: number
+        + devise: string
+        + paiementId: string
+        + notesClient: string
+        + codeConfirmation: string
+        + dateCreation: Date
+        + dateConfirmation: Date
+        + dateAnnulation: Date
+        + motifAnnulation: string
+        + dateMiseAJour: Date
+    }
+
+    class Participant <<entité>> {
+        + id: string
+        + reservationId: string
+        + nom: string
+        + prenom: string
+        + telephone: string
+        + email: string
+        + age: number
+        + estTitulaire: boolean
+    }
+
+    class ConflitReservation <<entité>> {
+        + id: string
+        + reservation1Id: string
+        + reservation2Id: string
+        + typeConflit: TypeConflit
+        + ressourceId: string
+        + dateDetection: Date
+        + estResolu: boolean
+        + modeResolution: string
+        + dateResolution: Date
+    }
+
+    class SuggestionAlternative <<entité>> {
+        + id: string
+        + reservationRefuseeId: string
+        + typeRessource: TypeRessource
+        + ressourceId: string
+        + commercantId: string
+        + dateDebut: Date
+        + dateFin: Date
+        + montantEstime: number
+        + scorePertinence: number
+        + raisonSuggestion: string
+        + estAcceptee: boolean
+    }
+
+    class HistoriqueStatut <<entité>> {
+        + id: string
+        + reservationId: string
+        + ancienStatut: StatutReservation
+        + nouveauStatut: StatutReservation
+        + raison: string
+        + auteur: string
+        + dateChangement: Date
+    }
+
+    class PolitiqueAnnulation <<entité>> {
+        + id: string
+        + commercantId: string
+        + typeRessource: TypeRessource
+        + delaiHeures: number
+        + pourcentageRemboursement: number
+        + fraisAnnulation: number
+        + description: string
+    }
+
+    ' ========== ÉNUMÉRATIONS ==========
+
+    enum TypeRessource {
+        CHAMBRE
+        SALLE_EVENEMENT
+        JARDIN
+        PISCINE
+        TABLE_RESTAURANT
+        ZONE_RESTAURANT
+        CRENEAU_SERVICE
+        PLACE_TRANSPORT
+        VEHICULE_VTC
+        AUTRE
+    }
+
+    enum StatutReservation {
+        EN_ATTENTE_PAIEMENT
+        CONFIRMEE
+        EN_COURS
+        TERMINEE
+        ANNULEE_CLIENT
+        ANNULEE_COMMERCANT
+        EXPIREE
+        NO_SHOW
+        AUTRE
+    }
+
+    enum TypeConflit {
+        DOUBLE_RESERVATION
+        CHEVAUCHEMENT_HORAIRE
+        SURRESERVATION
+        RESSOURCE_INDISPONIBLE
+        AUTRE
+    }
+}
+
+' ========== RELATIONS ==========
+
+Reservation "1" -- "1" TypeRessource : porte sur >
+Reservation "1" -- "1" StatutReservation : a un statut >
+Reservation "1" *-- "*" Participant : inclut >
+Reservation "1" -- "*" HistoriqueStatut : possède >
+Reservation "1" -- "*" ConflitReservation : peut avoir >
+Reservation "1" -- "*" SuggestionAlternative : peut avoir >
+
+Participant "*" --> "1" Reservation : de >
+
+ConflitReservation "1" -- "1" TypeConflit : est un >
+ConflitReservation "*" --> "1" Reservation : concerne 1 >
+ConflitReservation "*" --> "1" Reservation : concerne 2 >
+
+SuggestionAlternative "*" --> "1" Reservation : pour >
+SuggestionAlternative "1" -- "1" TypeRessource : suggère >
+
+HistoriqueStatut "*" --> "1" Reservation : de >
+HistoriqueStatut "1" -- "1" StatutReservation : ancien >
+HistoriqueStatut "1" -- "1" StatutReservation : nouveau >
+
+PolitiqueAnnulation "1" -- "1" TypeRessource : pour >
+
+' ========== NOTES MÉTIER ==========
+
+note right of Reservation
+  **Réservation centrale**
+
+  Entité polymorphe couvrant tous types
+  de réservations sur la plateforme.
+
+  **Types ressource:**
+  - CHAMBRE: hébergement (1+ nuits)
+  - SALLE_EVENEMENT: salle réunion/banquet
+  - JARDIN: espace extérieur événement
+  - PISCINE: créneau piscine privé/partagé
+  - TABLE_RESTAURANT: table individuelle
+  - ZONE_RESTAURANT: privatisation zone/restaurant
+  - CRENEAU_SERVICE: RDV coiffure, massage
+  - PLACE_TRANSPORT: siège bus/train/avion
+  - VEHICULE_VTC: course privée
+
+  **Numéro réservation:**
+  Format: {TYPE}-{DATE}-{SEQUENCE}
+  Ex: CHAMBRE-20250204-0123
+      TABLE-20250204-0456
+
+  **Code confirmation:**
+  Code 6 caractères alphanumériques
+  Ex: A8F2K9
+  Présenté par client lors check-in/arrivée
+
+  **Montants:**
+  - montantTotal: prix total réservation
+  - montantAcompte: acompte payé (30-50%)
+  - Solde payé sur place ou avant arrivée
+
+  **Contexte africain:**
+  - Paiement échelonné fréquent
+  - Acompte Mobile Money
+  - Solde cash sur place
+  - Flexibilité dates (événements familiaux)
+end note
+
+note bottom of Participant
+  **Participants réservation**
+
+  Liste personnes incluses dans réservation.
+
+  **Utilité:**
+  - Chambres: noms tous occupants
+  - Restaurant: noms convives (si groupe)
+  - Transport: infos passagers (pièce identité)
+  - Services: accompagnants (enfants)
+
+  **Titulaire:**
+  - estTitulaire = true: personne ayant réservé
+  - Autres: accompagnants
+
+  **Contexte réglementaire:**
+  - Transport: pièce identité obligatoire
+    (CNI, passeport) pour billets
+  - Hébergement: noms obligatoires (sécurité)
+  - Restaurant: noms optionnels (sauf grands groupes)
+
+  **Gestion:**
+  - Modification participants possible avant J-2
+  - Ajout participants si capacité disponible
+  - Supplément si dépassement prévu
+end note
+
+note right of ConflitReservation
+  **Conflit entre réservations**
+
+  Détection automatique conflits lors
+  création nouvelle réservation.
+
+  **Types conflit:**
+
+  - **DOUBLE_RESERVATION:**
+    2 réservations confirmées même ressource
+    même période (erreur système grave)
+
+  - **CHEVAUCHEMENT_HORAIRE:**
+    2 réservations qui se chevauchent
+    partiellement (ex: restaurant)
+
+  - **SURRESERVATION:**
+    Capacité ressource dépassée
+    (ex: piscine partagée: 15 places max)
+
+  - **RESSOURCE_INDISPONIBLE:**
+    Ressource marquée indisponible
+    mais réservation existe
+
+  **Détection:**
+  Lors de chaque création/modification
+  réservation, vérification automatique
+
+  **Résolution:**
+  - Refus nouvelle réservation
+  - Proposition alternatives (suggestions)
+  - Contact client pour replanifier
+  - Annulation réservation conflictuelle
+    (compensation si erreur système)
+
+  **Prévention:**
+  - Verrous base données (transactions)
+  - Cache Redis (disponibilités temps réel)
+  - Validation stricte avant confirmation
+end note
+
+note bottom of SuggestionAlternative
+  **Suggestions intelligentes**
+
+  Système génère alternatives quand
+  ressource demandée indisponible.
+
+  **Critères suggestions:**
+
+  **Similarité ressource:**
+  - Chambre double → autres chambres doubles
+  - Table 4 personnes → tables 4-6 personnes
+  - Salle 100 personnes → salles 80-120
+
+  **Proximité temporelle:**
+  - Si demande samedi 14h → suggestions:
+    * Samedi 12h, 13h, 15h, 16h (même jour)
+    * Vendredi 14h, dimanche 14h (même heure)
+
+  **Proximité géographique:**
+  - Même établissement (priorité)
+  - Établissements <5km
+  - Même ville
+
+  **Prix équivalent:**
+  - ±20% du prix recherché
+
+  **Score pertinence:**
+  Calculé selon pondération:
+  - Même établissement: +40%
+  - Même jour: +30%
+  - Prix proche: +20%
+  - Note établissement: +10%
+
+  **Affichage:**
+  Top 5 suggestions triées par score
+  Client peut accepter ou continuer recherche
+
+  **Contexte africain:**
+  - Flexibilité dates importante
+  - Préférence même établissement
+  - Prix critère majeur
+end note
+
+note bottom of HistoriqueStatut
+  **Traçabilité statuts**
+
+  Historique complet changements statut
+  pour audit et support client.
+
+  **Transitions possibles:**
+
+  EN_ATTENTE_PAIEMENT →
+    CONFIRMEE (paiement reçu)
+    EXPIREE (délai paiement dépassé)
+    ANNULEE_CLIENT (abandon)
+
+  CONFIRMEE →
+    EN_COURS (début séjour/prestation)
+    ANNULEE_CLIENT (annulation avant)
+    ANNULEE_COMMERCANT (force majeure)
+
+  EN_COURS →
+    TERMINEE (fin normale)
+    NO_SHOW (client absent sans prévenir)
+
+  **Raison changement:**
+  - "Paiement reçu via Orange Money"
+  - "Client annulé: changement de plans"
+  - "Commerçant annulé: panne climatisation"
+  - "Expiration automatique après 24h"
+
+  **Auteur:**
+  - "system": automatique
+  - "client-{id}": action client
+  - "merchant-{id}": action commerçant
+  - "admin-{id}": action admin support
+
+  **Utilité:**
+  - Résolution litiges
+  - Analyse comportements clients
+  - Statistiques annulations
+  - Audit transactions
+end note
+
+note right of PolitiqueAnnulation
+  **Politique d'annulation**
+
+  Règles remboursement selon délai
+  annulation avant date réservation.
+
+  **Exemples politiques:**
+
+  **Flexible:**
+  - >24h avant: remboursement 100%
+  - <24h: remboursement 50%
+  - No-show: 0%
+
+  **Modérée:**
+  - >7 jours avant: 100%
+  - 3-7 jours: 50%
+  - <3 jours: 0%
+
+  **Stricte:**
+  - >30 jours: 100%
+  - 15-30 jours: 50%
+  - <15 jours: 0%
+
+  **Frais annulation:**
+  Frais fixes (ex: 1000 XOF) +
+  pourcentage remboursement
+
+  **Exemple calcul:**
+  Réservation: 50000 XOF
+  Annulation 5 jours avant (politique modérée)
+  Remboursement: 50% = 25000 XOF
+  Frais: 1000 XOF
+  Montant remboursé: 24000 XOF
+
+  **Par type ressource:**
+  - Chambres: modérée/stricte
+  - Restaurant: flexible
+  - Transport: stricte (billet)
+  - Services: flexible (facile replacer créneau)
+
+  **Force majeure:**
+  Si annulation par commerçant
+  (panne, fermeture): remboursement 100%
+  + compensation (bon réduction)
+end note
+
+note as N1
+  **Cycle de vie réservation**
+
+  **1. Création:**
+  - Client sélectionne ressource + dates
+  - Système vérifie disponibilité
+  - Calcul prix (tarifs + promotions)
+  - Création réservation EN_ATTENTE_PAIEMENT
+
+  **2. Paiement:**
+  - Redirection Payment Service
+  - Si succès: CONFIRMEE + envoi confirmation
+  - Si échec: reste EN_ATTENTE_PAIEMENT (24h expiration)
+
+  **3. Confirmation:**
+  - Email/SMS confirmation + code 6 caractères
+  - Ajout calendrier client
+  - Notification commerçant
+
+  **4. Rappels:**
+  - J-7: rappel réservation à venir
+  - J-1: rappel avec instructions accès
+  - H-2: rappel imminent
+
+  **5. Début prestation:**
+  - Client présente code confirmation
+  - Commerçant valide (scan QR ou saisie code)
+  - Statut → EN_COURS
+
+  **6. Fin prestation:**
+  - Statut → TERMINEE
+  - Demande avis client (24h après)
+  - Paiement solde si applicable
+
+  **Annulations:**
+  Possible à tout moment selon politique
+  Client ou commerçant peut annuler
+  Remboursement automatique selon règles
+end note
+
+@enduml

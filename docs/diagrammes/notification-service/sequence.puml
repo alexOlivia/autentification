@@ -1,0 +1,317 @@
+@startuml Notification Service - Diagramme de Séquence
+
+title Notification Service - Envoi notification multi-canal
+
+participant "Booking Service" as BookingService
+participant "Payment Service" as PaymentService
+database "Redis Pub/Sub" as Redis
+participant "EcouteurEvenements" as Ecouteur
+participant "ServiceNotification" as Service
+participant "DispatcheurNotification" as Dispatcheur
+participant "DepotPreferences" as DepotPref
+participant "ServiceEmail" as Email
+participant "ServicePush" as Push
+participant "ServiceSMS" as SMS
+participant "DepotNotification" as Depot
+participant "SendGrid" as SendGrid
+participant "Firebase FCM" as Firebase
+participant "Twilio" as Twilio
+database "PostgreSQL" as DB
+actor "Client" as Client
+
+== Événement: Réservation confirmée ==
+BookingService -> Redis : publish("booking.confirmed",\n{reservationId, userId, restaurantName, date, time, code})
+activate Redis
+note right: Événement asynchrone
+
+Redis -> Ecouteur : message("booking.confirmed", data)
+activate Ecouteur
+
+Ecouteur -> Ecouteur : gererReservationConfirmee(donnees)
+
+Ecouteur -> Service : envoyer(userId, type: RESERVATION_CONFIRMEE, donnees)
+activate Service
+
+Service -> DepotPref : trouverParUtilisateur(userId)
+activate DepotPref
+DepotPref -> DB : SELECT * FROM notification_preferences WHERE user_id = ?
+DB --> DepotPref : preferences {emailActive: true, pushActive: true, smsActive: false}
+DepotPref --> Service : preferences
+deactivate DepotPref
+
+Service -> Dispatcheur : dispatcher(notification, preferences)
+activate Dispatcheur
+
+Dispatcheur -> Dispatcheur : selectionnerCanaux(userId, type: RESERVATION_CONFIRMEE)
+note right
+  Canaux sélectionnés selon préférences:
+  - Email: ✓ (activé + confirmation)
+  - Push: ✓ (activé + confirmation)
+  - SMS: ✗ (désactivé)
+end note
+
+== Envoi via Email ==
+par Envoi parallèle multi-canaux
+    Dispatcheur -> Email : envoyerAvecTemplate(email, "CONFIRMATION_RESERVATION", variables)
+    activate Email
+
+    Email -> Email : chargerTemplate("CONFIRMATION_RESERVATION")
+    Email -> Email : rendre(template, {prenom, restaurant, date, heure, table, code, prix})
+    note right
+      Template rendu:
+      "Bonjour Amadou,
+      Votre réservation au Restaurant Le Baobab
+      est confirmée pour le 15 mars à 19h00.
+      Table: T12 (4 personnes)
+      Code: PING-AB12CD
+      Prix: 50000 XOF"
+    end note
+
+    Email -> SendGrid : POST /v3/mail/send
+    activate SendGrid
+    SendGrid --> Email : {messageId: "msg-xyz", status: "sent"}
+    deactivate SendGrid
+
+    Email --> Dispatcheur : {succes: true, canal: EMAIL, messageId: "msg-xyz"}
+    deactivate Email
+
+== Envoi via Push ==
+else
+    Dispatcheur -> Push : envoyer(userId, titre, corps, donnees)
+    activate Push
+
+    Push -> DepotTokensDevice : trouverParUtilisateur(userId)
+    activate DepotTokensDevice
+    DepotTokensDevice -> DB : SELECT * FROM device_tokens WHERE user_id = ?
+    DB --> DepotTokensDevice : [token1: iOS, token2: Android]
+    DepotTokensDevice --> Push : tokens
+    deactivate DepotTokensDevice
+
+    loop Pour chaque token device
+        Push -> Firebase : POST /v1/projects/.../messages:send
+        activate Firebase
+        note right
+          {
+            token: "fcm-token-xyz",
+            notification: {
+              title: "Réservation confirmée \u2705",
+              body: "Le Baobab - 15 mars 19h"
+            },
+            data: {
+              reservationId: "res-123",
+              action: "open_booking"
+            }
+          }
+        end note
+        Firebase --> Push : {messageId: "fcm-msg-123"}
+        deactivate Firebase
+    end
+
+    Push --> Dispatcheur : {succes: true, canal: PUSH, messageIds: ["fcm-msg-123", "fcm-msg-456"]}
+    deactivate Push
+
+== SMS non envoyé (désactivé) ==
+else
+    note right of SMS
+      SMS désactivé dans préférences
+      utilisateur → pas d'envoi
+    end note
+end
+
+Dispatcheur -> Depot : creer({userId, type, canal: [EMAIL, PUSH], sujet, contenu, estLue: false})
+activate Depot
+Depot -> DB : INSERT INTO notifications\n(user_id, type, channel, subject, content, sent_at)
+DB --> Depot : notification créée
+Depot --> Dispatcheur : notification
+deactivate Depot
+
+Dispatcheur --> Service : {resultats: [{canal: EMAIL, succes: true}, {canal: PUSH, succes: true}]}
+deactivate Dispatcheur
+
+Service --> Ecouteur : notification envoyée
+deactivate Service
+
+Ecouteur --> Redis : ACK
+deactivate Ecouteur
+deactivate Redis
+
+== Réception côté client ==
+Firebase -> Client : Push notification affichée
+activate Client
+Client -> Client : Tap notification
+Client -> Client : Ouvre app → Page réservation
+deactivate Client
+
+== Événement: Rappel J-1 ==
+participant "Tâche Planifiée" as Cron
+
+Cron -> Redis : publish("booking.reminder",\n{reservationId, userId, date, time, restaurant})
+activate Redis
+
+Redis -> Ecouteur : message("booking.reminder", data)
+activate Ecouteur
+
+Ecouteur -> Service : envoyer(userId, type: RESERVATION_RAPPEL, donnees)
+activate Service
+
+Service -> DepotPref : trouverParUtilisateur(userId)
+activate DepotPref
+DepotPref -> DB : SELECT * FROM notification_preferences WHERE user_id = ?
+DB --> DepotPref : preferences {notifierRappel: true}
+DepotPref --> Service : preferences
+deactivate DepotPref
+
+alt Rappels activés
+    Service -> Dispatcheur : dispatcher(notification)
+    activate Dispatcheur
+
+    Dispatcheur -> Email : envoyerAvecTemplate(email, "RAPPEL_RESERVATION", variables)
+    activate Email
+    Email -> SendGrid : POST /v3/mail/send
+    activate SendGrid
+    note right
+      Sujet: "Rappel: Réservation demain 19h"
+      Contenu:
+      "Bonjour Amadou,
+      Nous vous rappelons votre réservation
+      demain 15 mars à 19h00 au
+      Restaurant Le Baobab.
+
+      Table: T12 (4 personnes)
+      Code: PING-AB12CD
+
+      Bon appétit!
+      Vous pouvez annuler jusqu'à
+      aujourd'hui 19h (24h avant)."
+    end note
+    SendGrid --> Email : {sent: true}
+    deactivate SendGrid
+    Email --> Dispatcheur : {succes: true}
+    deactivate Email
+
+    Dispatcheur -> Push : envoyer(userId, "Rappel réservation demain", corps)
+    activate Push
+    Push -> Firebase : POST /v1/.../messages:send
+    activate Firebase
+    Firebase --> Push : {sent: true}
+    deactivate Firebase
+    Push --> Dispatcheur : {succes: true}
+    deactivate Push
+
+    Dispatcheur -> Depot : creer(notification)
+    activate Depot
+    Depot -> DB : INSERT INTO notifications (...)
+    DB --> Depot : notification
+    Depot --> Dispatcheur : notification
+    deactivate Depot
+
+    Dispatcheur --> Service : résultats
+    deactivate Dispatcheur
+
+    Service --> Ecouteur : OK
+    deactivate Service
+
+else Rappels désactivés
+    Service --> Ecouteur : ignoré (préférences utilisateur)
+    deactivate Service
+end
+
+Ecouteur --> Redis : ACK
+deactivate Ecouteur
+deactivate Redis
+
+== Gestion des échecs d'envoi ==
+PaymentService -> Redis : publish("payment.success", {paiementId, userId})
+activate Redis
+
+Redis -> Ecouteur : message("payment.success", data)
+activate Ecouteur
+
+Ecouteur -> Service : envoyer(userId, PAIEMENT_REUSSI, donnees)
+activate Service
+
+Service -> Dispatcheur : dispatcher(notification)
+activate Dispatcheur
+
+Dispatcheur -> Email : envoyerAvecTemplate(email, "PAIEMENT_REUSSI", variables)
+activate Email
+
+Email -> SendGrid : POST /v3/mail/send
+activate SendGrid
+SendGrid --x Email : 500 Internal Server Error
+deactivate SendGrid
+
+Email -> Email : loguerEchec(erreur)
+
+Email -> Email : planifierRetry(tentative: 1, delai: 30s)
+note right
+  Stratégie retry:
+  - Tentative 1: 30s
+  - Tentative 2: 2min
+  - Tentative 3: 10min
+  - Après 3 échecs: alerter admin
+end note
+
+Email --> Dispatcheur : {succes: false, erreur: "SendGrid unavailable", retry: 1}
+deactivate Email
+
+alt Push toujours fonctionnel
+    Dispatcheur -> Push : envoyer(userId, titre, corps)
+    activate Push
+    Push -> Firebase : POST /v1/.../messages:send
+    activate Firebase
+    Firebase --> Push : {sent: true}
+    deactivate Firebase
+    Push --> Dispatcheur : {succes: true}
+    deactivate Push
+
+    note right
+      Notification envoyée via Push
+      même si Email a échoué.
+      Redondance multi-canal.
+    end note
+end
+
+Dispatcheur -> Depot : creer({..., canal: [PUSH], tentativesEmail: 1, prochainRetry: NOW()+30s})
+activate Depot
+Depot -> DB : INSERT INTO notifications (...)
+DB --> Depot : notification
+Depot --> Dispatcheur : notification
+deactivate Depot
+
+Dispatcheur --> Service : {emailEchoue: true, pushReussi: true}
+deactivate Dispatcheur
+
+Service --> Ecouteur : résultat partiel
+deactivate Service
+
+Ecouteur --> Redis : ACK
+deactivate Ecouteur
+deactivate Redis
+
+note right of Dispatcheur
+  Stratégie de résilience:
+
+  Multi-canal:
+  - Si Email échoue → Push/SMS envoyés
+  - Si Push échoue → Email/SMS envoyés
+  - Si SMS échoue → Email/Push envoyés
+
+  Retry automatique:
+  - Exponential backoff
+  - Max 3 tentatives par canal
+  - Queue Redis pour retry
+
+  Logging:
+  - Toutes tentatives loggées
+  - Timestamp précis
+  - Erreur détaillée
+  - Alertes admin si échecs répétés
+
+  Fallback:
+  - Email prioritaire (plus fiable)
+  - Push backup
+  - SMS urgences uniquement
+end note
+
+@enduml

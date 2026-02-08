@@ -1,0 +1,313 @@
+@startuml Payment Service - Diagramme de Séquence
+
+title Payment Service - Processus paiement complet avec Stripe
+
+actor "Client" as Client
+participant "App Mobile" as App
+participant "API Gateway" as Gateway
+participant "ControleurPaiement" as Controleur
+participant "ServicePaiement" as Service
+participant "ClientStripe" as StripeClient
+participant "ClientBooking" as BookingClient
+participant "ServiceFacture" as ServiceFacture
+participant "DepotPaiement" as Depot
+participant "DepotFacture" as DepotFacture
+participant "GestionnaireWebhook" as Webhook
+database "PostgreSQL" as DB
+database "Redis" as Redis
+participant "Stripe API" as Stripe
+
+== Création du paiement ==
+Client -> App : Clique "Payer" pour réservation
+activate App
+
+App -> Gateway : POST /payments\n{reservationId: "res-123", montant: 50000, devise: "XOF"}
+activate Gateway
+
+Gateway -> Controleur : creerPaiement(req, res)
+activate Controleur
+
+Controleur -> Service : creer(reservationId, montant)
+activate Service
+
+Service -> BookingClient : GET /bookings/:reservationId
+activate BookingClient
+BookingClient --> Service : reservation {id, utilisateurId, montant: 50000, statut: EN_ATTENTE}
+deactivate BookingClient
+
+alt Réservation valide et EN_ATTENTE
+    Service -> StripeClient : creerPaymentIntent(montant, devise, metadata)
+    activate StripeClient
+    StripeClient -> Stripe : POST /v1/payment_intents
+    activate Stripe
+    note right
+      {
+        amount: 50000,
+        currency: "xof",
+        metadata: {
+          reservationId: "res-123",
+          userId: "user-456"
+        }
+      }
+    end note
+    Stripe --> StripeClient : PaymentIntent {id: "pi_xyz", client_secret: "pi_xyz_secret_abc"}
+    deactivate Stripe
+    StripeClient --> Service : paymentIntent
+    deactivate StripeClient
+
+    Service -> Depot : creer({reservationId, montant, stripePaymentId, statut: EN_ATTENTE})
+    activate Depot
+    Depot -> DB : INSERT INTO payments\n(reservation_id, amount, stripe_payment_id, status, ...)
+    DB --> Depot : paiement créé
+    Depot --> Service : paiement
+    deactivate Depot
+
+    Service --> Controleur : {paiementId, clientSecret}
+    Controleur --> Gateway : 201 Created\n{paymentId, clientSecret: "pi_xyz_secret_abc"}
+    Gateway --> App : 201 Created\n{clientSecret}
+
+else Réservation invalide ou déjà payée
+    Service --> Controleur : throw BadRequestError("Réservation non payable")
+    Controleur --> Gateway : 400 Bad Request
+    Gateway --> App : 400 Bad Request
+end
+
+deactivate Service
+deactivate Controleur
+deactivate Gateway
+
+== Saisie des informations de paiement (Frontend) ==
+App -> App : Afficher Stripe Payment Sheet
+App -> Client : Client entre numéro carte
+Client -> App : Confirme paiement
+App -> Stripe : confirmCardPayment(clientSecret, {card: cardElement})
+activate Stripe
+Stripe -> Stripe : Valider carte
+Stripe -> Stripe : Autoriser transaction
+Stripe --> App : {paymentIntent: {status: "succeeded"}}
+deactivate Stripe
+
+App -> Gateway : GET /payments/:paiementId/status
+activate Gateway
+Gateway -> Controleur : obtenirPaiement(req, res)
+activate Controleur
+Controleur -> Service : trouverParId(paiementId)
+activate Service
+Service -> Depot : trouverParId(paiementId)
+activate Depot
+Depot -> DB : SELECT * FROM payments WHERE id = ?
+DB --> Depot : paiement {statut: EN_ATTENTE ou REUSSI}
+Depot --> Service : paiement
+deactivate Depot
+Service --> Controleur : paiement
+deactivate Service
+Controleur --> Gateway : 200 OK\n{statut}
+deactivate Controleur
+Gateway --> App : 200 OK
+deactivate Gateway
+
+note right
+  Le statut peut être EN_ATTENTE
+  car webhook pas encore reçu.
+  Frontend polling ou attend webhook.
+end note
+
+== Webhook Stripe - Paiement réussi ==
+Stripe -> Gateway : POST /webhooks/stripe\nStripe-Signature: signature_xyz\n{type: "payment_intent.succeeded", data: {...}}
+activate Gateway
+
+Gateway -> ControleurWebhook : gererWebhookStripe(req, res)
+activate ControleurWebhook
+
+ControleurWebhook -> Webhook : validerSignature(payload, signature)
+activate Webhook
+Webhook -> Webhook : crypto.verify(signature, payload, secretWebhook)
+
+alt Signature valide
+    Webhook --> ControleurWebhook : true
+
+    ControleurWebhook -> Webhook : traiterEvenement(evenement)
+
+    alt Événement: payment_intent.succeeded
+        Webhook -> Webhook : gererPaiementReussi(evenement)
+
+        Webhook -> Service : confirmer(paiementId, stripePaymentId)
+        activate Service
+
+        Service -> Depot : mettreAJour(paiementId, {statut: REUSSI, dateConfirmation: NOW()})
+        activate Depot
+        Depot -> DB : UPDATE payments SET status = 'REUSSI', confirmed_at = NOW() WHERE stripe_payment_id = ?
+        DB --> Depot : paiement mis à jour
+        Depot --> Service : paiement
+        deactivate Depot
+
+        Service -> BookingClient : PUT /bookings/:reservationId/confirm\n{paiementId}
+        activate BookingClient
+        BookingClient --> Service : {reservation, statut: CONFIRMEE}
+        deactivate BookingClient
+
+        Service -> ServiceFacture : creer(paiementId)
+        activate ServiceFacture
+        ServiceFacture -> ServiceFacture : genererNumeroFacture()
+        note right: FACT-2026-00042
+
+        ServiceFacture -> DepotFacture : creer({paiementId, numeroFacture, montantTTC: 50000})
+        activate DepotFacture
+        DepotFacture -> DB : INSERT INTO invoices (...)
+        DB --> DepotFacture : facture créée
+        DepotFacture --> ServiceFacture : facture
+        deactivate DepotFacture
+
+        ServiceFacture -> ServiceFacture : genererPDF(facture)
+        note right: Génère PDF avec PDFKit
+
+        ServiceFacture --> Service : facture
+        deactivate ServiceFacture
+
+        Service -> Redis : publish("payment.success", {paiementId, utilisateurId, montant, factureId})
+        activate Redis
+        note right: Notification Service envoie email avec facture PDF
+        Redis --> Service : OK
+        deactivate Redis
+
+        Service --> Webhook : paiement confirmé
+        deactivate Service
+
+        Webhook --> ControleurWebhook : OK
+        ControleurWebhook --> Gateway : 200 OK
+
+    else Événement: payment_intent.payment_failed
+        Webhook -> Webhook : gererPaiementEchoue(evenement)
+
+        Webhook -> Service : annuler(paiementId)
+        activate Service
+
+        Service -> Depot : mettreAJour(paiementId, {statut: ECHOUE})
+        activate Depot
+        Depot -> DB : UPDATE payments SET status = 'ECHOUE' WHERE stripe_payment_id = ?
+        DB --> Depot : paiement mis à jour
+        Depot --> Service : paiement
+        deactivate Depot
+
+        Service -> BookingClient : DELETE /bookings/:reservationId
+        activate BookingClient
+        BookingClient --> Service : {reservation annulée}
+        deactivate BookingClient
+
+        Service -> Redis : publish("payment.failed", {paiementId, utilisateurId, raison})
+        activate Redis
+        Redis --> Service : OK
+        deactivate Redis
+
+        Service --> Webhook : paiement échoué
+        deactivate Service
+
+        Webhook --> ControleurWebhook : OK
+        ControleurWebhook --> Gateway : 200 OK
+    end
+
+else Signature invalide (attaque potentielle)
+    Webhook --> ControleurWebhook : false
+    ControleurWebhook --> Gateway : 401 Unauthorized\n{error: "Invalid signature"}
+    Gateway -> Gateway : Logger tentative suspecte
+end
+
+deactivate Webhook
+deactivate ControleurWebhook
+deactivate Gateway
+
+== Demande de remboursement ==
+Client -> Gateway : POST /refunds\n{paiementId: "pay-123", raison: "Annulation réservation"}
+activate Gateway
+
+Gateway -> ControleurRemboursement : demanderRemboursement(req, res)
+activate ControleurRemboursement
+
+ControleurRemboursement -> ServiceRemboursement : creer(paiementId, raison)
+activate ServiceRemboursement
+
+ServiceRemboursement -> Depot : trouverParId(paiementId)
+activate Depot
+Depot -> DB : SELECT * FROM payments WHERE id = ?
+DB --> Depot : paiement {montant: 50000, statut: REUSSI, reservationId}
+Depot --> ServiceRemboursement : paiement
+deactivate Depot
+
+ServiceRemboursement -> BookingClient : GET /bookings/:reservationId
+activate BookingClient
+BookingClient --> ServiceRemboursement : reservation {dateDebut, statut: ANNULEE}
+deactivate BookingClient
+
+ServiceRemboursement -> CalculateurRemboursement : calculerMontant(reservation, paiement, NOW())
+activate CalculateurRemboursement
+
+CalculateurRemboursement -> CalculateurRemboursement : calculerHeuresAvantDebut(reservation.dateDebut, NOW())
+note right: 48 heures avant début
+
+CalculateurRemboursement -> CalculateurRemboursement : appliquerPolitique(50000, 48h, politique)
+note right
+  48h > 24h → 100% remboursement
+  montantRemboursement = 50000 XOF
+  pourcentage = 100%
+end note
+
+CalculateurRemboursement --> ServiceRemboursement : {montant: 50000, pourcentage: 100%}
+deactivate CalculateurRemboursement
+
+ServiceRemboursement -> StripeClient : creerRemboursement(stripePaymentId, 50000)
+activate StripeClient
+StripeClient -> Stripe : POST /v1/refunds\n{payment_intent: "pi_xyz", amount: 50000}
+activate Stripe
+Stripe --> StripeClient : Refund {id: "re_abc", status: "succeeded"}
+deactivate Stripe
+StripeClient --> ServiceRemboursement : remboursement Stripe
+deactivate StripeClient
+
+ServiceRemboursement -> DepotRemboursement : creer({paiementId, montant: 50000, stripeRefundId, statut: REUSSI, pourcentage: 100%})
+activate DepotRemboursement
+DepotRemboursement -> DB : INSERT INTO refunds (...)
+DB --> DepotRemboursement : remboursement créé
+DepotRemboursement --> ServiceRemboursement : remboursement
+deactivate DepotRemboursement
+
+ServiceRemboursement -> Depot : mettreAJour(paiementId, {statut: REMBOURSE})
+activate Depot
+Depot -> DB : UPDATE payments SET status = 'REMBOURSE' WHERE id = ?
+DB --> Depot : paiement mis à jour
+Depot --> ServiceRemboursement : paiement
+deactivate Depot
+
+ServiceRemboursement -> Redis : publish("refund.processed", {remboursementId, utilisateurId, montant})
+activate Redis
+Redis --> ServiceRemboursement : OK
+deactivate Redis
+
+ServiceRemboursement --> ControleurRemboursement : remboursement
+deactivate ServiceRemboursement
+
+ControleurRemboursement --> Gateway : 201 Created\n{remboursementId, montant: 50000, statut: "REUSSI"}
+deactivate ControleurRemboursement
+
+Gateway --> Client : 201 Created\n{refund: true, amount: 50000 XOF, delay: "3-5 jours"}
+deactivate Gateway
+
+note right of Stripe
+  Délais Stripe:
+
+  Paiement:
+  - Autorisation: instantanée
+  - Capture: instantanée
+  - Disponibilité fonds merchant: 2-7 jours
+
+  Remboursement:
+  - Initiation: instantanée
+  - Traitement Stripe: 5-10 jours
+  - Apparition compte client: 3-5 jours
+    (selon banque)
+
+  Mobile Money (Orange, MTN):
+  - Crédit: immédiat
+  - Remboursement: 1-2 jours
+end note
+
+@enduml

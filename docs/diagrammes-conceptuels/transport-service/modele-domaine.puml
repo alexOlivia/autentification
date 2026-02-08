@@ -1,0 +1,574 @@
+@startuml Transport Service - Modèle de Domaine
+
+title Transport Service - Modèle de Domaine Conceptuel
+
+' Styles
+skinparam class {
+    BackgroundColor LightSteelBlue
+    BorderColor DarkBlue
+    ArrowColor DarkBlue
+}
+
+package "Domaine Transport" {
+
+    ' ========== ENTITÉS ==========
+
+    class Vehicule <<entité>> {
+        + id: string
+        + commercantId: string
+        + typeVehicule: TypeVehicule
+        + immatriculation: string
+        + marque: string
+        + modele: string
+        + compagnie: string
+        + capaciteTotale: number
+        + annee: number
+        + equipements: string[]
+        + estActif: boolean
+        + urlPhoto: string
+        + dateCreation: Date
+    }
+
+    class Ligne <<entité>> {
+        + id: string
+        + commercantId: string
+        + numero: string
+        + nom: string
+        + typeTransport: TypeVehicule
+        + description: string
+        + tempsTrajetMoyen: number
+        + estActive: boolean
+        + dateCreation: Date
+    }
+
+    class Arret <<entité>> {
+        + id: string
+        + ligneId: string
+        + nom: string
+        + adresse: string
+        + ville: string
+        + latitude: number
+        + longitude: number
+        + ordreSequence: number
+        + estTerminus: boolean
+    }
+
+    class Trajet <<entité>> {
+        + id: string
+        + ligneId: string
+        + vehiculeId: string
+        + arretDepartId: string
+        + arretArriveeId: string
+        + dateDepart: Date
+        + heureDepart: string
+        + heureArriveeEstimee: string
+        + dureeMinutes: number
+        + distanceKm: number
+        + statut: StatutTrajet
+        + placesDisponibles: number
+        + dateCreation: Date
+    }
+
+    class Place <<entité>> {
+        + id: string
+        + vehiculeId: string
+        + numero: string
+        + classe: ClassePlace
+        + typeSiege: TypeSiege
+        + position: PositionPlace
+        + prixBase: number
+        + estDisponible: boolean
+    }
+
+    class Tarification <<entité>> {
+        + id: string
+        + ligneId: string
+        + arretDepartId: string
+        + arretArriveeId: string
+        + classe: ClassePlace
+        + prixBase: number
+        + devise: string
+        + estActif: boolean
+        + dateDebutValidite: Date
+        + dateFinValidite: Date
+    }
+
+    class Billet <<entité>> {
+        + id: string
+        + trajetId: string
+        + placeId: string
+        + clientId: string
+        + numeroBillet: string
+        + nomPassager: string
+        + telephonePassager: string
+        + typeDocument: TypeDocument
+        + numeroDocument: string
+        + prixPaye: number
+        + devise: string
+        + statut: StatutBillet
+        + codeQR: string
+        + dateEmission: Date
+        + dateValidation: Date
+    }
+
+    class Chauffeur <<entité>> {
+        + id: string
+        + commercantId: string
+        + prenom: string
+        + nom: string
+        + telephone: string
+        + numeroPermis: string
+        + dateExpirationPermis: Date
+        + evaluation: number
+        + nombreVoyages: number
+        + estDisponible: boolean
+        + urlPhoto: string
+        + dateCreation: Date
+    }
+
+    class CourseVTC <<entité>> {
+        + id: string
+        + vehiculeId: string
+        + chauffeurId: string
+        + clientId: string
+        + adresseDepart: string
+        + latitudeDepart: number
+        + longitudeDepart: number
+        + adresseArrivee: string
+        + latitudeArrivee: number
+        + longitudeArrivee: number
+        + distanceEstimeeKm: number
+        + distanceReelleKm: number
+        + prixEstime: number
+        + prixFinal: number
+        + devise: string
+        + statut: StatutCourse
+        + heureDemandee: Date
+        + heurePriseEnCharge: Date
+        + heureArrivee: Date
+        + noteClient: number
+        + noteChauffeur: number
+        + commentaire: string
+    }
+
+    ' ========== ÉNUMÉRATIONS ==========
+
+    enum TypeVehicule {
+        BUS
+        MINIBUS
+        TRAIN
+        AVION
+        METRO
+        VTC
+        TAXI
+        BATEAU
+    }
+
+    enum ClassePlace {
+        ECONOMIQUE
+        CONFORT
+        BUSINESS
+        PREMIERE
+        VIP
+    }
+
+    enum TypeSiege {
+        STANDARD
+        COULOIR
+        FENETRE
+        INCLINABLE
+        COUCHETTE
+    }
+
+    enum PositionPlace {
+        AVANT
+        MILIEU
+        ARRIERE
+        SUPERIEUR
+        INFERIEUR
+    }
+
+    enum StatutTrajet {
+        PROGRAMME
+        EMBARQUEMENT
+        EN_COURS
+        TERMINE
+        ANNULE
+        RETARDE
+    }
+
+    enum StatutBillet {
+        RESERVE
+        PAYE
+        VALIDE
+        UTILISE
+        ANNULE
+        EXPIRE
+        REMBOURSE
+    }
+
+    enum TypeDocument {
+        CNI
+        PASSEPORT
+        PERMIS_CONDUIRE
+        CARTE_RESIDENT
+    }
+
+    enum StatutCourse {
+        DEMANDEE
+        ACCEPTEE
+        CHAUFFEUR_EN_ROUTE
+        ARRIVEE_DEPART
+        EN_COURS
+        TERMINEE
+        ANNULEE
+    }
+}
+
+' ========== RELATIONS ==========
+
+Vehicule "1" -- "1" TypeVehicule : est de type >
+Vehicule "1" *-- "*" Place : contient >
+Vehicule "1" -- "*" Trajet : effectue >
+Vehicule "1" -- "*" CourseVTC : utilisé pour >
+
+Ligne "1" -- "1" TypeVehicule : utilise type >
+Ligne "1" *-- "2..*" Arret : dessert >
+Ligne "1" -- "*" Trajet : programme >
+Ligne "1" *-- "*" Tarification : définit >
+
+Trajet "1" -- "1" StatutTrajet : a un statut >
+Trajet "1" -- "*" Billet : génère >
+Trajet "*" --> "1" Arret : départ de >
+Trajet "*" --> "1" Arret : arrive à >
+Trajet "*" --> "1" Ligne : suit >
+Trajet "*" --> "1" Vehicule : utilise >
+
+Place "1" -- "1" ClassePlace : appartient à >
+Place "1" -- "1" TypeSiege : est de type >
+Place "1" -- "1" PositionPlace : est en position >
+Place "1" -- "*" Billet : réservée par >
+Place "*" --> "1" Vehicule : se trouve dans >
+
+Billet "1" -- "1" StatutBillet : a un statut >
+Billet "1" -- "1" TypeDocument : document identité >
+Billet "*" --> "1" Trajet : pour >
+Billet "*" --> "1" Place : occupe >
+
+Tarification "*" --> "1" Ligne : pour ligne >
+Tarification "*" --> "1" Arret : départ de >
+Tarification "*" --> "1" Arret : arrive à >
+Tarification "1" -- "1" ClassePlace : selon classe >
+
+Chauffeur "1" -- "*" CourseVTC : conduit >
+
+CourseVTC "1" -- "1" StatutCourse : a un statut >
+CourseVTC "*" --> "1" Vehicule : utilise >
+CourseVTC "*" --> "1" Chauffeur : conduit par >
+
+' ========== NOTES MÉTIER ==========
+
+note right of Vehicule
+  **Véhicule de transport**
+
+  **Types contexte africain:**
+
+  - **BUS:** Transport interurbain (50-70 places)
+    Ex: Dakar-Saint-Louis, Abidjan-Yamoussoukro
+
+  - **MINIBUS:** Transport urbain/semi-urbain (15-30 places)
+    Ex: Sotrama, Car rapide, Gbaka, Wôrô-wôrô
+
+  - **TRAIN:** Grandes lignes ferroviaires
+    Ex: TER Dakar-Diamniadio, Abidjan-Ouagadougou
+
+  - **AVION:** Vols domestiques
+    Ex: Dakar-Ziguinchor, Lagos-Abuja
+
+  - **METRO:** Transport urbain rapide
+    Ex: Abidjan (en développement)
+
+  - **VTC:** Course privée à la demande
+    Ex: Yango, Heetch, Gozem
+
+  - **TAXI:** Taxi traditionnel collectif
+    Ex: 7 places, Dakkar Dem Dikk
+
+  - **BATEAU:** Traversées fluviales/maritimes
+    Ex: Dakar-Gorée, Ziguinchor-Casamance
+
+  **Équipements:**
+  - Climatisation (valeur ajoutée +30%)
+  - WiFi, USB charging
+  - TV/audio (longs trajets)
+  - Toilettes (bus longue distance)
+end note
+
+note right of Ligne
+  **Ligne de transport**
+
+  Représente un itinéraire fixe avec
+  plusieurs arrêts définis.
+
+  **Exemples:**
+  - Ligne A: Dakar-Saint-Louis (7 arrêts, 270km)
+  - Ligne 12: Plateau-Yopougon (15 arrêts urbains)
+  - Ligne TER: Dakar-Aéroport (5 stations)
+
+  **Code ligne:**
+  - Bus: B1, B2, etc.
+  - Train: T1, TER
+  - Metro: M1, M2
+
+  Une ligne possède:
+  - Au moins 2 arrêts (départ/arrivée)
+  - Plusieurs trajets quotidiens
+  - Grille tarifaire par segment
+end note
+
+note bottom of Arret
+  **Arrêt/Gare/Station**
+
+  Point d'embarquement/débarquement
+  sur une ligne de transport.
+
+  **Informations géolocalisées:**
+  - Adresse textuelle (souvent approximative)
+  - Coordonnées GPS (latitude/longitude)
+  - Ville/quartier
+
+  **Ordre séquence:**
+  Définit position dans l'itinéraire
+  (1 = départ, dernier = terminus)
+
+  **Contexte africain:**
+  - Arrêts informels fréquents
+  - Adresses sans numéro de rue
+  - Repères locaux (marché, mosquée, rond-point)
+
+  **Terminus:**
+  Arrêt final où le véhicule fait demi-tour
+  ou termine sa course.
+end note
+
+note right of Trajet
+  **Trajet/Course programmé(e)**
+
+  Instance concrète d'un déplacement
+  sur une ligne à une date/heure donnée.
+
+  **Caractéristiques:**
+  - Date et heure de départ
+  - Heure arrivée estimée (trafic imprévisible)
+  - Durée théorique en minutes
+  - Distance en kilomètres
+  - Places disponibles en temps réel
+
+  **États:**
+  - PROGRAMME: trajet créé, vente billets ouverte
+  - EMBARQUEMENT: passagers montent (15min avant)
+  - EN_COURS: véhicule en route
+  - TERMINE: arrivé à destination
+  - ANNULE: supprimé (panne, grève)
+  - RETARDE: retard signalé
+
+  **Contexte africain:**
+  - Retards fréquents (trafic, barrages, état routes)
+  - Départ souvent quand véhicule plein
+  - Flexibilité horaire nécessaire
+end note
+
+note bottom of Place
+  **Place/Siège dans véhicule**
+
+  **Numérotation:**
+  - Bus: 1-70 (places numérotées)
+  - Train: Wagon + numéro (W1-12, W2-08)
+  - Avion: Rangée + Lettre (12A, 15F)
+  - Minibus: souvent non numéroté
+
+  **Classes:**
+  - ECONOMIQUE: siège standard
+  - CONFORT: siège large, inclinable (+30%)
+  - BUSINESS: espace jambes, service (+50%)
+  - PREMIERE: sièges luxe, repas (+100%)
+  - VIP: compartiment privé (+150%)
+
+  **Types siège:**
+  - STANDARD: siège basique
+  - COULOIR: accès allée (pratique)
+  - FENETRE: vue extérieure (prisé)
+  - INCLINABLE: dossier réglable (confort)
+  - COUCHETTE: lit (trains nuit)
+
+  **Position:**
+  - AVANT: proche chauffeur (plus cher)
+  - MILIEU: équilibré
+  - ARRIERE: moins cher, moins confortable
+  - SUPERIEUR/INFERIEUR: bus/trains à étages
+end note
+
+note right of Billet
+  **Billet de transport**
+
+  **Numéro unique:**
+  Format: {TYPE}{DATE}{SEQUENCE}
+  Ex: BUS20250204-0123, TER20250204-045
+
+  **Informations passager:**
+  - Nom complet (nom famille + prénom)
+  - Téléphone (contact/rappel)
+  - Pièce identité (CNI, passeport)
+  - Numéro document (contrôle embarquement)
+
+  **QR Code:**
+  Contient: {billetId, trajetId, placeId, passager}
+  Scanné lors embarquement pour validation.
+
+  **États:**
+  - RESERVE: réservé, non payé (24h max)
+  - PAYE: payé, confirmé, peut être validé
+  - VALIDE: scanné, embarquement OK
+  - UTILISE: trajet effectué
+  - ANNULE: annulé par client (remboursement partiel)
+  - EXPIRE: réservation non payée après délai
+  - REMBOURSE: remboursé suite annulation trajet
+
+  **Règles remboursement:**
+  - >24h avant départ: 90%
+  - 12-24h: 50%
+  - <12h: 20%
+  - Trajet annulé par compagnie: 100%
+
+  **Contexte africain:**
+  - Paiement Mobile Money (Orange, MTN, Moov)
+  - Billets souvent achetés en gare (pas en ligne)
+  - QR code imprimé ou sur téléphone
+end note
+
+note bottom of Tarification
+  **Grille tarifaire flexible**
+
+  **Principe:**
+  Tarif dépend de:
+  - Distance (arrêt départ → arrêt arrivée)
+  - Classe de confort
+  - Période (haute/basse saison)
+
+  **Exemple ligne Dakar-Saint-Louis:**
+  - Dakar → Thiès (70km): 2500 XOF économique
+  - Dakar → Louga (200km): 5000 XOF économique
+  - Dakar → Saint-Louis (270km): 7000 XOF économique
+
+  Classe confort: × 1.3
+  Classe business: × 1.5
+
+  **Devises supportées:**
+  - XOF (Franc CFA Ouest): Sénégal, Côte d'Ivoire, Mali
+  - XAF (Franc CFA Central): Cameroun, Gabon
+  - NGN (Naira): Nigeria
+  - KES (Shilling): Kenya
+  - EUR, USD (touristes)
+
+  **Validité temporelle:**
+  - Tarifs saisonniers (haute/basse saison)
+  - Promotions périodiques
+  - Ajustements prix carburant
+end note
+
+note left of Chauffeur
+  **Chauffeur VTC/Taxi**
+
+  Conducteur pour courses à la demande
+  (modèle Uber, Bolt, Yango, Heetch, Gozem)
+
+  **Informations:**
+  - Nom complet, photo profil
+  - Téléphone (contact client)
+  - Permis conduire + numéro
+  - Date expiration permis
+
+  **Note moyenne:**
+  Calculée sur base évaluations clients
+  (1-5 étoiles)
+
+  **Statut disponibilité:**
+  - Disponible: peut accepter courses
+  - En course: occupe
+  - Hors ligne: inactif
+
+  **Contexte africain:**
+  - Permis de conduire local obligatoire
+  - Assurance véhicule vérifiée
+  - Connaissance terrain (routes non cartographiées)
+  - Multilingue (français + langues locales)
+end note
+
+note right of CourseVTC
+  **Course VTC à la demande**
+
+  **Fonctionnement temps réel:**
+
+  1. Client demande course (géolocalisation)
+  2. Système trouve chauffeur proche
+  3. Chauffeur accepte/refuse (30s)
+  4. Trajet calculé, prix estimé
+  5. Chauffeur en route vers client
+  6. Prise en charge passager
+  7. Course en cours (suivi GPS)
+  8. Arrivée destination
+  9. Paiement + évaluations mutuelles
+
+  **Tarification dynamique:**
+  - Prix base au km (ex: 200 XOF/km)
+  - Prix minimum (ex: 1000 XOF)
+  - Supplément heure pointe (× 1.5)
+  - Supplément nuit 22h-6h (× 1.3)
+  - Péages routiers ajoutés
+  - Temps d'attente (100 XOF/min)
+
+  **Distance:**
+  - Estimée: calculée avant départ (Haversine)
+  - Réelle: GPS tracking pendant course
+  - Facturation sur distance réelle
+
+  **États:**
+  - DEMANDEE: client attend matching
+  - ACCEPTEE: chauffeur assigné
+  - CHAUFFEUR_EN_ROUTE: chauffeur vient
+  - ARRIVEE_DEPART: chauffeur attend client
+  - EN_COURS: course en cours
+  - TERMINEE: arrivée, paiement effectué
+  - ANNULEE: annulée (frais si tardif)
+
+  **Évaluations:**
+  - Client note chauffeur (1-5 étoiles)
+  - Chauffeur note client (comportement)
+  - Commentaire optionnel
+
+  **Contexte africain:**
+  - Routes non cartographiées (GPS imprécis)
+  - Trafic imprévisible (embouteillages)
+  - Négociation prix parfois (hors app)
+  - Paiement cash ou Mobile Money
+end note
+
+note as N1
+  **Règles de disponibilité**
+
+  **Place disponible si:**
+  - Place.estDisponible = true
+  - Aucun billet PAYE/VALIDE pour cette place
+  - Trajet pas encore TERMINE/ANNULE
+
+  **Trajet réservable si:**
+  - Statut = PROGRAMME ou EMBARQUEMENT
+  - Places disponibles > 0
+  - Date départ > maintenant + délai minimum (ex: 30min)
+
+  **Overbooking:**
+  Certaines compagnies autorisent 5-10% overbooking
+  (anticipation no-shows) mais risque refus embarquement.
+end note
+
+@enduml
