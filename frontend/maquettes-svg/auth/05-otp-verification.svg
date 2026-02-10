@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; fill: #1E293B; }
+      .body { font-family: Arial, sans-serif; font-size: 14px; fill: #64748B; }
+      .btn-text { font-family: Arial, sans-serif; font-size: 16px; font-weight: 600; fill: #FFF; }
+      .link { font-family: Arial, sans-serif; font-size: 14px; fill: #2563EB; font-weight: 600; }
+      .link-gray { font-family: Arial, sans-serif; font-size: 14px; fill: #64748B; }
+      .otp-digit { font-family: Arial, sans-serif; font-size: 28px; font-weight: bold; fill: #1E293B; }
+      .timer { font-family: Arial, sans-serif; font-size: 14px; fill: #2563EB; font-weight: 600; }
+      .expire-text { font-family: Arial, sans-serif; font-size: 12px; fill: #B45309; font-weight: 500; }
+      .attempts { font-family: Arial, sans-serif; font-size: 12px; fill: #94A3B8; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="844" fill="#FFF"/>
+
+  <!-- Back button -->
+  <text x="20" y="52" font-family="Arial, sans-serif" font-size="22" fill="#1E293B">‹</text>
+
+  <!-- SMS Icon circle -->
+  <circle cx="195" cy="170" r="55" fill="#DCFCE7"/>
+  <text x="195" y="185" font-family="Arial, sans-serif" font-size="40" text-anchor="middle" fill="#10B981">💬</text>
+
+  <!-- Title -->
+  <text x="195" y="270" class="title" text-anchor="middle">Vérification</text>
+
+  <!-- Description -->
+  <text x="195" y="300" class="body" text-anchor="middle">Entrez le code à 6 chiffres envoyé à</text>
+  <text x="195" y="320" class="body" text-anchor="middle">+221 77 ****67</text>
+
+  <!-- Expiration badge -->
+  <rect x="103" y="340" width="184" height="28" rx="8" fill="#FEF3C7"/>
+  <text x="120" y="359" font-family="Arial, sans-serif" font-size="14" fill="#F59E0B">⏱</text>
+  <text x="137" y="359" class="expire-text">Code valide pendant 5 minutes</text>
+
+  <!-- OTP Inputs -->
+  <rect x="22" y="400" width="50" height="56" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="47" y="436" class="otp-digit" text-anchor="middle">4</text>
+
+  <rect x="80" y="400" width="50" height="56" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="105" y="436" class="otp-digit" text-anchor="middle">7</text>
+
+  <rect x="138" y="400" width="50" height="56" rx="12" fill="#F8FAFC" stroke="#2563EB" stroke-width="2"/>
+  <text x="163" y="436" class="otp-digit" text-anchor="middle">_</text>
+
+  <rect x="196" y="400" width="50" height="56" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <rect x="254" y="400" width="50" height="56" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <rect x="312" y="400" width="50" height="56" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- Attempts -->
+  <text x="195" y="490" class="attempts" text-anchor="middle">Tentatives restantes : 3/3</text>
+
+  <!-- Resend -->
+  <text x="125" y="520" class="link-gray">Vous n'avez pas reçu le code ? </text>
+  <text x="315" y="520" class="timer">45s</text>
+
+  <!-- Verify button -->
+  <rect x="24" y="740" width="342" height="56" rx="12" fill="#2563EB"/>
+  <text x="195" y="774" class="btn-text" text-anchor="middle">Vérifier</text>
+</svg>

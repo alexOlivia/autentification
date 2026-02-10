@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1E293B; }
+      .section { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #1E293B; }
+      .stat-val { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; }
+      .stat-label { font-family: Arial, sans-serif; font-size: 11px; fill: #64748B; }
+      .card-name { font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #1E293B; }
+      .card-info { font-family: Arial, sans-serif; font-size: 12px; fill: #64748B; }
+      .card-status { font-family: Arial, sans-serif; font-size: 11px; font-weight: 600; }
+      .chip-active { font-family: Arial, sans-serif; font-size: 12px; fill: #FFF; font-weight: 600; }
+      .chip-inactive { font-family: Arial, sans-serif; font-size: 12px; fill: #64748B; }
+      .date-active { font-family: Arial, sans-serif; font-size: 12px; fill: #FFF; font-weight: 600; }
+      .date-inactive { font-family: Arial, sans-serif; font-size: 12px; fill: #64748B; }
+      .date-day { font-family: Arial, sans-serif; font-size: 10px; fill: #94A3B8; }
+      .date-day-active { font-family: Arial, sans-serif; font-size: 10px; fill: rgba(255,255,255,0.8); }
+      .group-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: 600; fill: #94A3B8; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="844" fill="#F8FAFC"/>
+
+  <!-- Header -->
+  <rect width="390" height="90" fill="#FFF"/>
+  <rect x="16" y="40" width="40" height="40" rx="12" fill="#F1F5F9"/>
+  <text x="36" y="66" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="#1E293B">‹</text>
+  <text x="195" y="66" class="title" text-anchor="middle">Réservations</text>
+  <rect x="334" y="40" width="40" height="40" rx="12" fill="#F1F5F9"/>
+  <text x="354" y="66" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">📊</text>
+
+  <!-- Date selector -->
+  <rect width="390" height="80" y="90" fill="#FFF"/>
+  <rect x="16" y="100" width="48" height="56" rx="10" fill="#F1F5F9"/>
+  <text x="40" y="118" class="date-day" text-anchor="middle">Lun</text>
+  <text x="40" y="140" class="date-inactive" text-anchor="middle">13</text>
+
+  <rect x="72" y="100" width="48" height="56" rx="10" fill="#F1F5F9"/>
+  <text x="96" y="118" class="date-day" text-anchor="middle">Mar</text>
+  <text x="96" y="140" class="date-inactive" text-anchor="middle">14</text>
+
+  <rect x="128" y="100" width="48" height="56" rx="10" fill="#2563EB"/>
+  <text x="152" y="118" class="date-day-active" text-anchor="middle">Mer</text>
+  <text x="152" y="140" class="date-active" text-anchor="middle">15</text>
+
+  <rect x="184" y="100" width="48" height="56" rx="10" fill="#F1F5F9"/>
+  <text x="208" y="118" class="date-day" text-anchor="middle">Jeu</text>
+  <text x="208" y="140" class="date-inactive" text-anchor="middle">16</text>
+
+  <rect x="240" y="100" width="48" height="56" rx="10" fill="#F1F5F9"/>
+  <text x="264" y="118" class="date-day" text-anchor="middle">Ven</text>
+  <text x="264" y="140" class="date-inactive" text-anchor="middle">17</text>
+
+  <rect x="296" y="100" width="48" height="56" rx="10" fill="#F1F5F9"/>
+  <text x="320" y="118" class="date-day" text-anchor="middle">Sam</text>
+  <text x="320" y="140" class="date-inactive" text-anchor="middle">18</text>
+
+  <!-- Status filters -->
+  <rect x="16" y="174" width="56" height="30" rx="15" fill="#2563EB"/>
+  <text x="44" y="194" class="chip-active" text-anchor="middle">Tout</text>
+  <rect x="80" y="174" width="82" height="30" rx="15" fill="#DCFCE7"/>
+  <text x="121" y="194" font-family="Arial, sans-serif" font-size="12" fill="#10B981" text-anchor="middle">Confirmées</text>
+  <rect x="170" y="174" width="82" height="30" rx="15" fill="#FEF3C7"/>
+  <text x="211" y="194" font-family="Arial, sans-serif" font-size="12" fill="#F59E0B" text-anchor="middle">En attente</text>
+  <rect x="260" y="174" width="76" height="30" rx="15" fill="#FEE2E2"/>
+  <text x="298" y="194" font-family="Arial, sans-serif" font-size="12" fill="#EF4444" text-anchor="middle">Annulées</text>
+
+  <!-- Stats -->
+  <rect x="16" y="216" width="110" height="50" rx="10" fill="#FFF"/>
+  <text x="71" y="238" class="stat-val" fill="#2563EB" text-anchor="middle">8</text>
+  <text x="71" y="254" class="stat-label" text-anchor="middle">Total</text>
+  <rect x="140" y="216" width="110" height="50" rx="10" fill="#FFF"/>
+  <text x="195" y="238" class="stat-val" fill="#10B981" text-anchor="middle">5</text>
+  <text x="195" y="254" class="stat-label" text-anchor="middle">Confirmées</text>
+  <rect x="264" y="216" width="110" height="50" rx="10" fill="#FFF"/>
+  <text x="319" y="238" class="stat-val" fill="#F59E0B" text-anchor="middle">3</text>
+  <text x="319" y="254" class="stat-label" text-anchor="middle">En attente</text>
+
+  <!-- Group: Déjeuner -->
+  <text x="24" y="296" class="group-title">🕐 DÉJEUNER (5)</text>
+
+  <!-- Reservation 1 -->
+  <rect x="16" y="306" width="358" height="74" rx="12" fill="#FFF"/>
+  <rect x="28" y="318" width="44" height="44" rx="10" fill="rgba(37,99,235,0.1)"/>
+  <text x="50" y="346" font-family="Arial, sans-serif" font-size="18" text-anchor="middle">👤</text>
+  <text x="82" y="336" class="card-name">Aminata Sow</text>
+  <text x="82" y="354" class="card-info">12:00 • Table VIP • 4 pers.</text>
+  <rect x="280" y="326" width="84" height="24" rx="6" fill="#DCFCE7"/>
+  <text x="322" y="343" class="card-status" fill="#10B981" text-anchor="middle">✓ Confirmée</text>
+
+  <!-- Reservation 2 -->
+  <rect x="16" y="390" width="358" height="74" rx="12" fill="#FFF"/>
+  <rect x="28" y="402" width="44" height="44" rx="10" fill="rgba(245,158,11,0.1)"/>
+  <text x="50" y="430" font-family="Arial, sans-serif" font-size="18" text-anchor="middle">👤</text>
+  <text x="82" y="420" class="card-name">Moussa Ba</text>
+  <text x="82" y="438" class="card-info">12:30 • Table T2 • 2 pers.</text>
+  <rect x="280" y="410" width="84" height="24" rx="6" fill="#FEF3C7"/>
+  <text x="322" y="427" class="card-status" fill="#F59E0B" text-anchor="middle">⏳ En attente</text>
+
+  <!-- Reservation 3 -->
+  <rect x="16" y="474" width="358" height="74" rx="12" fill="#FFF"/>
+  <rect x="28" y="486" width="44" height="44" rx="10" fill="rgba(16,185,129,0.1)"/>
+  <text x="50" y="514" font-family="Arial, sans-serif" font-size="18" text-anchor="middle">👤</text>
+  <text x="82" y="504" class="card-name">Ibrahima Ndiaye</text>
+  <text x="82" y="522" class="card-info">13:00 • Table T4 • 2 pers.</text>
+  <rect x="280" y="494" width="84" height="24" rx="6" fill="#DCFCE7"/>
+  <text x="322" y="511" class="card-status" fill="#10B981" text-anchor="middle">✓ Confirmée</text>
+
+  <!-- Group: Dîner -->
+  <text x="24" y="580" class="group-title">🌙 DÎNER (3)</text>
+
+  <!-- Reservation 4 -->
+  <rect x="16" y="590" width="358" height="74" rx="12" fill="#FFF"/>
+  <rect x="28" y="602" width="44" height="44" rx="10" fill="rgba(139,92,246,0.1)"/>
+  <text x="50" y="630" font-family="Arial, sans-serif" font-size="18" text-anchor="middle">👤</text>
+  <text x="82" y="620" class="card-name">Fatou Diop</text>
+  <text x="82" y="638" class="card-info">19:00 • Table T3 • 6 pers.</text>
+  <rect x="280" y="610" width="84" height="24" rx="6" fill="#DCFCE7"/>
+  <text x="322" y="627" class="card-status" fill="#10B981" text-anchor="middle">✓ Confirmée</text>
+
+  <!-- Reservation 5 -->
+  <rect x="16" y="674" width="358" height="74" rx="12" fill="#FFF"/>
+  <rect x="28" y="686" width="44" height="44" rx="10" fill="rgba(245,158,11,0.1)"/>
+  <text x="50" y="714" font-family="Arial, sans-serif" font-size="18" text-anchor="middle">👤</text>
+  <text x="82" y="704" class="card-name">Ousmane Fall</text>
+  <text x="82" y="722" class="card-info">20:00 • Table VIP • 8 pers.</text>
+  <rect x="280" y="694" width="84" height="24" rx="6" fill="#FEF3C7"/>
+  <text x="322" y="711" class="card-status" fill="#F59E0B" text-anchor="middle">⏳ En attente</text>
+</svg>

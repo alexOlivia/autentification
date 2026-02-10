@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 1100" width="390" height="1100">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 28px; font-weight: bold; fill: #1E293B; }
+      .subtitle { font-family: Arial, sans-serif; font-size: 16px; fill: #64748B; }
+      .label { font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #374151; }
+      .hint { font-family: Arial, sans-serif; font-size: 13px; fill: #94A3B8; }
+      .btn-text { font-family: Arial, sans-serif; font-size: 16px; font-weight: 600; fill: #FFF; }
+      .link { font-family: Arial, sans-serif; font-size: 14px; fill: #2563EB; font-weight: 600; }
+      .link-gray { font-family: Arial, sans-serif; font-size: 14px; fill: #64748B; }
+      .small { font-family: Arial, sans-serif; font-size: 12px; fill: #94A3B8; }
+      .small-green { font-family: Arial, sans-serif; font-size: 12px; fill: #10B981; }
+      .badge { font-family: Arial, sans-serif; font-size: 11px; fill: #94A3B8; font-weight: 500; }
+      .card-title { font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #374151; }
+      .card-desc { font-family: Arial, sans-serif; font-size: 12px; fill: #94A3B8; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="1100" fill="#FFF"/>
+
+  <!-- AppBar -->
+  <text x="20" y="52" font-family="Arial, sans-serif" font-size="22" fill="#1E293B">‹</text>
+
+  <!-- Title -->
+  <text x="24" y="94" class="title">Créer un compte</text>
+  <text x="24" y="118" class="subtitle">Rejoignez PING et commencez à réserver</text>
+
+  <!-- Account type -->
+  <text x="24" y="156" class="label">Type de compte</text>
+
+  <!-- Client card (selected) -->
+  <rect x="24" y="168" width="163" height="100" rx="12" fill="#EFF6FF" stroke="#2563EB" stroke-width="2"/>
+  <rect x="82" y="180" width="48" height="48" rx="12" fill="#2563EB"/>
+  <text x="106" y="211" font-family="Arial, sans-serif" font-size="22" fill="#FFF" text-anchor="middle">👤</text>
+  <text x="106" y="248" class="card-title" text-anchor="middle" fill="#2563EB">Client</text>
+  <text x="106" y="262" class="card-desc" text-anchor="middle">Réservez des services</text>
+
+  <!-- Commerçant card -->
+  <rect x="203" y="168" width="163" height="100" rx="12" fill="#FFF" stroke="#E2E8F0" stroke-width="1"/>
+  <rect x="261" y="180" width="48" height="48" rx="12" fill="#F1F5F9"/>
+  <text x="285" y="211" font-family="Arial, sans-serif" font-size="22" fill="#64748B" text-anchor="middle">🏪</text>
+  <text x="285" y="248" class="card-title" text-anchor="middle">Commerçant</text>
+  <text x="285" y="262" class="card-desc" text-anchor="middle">Proposez vos services</text>
+
+  <!-- Nom + Prénom -->
+  <text x="24" y="296" class="label">Nom</text>
+  <rect x="24" y="306" width="163" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="40" y="336" class="hint">Diallo</text>
+
+  <text x="203" y="296" class="label">Prénom</text>
+  <rect x="203" y="306" width="163" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="219" y="336" class="hint">Amadou</text>
+
+  <!-- Email (optional) -->
+  <text x="24" y="382" class="label">Email</text>
+  <rect x="55" y="369" width="62" height="18" rx="4" fill="#F1F5F9"/>
+  <text x="86" y="382" class="badge" text-anchor="middle">Optionnel</text>
+  <rect x="24" y="392" width="342" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="52" y="420" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8">✉️</text>
+  <text x="72" y="422" class="hint">exemple@email.com</text>
+
+  <!-- Téléphone -->
+  <text x="24" y="468" class="label">Téléphone *</text>
+  <rect x="24" y="478" width="342" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <rect x="36" y="490" width="52" height="24" rx="4" fill="#F1F5F9"/>
+  <rect x="42" y="496" width="24" height="12" rx="2" fill="#00853F"/>
+  <text x="66" y="507" font-family="Arial, sans-serif" font-size="12" fill="#374151">▼</text>
+  <text x="100" y="508" class="hint">+221 77 123 45 67</text>
+
+  <!-- Date de naissance -->
+  <text x="24" y="554" class="label">Date de naissance</text>
+  <rect x="24" y="564" width="342" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="50" y="594" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8">📅</text>
+  <text x="72" y="594" class="hint">JJ/MM/AAAA</text>
+  <text x="346" y="594" font-family="Arial, sans-serif" font-size="18" fill="#94A3B8" text-anchor="end">▾</text>
+
+  <!-- Mot de passe -->
+  <text x="24" y="640" class="label">Mot de passe</text>
+  <rect x="24" y="650" width="342" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="50" y="680" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8">🔒</text>
+  <text x="72" y="680" class="hint">Min. 8 caractères</text>
+  <text x="346" y="680" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8" text-anchor="end">👁️</text>
+
+  <!-- Password strength -->
+  <circle cx="34" cy="718" r="6" fill="none" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="48" y="722" class="small">Min. 8 caractères</text>
+  <circle cx="34" cy="736" r="6" fill="none" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="48" y="740" class="small">1 majuscule</text>
+  <circle cx="34" cy="754" r="6" fill="none" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="48" y="758" class="small">1 minuscule</text>
+  <circle cx="34" cy="772" r="6" fill="none" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="48" y="776" class="small">1 chiffre</text>
+  <circle cx="34" cy="790" r="6" fill="none" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="48" y="794" class="small">1 caractère spécial</text>
+
+  <!-- Confirmer MDP -->
+  <text x="24" y="828" class="label">Confirmer le mot de passe</text>
+  <rect x="24" y="838" width="342" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="50" y="868" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8">🔒</text>
+  <text x="72" y="868" class="hint">Confirmer</text>
+
+  <!-- Terms -->
+  <rect x="24" y="908" width="18" height="18" rx="4" fill="none" stroke="#E2E8F0" stroke-width="1.5"/>
+  <text x="50" y="921" class="link-gray" font-size="13">J'accepte les </text>
+  <text x="120" y="921" class="link" font-size="13">Conditions d'utilisation</text>
+  <text x="50" y="938" class="link-gray" font-size="13">et la </text>
+  <text x="82" y="938" class="link" font-size="13">Politique de confidentialité</text>
+
+  <!-- Button -->
+  <rect x="24" y="964" width="342" height="56" rx="12" fill="#CBD5E1"/>
+  <text x="195" y="998" class="btn-text" text-anchor="middle">Créer mon compte</text>
+
+  <!-- Login link -->
+  <text x="136" y="1050" class="link-gray">Déjà un compte ? </text>
+  <text x="261" y="1050" class="link">Se connecter</text>
+</svg>

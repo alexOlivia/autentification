@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 950" width="390" height="950">
+  <defs>
+    <style>
+      .name { font-family: Arial, sans-serif; font-size: 22px; font-weight: bold; fill: #FFF; }
+      .email { font-family: Arial, sans-serif; font-size: 13px; fill: rgba(255,255,255,0.75); }
+      .stat-val { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #FFF; }
+      .stat-label { font-family: Arial, sans-serif; font-size: 11px; fill: rgba(255,255,255,0.75); }
+      .section { font-family: Arial, sans-serif; font-size: 13px; font-weight: 600; fill: #94A3B8; text-transform: uppercase; }
+      .item-title { font-family: Arial, sans-serif; font-size: 15px; font-weight: 500; fill: #1E293B; }
+      .item-desc { font-family: Arial, sans-serif; font-size: 12px; fill: #94A3B8; }
+      .switch-on { fill: #2563EB; }
+      .switch-off { fill: #CBD5E1; }
+      .logout { font-family: Arial, sans-serif; font-size: 15px; font-weight: 600; fill: #EF4444; }
+      .version { font-family: Arial, sans-serif; font-size: 12px; fill: #CBD5E1; }
+    </style>
+    <linearGradient id="profileGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="950" fill="#F8FAFC"/>
+
+  <!-- Profile header gradient -->
+  <rect width="390" height="260" fill="url(#profileGrad)"/>
+  <!-- Back -->
+  <rect x="16" y="44" width="40" height="40" rx="12" fill="rgba(255,255,255,0.15)"/>
+  <text x="36" y="70" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="#FFF">‹</text>
+  <!-- Settings icon -->
+  <rect x="334" y="44" width="40" height="40" rx="12" fill="rgba(255,255,255,0.15)"/>
+  <text x="354" y="70" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#FFF">⚙</text>
+
+  <!-- Avatar -->
+  <circle cx="195" cy="120" r="40" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="195" cy="120" r="36" fill="rgba(255,255,255,0.3)"/>
+  <text x="195" y="130" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#FFF" text-anchor="middle">AD</text>
+  <!-- Edit avatar -->
+  <circle cx="222" cy="148" r="14" fill="#FFF"/>
+  <text x="222" y="153" font-family="Arial, sans-serif" font-size="12" text-anchor="middle">📷</text>
+
+  <text x="195" y="188" class="name" text-anchor="middle">Amadou Diallo</text>
+  <text x="195" y="208" class="email" text-anchor="middle">👤 amadou.diallo@email.com</text>
+  <text x="195" y="226" class="email" text-anchor="middle">📱 +221 77 123 45 67</text>
+
+  <!-- Stats bar -->
+  <rect x="24" y="238" width="342" height="1" fill="rgba(255,255,255,0.2)"/>
+  <text x="75" y="256" class="stat-val" text-anchor="middle">12</text>
+  <text x="75" y="270" class="stat-label" text-anchor="middle">Réservations</text>
+  <text x="195" y="256" class="stat-val" text-anchor="middle">4.8</text>
+  <text x="195" y="270" class="stat-label" text-anchor="middle">Note moyenne</text>
+  <text x="315" y="256" class="stat-val" text-anchor="middle">3</text>
+  <text x="315" y="270" class="stat-label" text-anchor="middle">Favoris</text>
+
+  <!-- Section: Compte -->
+  <text x="24" y="304" class="section">COMPTE</text>
+  <rect x="16" y="312" width="358" height="180" rx="12" fill="#FFF"/>
+  <!-- Item 1 -->
+  <rect x="28" y="322" width="36" height="36" rx="8" fill="rgba(37,99,235,0.1)"/>
+  <text x="46" y="346" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">👤</text>
+  <text x="76" y="344" class="item-title">Informations personnelles</text>
+  <text x="354" y="344" font-family="Arial, sans-serif" font-size="14" fill="#CBD5E1" text-anchor="end">›</text>
+  <line x1="76" y1="364" x2="358" y2="364" stroke="#F1F5F9" stroke-width="1"/>
+  <!-- Item 2 -->
+  <rect x="28" y="372" width="36" height="36" rx="8" fill="rgba(245,158,11,0.1)"/>
+  <text x="46" y="396" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">💳</text>
+  <text x="76" y="394" class="item-title">Moyens de paiement</text>
+  <text x="354" y="394" font-family="Arial, sans-serif" font-size="14" fill="#CBD5E1" text-anchor="end">›</text>
+  <line x1="76" y1="414" x2="358" y2="414" stroke="#F1F5F9" stroke-width="1"/>
+  <!-- Item 3 -->
+  <rect x="28" y="422" width="36" height="36" rx="8" fill="rgba(16,185,129,0.1)"/>
+  <text x="46" y="446" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">📍</text>
+  <text x="76" y="444" class="item-title">Adresses enregistrées</text>
+  <text x="354" y="444" font-family="Arial, sans-serif" font-size="14" fill="#CBD5E1" text-anchor="end">›</text>
+
+  <!-- Section: Notifications -->
+  <text x="24" y="524" class="section">NOTIFICATIONS</text>
+  <rect x="16" y="532" width="358" height="130" rx="12" fill="#FFF"/>
+  <!-- Toggle 1 -->
+  <rect x="28" y="542" width="36" height="36" rx="8" fill="rgba(59,130,246,0.1)"/>
+  <text x="46" y="566" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">🔔</text>
+  <text x="76" y="560" class="item-title">Notifications push</text>
+  <text x="76" y="576" class="item-desc">Réservations et rappels</text>
+  <rect x="320" y="550" width="38" height="22" rx="11" class="switch-on"/>
+  <circle cx="347" cy="561" r="8" fill="#FFF"/>
+  <line x1="76" y1="590" x2="358" y2="590" stroke="#F1F5F9" stroke-width="1"/>
+  <!-- Toggle 2 -->
+  <rect x="28" y="598" width="36" height="36" rx="8" fill="rgba(139,92,246,0.1)"/>
+  <text x="46" y="622" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">📧</text>
+  <text x="76" y="616" class="item-title">Notifications SMS</text>
+  <text x="76" y="632" class="item-desc">Confirmations par SMS</text>
+  <rect x="320" y="606" width="38" height="22" rx="11" class="switch-on"/>
+  <circle cx="347" cy="617" r="8" fill="#FFF"/>
+
+  <!-- Section: Sécurité -->
+  <text x="24" y="694" class="section">SÉCURITÉ</text>
+  <rect x="16" y="702" width="358" height="80" rx="12" fill="#FFF"/>
+  <rect x="28" y="712" width="36" height="36" rx="8" fill="rgba(239,68,68,0.1)"/>
+  <text x="46" y="736" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">🔒</text>
+  <text x="76" y="734" class="item-title">Changer le mot de passe</text>
+  <text x="354" y="734" font-family="Arial, sans-serif" font-size="14" fill="#CBD5E1" text-anchor="end">›</text>
+  <line x1="76" y1="754" x2="358" y2="754" stroke="#F1F5F9" stroke-width="1"/>
+  <rect x="28" y="760" width="36" height="36" rx="8" fill="rgba(37,99,235,0.1)"/>
+  <text x="46" y="784" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">🛡</text>
+  <text x="76" y="778" class="item-title">Double authentification</text>
+  <rect x="320" y="768" width="38" height="22" rx="11" class="switch-off"/>
+  <circle cx="331" cy="779" r="8" fill="#FFF"/>
+
+  <!-- Logout -->
+  <rect x="16" y="810" width="358" height="48" rx="12" fill="#FFF"/>
+  <text x="195" y="840" class="logout" text-anchor="middle">🚪 Se déconnecter</text>
+
+  <!-- Version -->
+  <text x="195" y="886" class="version" text-anchor="middle">PING v1.0.0</text>
+</svg>

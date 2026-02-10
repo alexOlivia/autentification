@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 28px; font-weight: bold; fill: #1E293B; }
+      .subtitle { font-family: Arial, sans-serif; font-size: 16px; fill: #64748B; }
+      .label { font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #374151; }
+      .hint { font-family: Arial, sans-serif; font-size: 14px; fill: #94A3B8; }
+      .btn-text { font-family: Arial, sans-serif; font-size: 16px; font-weight: 600; fill: #FFF; }
+      .link { font-family: Arial, sans-serif; font-size: 14px; fill: #2563EB; font-weight: 600; }
+      .link-gray { font-family: Arial, sans-serif; font-size: 14px; fill: #64748B; }
+      .divider-text { font-family: Arial, sans-serif; font-size: 13px; fill: #94A3B8; }
+      .social-text { font-family: Arial, sans-serif; font-size: 14px; font-weight: 500; fill: #374151; }
+      .check-label { font-family: Arial, sans-serif; font-size: 14px; fill: #64748B; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="844" fill="#FFF"/>
+
+  <!-- Logo -->
+  <rect x="155" y="74" width="80" height="80" rx="20" fill="#2563EB"/>
+  <text x="195" y="128" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="#FFF" text-anchor="middle">P</text>
+
+  <!-- Title -->
+  <text x="195" y="194" class="title" text-anchor="middle">Bon retour !</text>
+  <text x="195" y="218" class="subtitle" text-anchor="middle">Connectez-vous pour continuer</text>
+
+  <!-- Email/Phone label -->
+  <text x="24" y="270" class="label">Email ou Téléphone</text>
+  <!-- Email input -->
+  <rect x="24" y="280" width="342" height="52" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="22" y="298" font-family="Arial, sans-serif" font-size="18" fill="#94A3B8">👤</text>
+  <circle cx="50" cy="306" r="12" fill="none"/>
+  <text x="68" y="312" class="hint">exemple@email.com ou +221 77 123 45 67</text>
+
+  <!-- Password label -->
+  <text x="24" y="358" class="label">Mot de passe</text>
+  <!-- Password input -->
+  <rect x="24" y="368" width="342" height="52" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="22" y="386" font-family="Arial, sans-serif" font-size="18" fill="#94A3B8">🔒</text>
+  <text x="68" y="400" class="hint">••••••••</text>
+  <!-- Eye icon -->
+  <text x="340" y="400" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8" text-anchor="end">👁️</text>
+
+  <!-- Remember + Forgot -->
+  <rect x="24" y="436" width="18" height="18" rx="4" fill="none" stroke="#2563EB" stroke-width="2"/>
+  <text x="48" y="451" class="check-label">Se souvenir</text>
+  <text x="366" y="451" class="link" text-anchor="end">Mot de passe oublié ?</text>
+
+  <!-- Login button -->
+  <rect x="24" y="484" width="342" height="56" rx="12" fill="#2563EB"/>
+  <text x="195" y="518" class="btn-text" text-anchor="middle">Se connecter</text>
+
+  <!-- Divider -->
+  <line x1="24" y1="564" x2="130" y2="564" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="195" y="569" class="divider-text" text-anchor="middle">ou continuer avec</text>
+  <line x1="260" y1="564" x2="366" y2="564" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- Social buttons -->
+  <!-- Google -->
+  <rect x="24" y="588" width="163" height="56" rx="12" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="76" y="621" font-family="Arial, sans-serif" font-size="18" fill="#374151">G</text>
+  <text x="96" y="622" class="social-text">Google</text>
+
+  <!-- Phone -->
+  <rect x="203" y="588" width="163" height="56" rx="12" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="250" y="621" font-family="Arial, sans-serif" font-size="18" fill="#10B981">📱</text>
+  <text x="273" y="622" class="social-text">Téléphone</text>
+
+  <!-- Register link -->
+  <text x="136" y="688" class="link-gray">Pas encore de compte ? </text>
+  <text x="290" y="688" class="link">S'inscrire</text>
+</svg>

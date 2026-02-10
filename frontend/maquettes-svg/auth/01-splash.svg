@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <defs>
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <filter id="shadow1">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#000" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- Background gradient -->
+  <rect width="390" height="844" fill="url(#blueGrad)"/>
+
+  <!-- Logo box -->
+  <rect x="135" y="302" width="120" height="120" rx="30" fill="#FFF" filter="url(#shadow1)"/>
+  <text x="195" y="380" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="#2563EB" text-anchor="middle">PING</text>
+
+  <!-- Tagline -->
+  <text x="195" y="462" font-family="Arial, sans-serif" font-size="18" fill="rgba(255,255,255,0.7)" text-anchor="middle" font-weight="500">Réservez en un clic</text>
+
+  <!-- Loading spinner (circle) -->
+  <circle cx="195" cy="530" r="18" fill="none" stroke="#FFF" stroke-width="3" stroke-dasharray="80 33" stroke-linecap="round"/>
+</svg>

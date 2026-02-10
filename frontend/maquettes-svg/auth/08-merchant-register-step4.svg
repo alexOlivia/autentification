@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 1200" width="390" height="1200">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #FFF; }
+      .subtitle-w { font-family: Arial, sans-serif; font-size: 13px; fill: rgba(255,255,255,0.7); }
+      .label { font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #374151; }
+      .hint { font-family: Arial, sans-serif; font-size: 13px; fill: #94A3B8; }
+      .btn-text { font-family: Arial, sans-serif; font-size: 16px; font-weight: 600; fill: #FFF; }
+      .btn-outline { font-family: Arial, sans-serif; font-size: 16px; font-weight: 600; fill: #64748B; }
+      .step-text { font-family: Arial, sans-serif; font-size: 16px; font-weight: 600; fill: #64748B; }
+      .step-label { font-family: Arial, sans-serif; font-size: 11px; }
+      .section-title { font-family: Arial, sans-serif; font-size: 15px; font-weight: 600; }
+      .recap-label { font-family: Arial, sans-serif; font-size: 13px; fill: #64748B; }
+      .recap-value { font-family: Arial, sans-serif; font-size: 13px; font-weight: 500; fill: #1E293B; }
+      .modify { font-family: Arial, sans-serif; font-size: 13px; font-weight: 500; }
+      .link { font-family: Arial, sans-serif; font-size: 13px; fill: #2563EB; font-weight: 600; }
+      .link-gray { font-family: Arial, sans-serif; font-size: 13px; fill: #64748B; }
+      .info-text { font-family: Arial, sans-serif; font-size: 12px; fill: #1E40AF; }
+      .doc-ok { font-family: Arial, sans-serif; font-size: 13px; font-weight: 500; fill: #10B981; }
+      .doc-no { font-family: Arial, sans-serif; font-size: 13px; font-weight: 500; fill: #94A3B8; }
+    </style>
+    <linearGradient id="grad4" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8B5CF6"/>
+      <stop offset="100%" style="stop-color:#7C3AED"/>
+    </linearGradient>
+    <filter id="shadow" x="-2%" y="-10%" width="104%" height="120%">
+      <feDropShadow dx="0" dy="-4" stdDeviation="5" flood-color="rgba(0,0,0,0.05)"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="1200" fill="#FFF"/>
+
+  <!-- AppBar -->
+  <text x="20" y="44" font-family="Arial, sans-serif" font-size="22" fill="#1E293B">‹</text>
+  <text x="160" y="44" class="step-text" text-anchor="middle">Étape 4/4</text>
+
+  <!-- Progress bar (all filled) -->
+  <rect x="24" y="62" width="82" height="4" rx="2" fill="#2563EB"/>
+  <rect x="112" y="62" width="82" height="4" rx="2" fill="#2563EB"/>
+  <rect x="200" y="62" width="82" height="4" rx="2" fill="#2563EB"/>
+  <rect x="288" y="62" width="82" height="4" rx="2" fill="#2563EB"/>
+
+  <!-- Step labels -->
+  <text x="44" y="82" class="step-label" fill="#10B981" text-anchor="middle">Personnel</text>
+  <text x="150" y="82" class="step-label" fill="#10B981" text-anchor="middle">Entreprise</text>
+  <text x="240" y="82" class="step-label" fill="#10B981" text-anchor="middle">Documents</text>
+  <text x="338" y="82" class="step-label" fill="#2563EB" font-weight="600" text-anchor="middle">Confirmation</text>
+
+  <!-- Header card (purple) -->
+  <rect x="24" y="100" width="342" height="72" rx="16" fill="url(#grad4)"/>
+  <rect x="36" y="112" width="48" height="48" rx="12" fill="rgba(255,255,255,0.2)"/>
+  <text x="60" y="143" font-family="Arial, sans-serif" font-size="24" fill="#FFF" text-anchor="middle">✅</text>
+  <text x="96" y="133" class="title">Récapitulatif</text>
+  <text x="96" y="152" class="subtitle-w">Vérifiez vos informations avant de valider</text>
+
+  <!-- ===== Section 1: Informations personnelles ===== -->
+  <rect x="24" y="188" width="342" height="188" rx="16" fill="#FFF" stroke="#E2E8F0" stroke-width="1"/>
+  <!-- Section header -->
+  <rect x="24" y="188" width="342" height="40" rx="16" fill="rgba(37,99,235,0.05)"/>
+  <rect x="24" y="208" width="342" height="20" fill="rgba(37,99,235,0.05)"/>
+  <text x="58" y="214" font-family="Arial, sans-serif" font-size="16" fill="#2563EB">👤</text>
+  <text x="78" y="214" class="section-title" fill="#2563EB">Informations personnelles</text>
+  <text x="346" y="214" class="modify" fill="#2563EB" text-anchor="end">Modifier</text>
+
+  <!-- Rows -->
+  <text x="40" y="248" class="recap-label">Nom complet</text>
+  <text x="346" y="248" class="recap-value" text-anchor="end">Amadou Diallo</text>
+  <line x1="40" y1="258" x2="350" y2="258" stroke="#F1F5F9" stroke-width="1"/>
+
+  <text x="40" y="280" class="recap-label">Téléphone</text>
+  <text x="346" y="280" class="recap-value" text-anchor="end">+221 77 123 45 67</text>
+  <line x1="40" y1="290" x2="350" y2="290" stroke="#F1F5F9" stroke-width="1"/>
+
+  <text x="40" y="312" class="recap-label">Email</text>
+  <text x="346" y="312" class="recap-value" text-anchor="end">amadou@email.com</text>
+  <line x1="40" y1="322" x2="350" y2="322" stroke="#F1F5F9" stroke-width="1"/>
+
+  <text x="40" y="344" class="recap-label">Date de naissance</text>
+  <text x="346" y="344" class="recap-value" text-anchor="end">15/03/1990</text>
+
+  <!-- ===== Section 2: Entreprise ===== -->
+  <rect x="24" y="392" width="342" height="188" rx="16" fill="#FFF" stroke="#E2E8F0" stroke-width="1"/>
+  <!-- Section header -->
+  <rect x="24" y="392" width="342" height="40" rx="16" fill="rgba(255,107,53,0.05)"/>
+  <rect x="24" y="412" width="342" height="20" fill="rgba(255,107,53,0.05)"/>
+  <text x="58" y="418" font-family="Arial, sans-serif" font-size="16" fill="#FF6B35">🏪</text>
+  <text x="78" y="418" class="section-title" fill="#FF6B35">Entreprise</text>
+  <text x="346" y="418" class="modify" fill="#FF6B35" text-anchor="end">Modifier</text>
+
+  <!-- Rows -->
+  <text x="40" y="452" class="recap-label">Nom</text>
+  <text x="346" y="452" class="recap-value" text-anchor="end">Restaurant Le Djolof</text>
+  <line x1="40" y1="462" x2="350" y2="462" stroke="#F1F5F9" stroke-width="1"/>
+
+  <text x="40" y="484" class="recap-label">Type</text>
+  <text x="346" y="484" class="recap-value" text-anchor="end">Restaurant</text>
+  <line x1="40" y1="494" x2="350" y2="494" stroke="#F1F5F9" stroke-width="1"/>
+
+  <text x="40" y="516" class="recap-label">NINEA</text>
+  <text x="346" y="516" class="recap-value" text-anchor="end">005234567 2G3</text>
+  <line x1="40" y1="526" x2="350" y2="526" stroke="#F1F5F9" stroke-width="1"/>
+
+  <text x="40" y="548" class="recap-label">Adresse</text>
+  <text x="346" y="548" class="recap-value" text-anchor="end">Almadies, Dakar</text>
+
+  <!-- ===== Section 3: Documents ===== -->
+  <rect x="24" y="596" width="342" height="188" rx="16" fill="#FFF" stroke="#E2E8F0" stroke-width="1"/>
+  <!-- Section header -->
+  <rect x="24" y="596" width="342" height="40" rx="16" fill="rgba(16,185,129,0.05)"/>
+  <rect x="24" y="616" width="342" height="20" fill="rgba(16,185,129,0.05)"/>
+  <text x="58" y="622" font-family="Arial, sans-serif" font-size="16" fill="#10B981">📂</text>
+  <text x="78" y="622" class="section-title" fill="#10B981">Documents</text>
+  <text x="346" y="622" class="modify" fill="#10B981" text-anchor="end">Modifier</text>
+
+  <!-- Doc rows -->
+  <text x="40" y="656" class="recap-label">Pièce d'identité</text>
+  <circle cx="290" cy="652" r="8" fill="#10B981"/>
+  <text x="290" y="656" font-family="Arial, sans-serif" font-size="11" fill="#FFF" text-anchor="middle">✓</text>
+  <text x="306" y="656" class="doc-ok">Ajouté</text>
+  <line x1="40" y1="668" x2="350" y2="668" stroke="#F1F5F9" stroke-width="1"/>
+
+  <text x="40" y="690" class="recap-label">Registre de Commerce</text>
+  <circle cx="290" cy="686" r="8" fill="none" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="306" y="690" class="doc-no">Non fourni</text>
+  <line x1="40" y1="702" x2="350" y2="702" stroke="#F1F5F9" stroke-width="1"/>
+
+  <text x="40" y="724" class="recap-label">Photo de profil</text>
+  <circle cx="290" cy="720" r="8" fill="#10B981"/>
+  <text x="290" y="724" font-family="Arial, sans-serif" font-size="11" fill="#FFF" text-anchor="middle">✓</text>
+  <text x="306" y="724" class="doc-ok">Ajouté</text>
+  <line x1="40" y1="736" x2="350" y2="736" stroke="#F1F5F9" stroke-width="1"/>
+
+  <text x="40" y="758" class="recap-label">Justificatif domicile</text>
+  <circle cx="290" cy="754" r="8" fill="none" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="306" y="758" class="doc-no">Non fourni</text>
+
+  <!-- ===== Checkboxes ===== -->
+  <!-- CGU -->
+  <rect x="24" y="800" width="20" height="20" rx="5" fill="#2563EB"/>
+  <text x="34" y="815" font-family="Arial, sans-serif" font-size="13" fill="#FFF" text-anchor="middle">✓</text>
+  <text x="52" y="815" class="link-gray">J'accepte les </text>
+  <text x="130" y="815" class="link">CGU </text>
+  <text x="155" y="815" class="link-gray">et les</text>
+  <text x="52" y="836" class="link">Conditions de service Commerçant</text>
+
+  <!-- Politique de confidentialité -->
+  <rect x="24" y="858" width="20" height="20" rx="5" fill="#2563EB"/>
+  <text x="34" y="873" font-family="Arial, sans-serif" font-size="13" fill="#FFF" text-anchor="middle">✓</text>
+  <text x="52" y="873" class="link-gray">J'accepte la </text>
+  <text x="120" y="873" class="link">Politique de Confidentialité</text>
+  <text x="52" y="894" class="link-gray">et le traitement de mes données</text>
+  <text x="52" y="912" class="link-gray">personnelles</text>
+
+  <!-- Info box -->
+  <rect x="24" y="934" width="342" height="52" rx="12" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+  <text x="44" y="960" font-family="Arial, sans-serif" font-size="16" fill="#2563EB">🛡️</text>
+  <text x="66" y="955" class="info-text">Votre compte sera vérifié sous 24 à 48h.</text>
+  <text x="66" y="971" class="info-text">Vous recevrez une notification dès l'activation.</text>
+
+  <!-- Bottom buttons -->
+  <rect x="0" y="1010" width="390" height="90" fill="#FFF" filter="url(#shadow)"/>
+
+  <!-- Précédent -->
+  <rect x="24" y="1028" width="110" height="52" rx="12" fill="#FFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="52" y="1060" class="btn-outline">Précédent</text>
+
+  <!-- Créer mon compte -->
+  <rect x="150" y="1028" width="216" height="52" rx="12" fill="#10B981"/>
+  <text x="258" y="1060" class="btn-text" text-anchor="middle">Créer mon compte</text>
+</svg>
