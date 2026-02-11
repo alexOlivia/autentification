@@ -1,0 +1,156 @@
+model Vehicule {
+  id              String   @id @default(cuid())
+  commercantId    String
+  typeTransport   TypeTransport
+  immatriculation String   @unique
+  marque          String
+  modele          String
+  compagnie       String
+  capaciteTotale  Int
+  annee           Int
+  equipements     String[]
+  estActif       Boolean  @default(true)
+  urlPhoto        String?
+  dateCreation    DateTime @default(now())
+}
+
+model Trajet {
+  id              String       @id @default(cuid())
+  vehiculeId      String
+  ligneId         String
+  origine         String
+  destination     String
+  heureDepart     DateTime
+  heureArrivee    DateTime
+  dureeEstimee    Int
+  distance        Int
+  statut          StatutTrajet
+  chauffeurId     String
+  dateCreation    DateTime     @default(now())
+}
+
+model Place {
+  id              String       @id @default(cuid())
+  vehiculeId      String
+  numero          String
+  classe          ClasseTransport
+  typeSiege       TypePlace
+  position        PositionPlace
+  prixBase        Float
+  caracteristiques String[]
+  estDisponible   Boolean      @default(true)
+}
+
+model Ligne {
+  id              String       @id @default(cuid())
+  commercantId    String
+  numero          String
+  nom             String
+  typeTransport   TypeTransport
+  description     String?
+  tempsTrajetMoyen Int
+  dateCreation    DateTime     @default(now())
+}
+
+model Arret {
+  id              String       @id @default(cuid())
+  trajetId        String
+  nomArret        String
+  ville           String
+  coordonnees     Coordonnees
+  ordre           Int
+  heureArrivee    DateTime
+  heureDepart     DateTime
+  dureeArret      Int
+}
+
+model Chauffeur {
+  id                  String       @id @default(cuid())
+  commercantId        String
+  prenom              String
+  nom                 String
+  telephone           String
+  numeroPermis        String
+  dateExpirationPermis DateTime
+  evaluation          Float
+  nombreVoyages       Int
+  estDisponible       Boolean      @default(true)
+  urlPhoto            String?
+  dateCreation        DateTime     @default(now())
+}
+
+enum TypeTransport {
+  BUS
+  MINIBUS
+  TRAIN
+  AVION
+  METRO
+  VTC
+  TAXI
+  BATEAU
+}
+
+enum ClasseTransport {
+  ECONOMIQUE
+  CONFORT
+  BUSINESS
+  PREMIERE
+  VIP
+}
+
+enum TypePlace {
+  STANDARD
+  FENETRE
+  COULOIR
+  INCLINABLE
+  COUCHETTE
+}
+
+enum StatutTrajet {
+  PROGRAMME
+  EMBARQUEMENT
+  EN_COURS
+  TERMINE
+  ANNULE
+  RETARDE
+}
+
+enum StatutBillet {
+  RESERVE
+  PAYE
+  VALIDE
+  UTILISE
+  ANNULE
+  EXPIRE
+  REMBOURSE
+}
+
+enum TypeDocument {
+  CNI
+  PASSEPORT
+  PERMIS_CONDUIRE
+  CARTE_RESIDENT
+}
+
+enum StatutCourse {
+  DEMANDEE
+  ACCEPTEE
+  CHAUFFEUR_EN_ROUTE
+  ARRIVEE_DEPART
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+enum PositionPlace {
+  AVANT
+  MILIEU
+  ARRIERE
+  SUPERIEUR
+  INFERIEUR
+}
+
+type Coordonnees {
+  latitude  Float
+  longitude Float
+}
