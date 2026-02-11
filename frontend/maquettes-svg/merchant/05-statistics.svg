@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 950" width="390" height="950">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1E293B; }
+      .section { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #1E293B; }
+      .kpi-val { font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; }
+      .kpi-label { font-family: Arial, sans-serif; font-size: 11px; fill: #64748B; }
+      .kpi-delta { font-family: Arial, sans-serif; font-size: 11px; font-weight: 600; }
+      .period-active { font-family: Arial, sans-serif; font-size: 13px; font-weight: 600; fill: #FFF; }
+      .period-inactive { font-family: Arial, sans-serif; font-size: 13px; fill: #64748B; }
+      .chart-label { font-family: Arial, sans-serif; font-size: 10px; fill: #94A3B8; }
+      .chart-val { font-family: Arial, sans-serif; font-size: 9px; fill: #94A3B8; }
+      .top-name { font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #1E293B; }
+      .top-info { font-family: Arial, sans-serif; font-size: 12px; fill: #64748B; }
+      .top-rank { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #2563EB; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="950" fill="#F8FAFC"/>
+
+  <!-- Header -->
+  <rect width="390" height="90" fill="#FFF"/>
+  <rect x="16" y="40" width="40" height="40" rx="12" fill="#F1F5F9"/>
+  <text x="36" y="66" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="#1E293B">‹</text>
+  <text x="195" y="66" class="title" text-anchor="middle">Statistiques</text>
+  <rect x="334" y="40" width="40" height="40" rx="12" fill="#F1F5F9"/>
+  <text x="354" y="66" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">📥</text>
+
+  <!-- Period selector -->
+  <rect x="16" y="100" width="358" height="40" rx="10" fill="#F1F5F9"/>
+  <rect x="20" y="104" width="84" height="32" rx="8" fill="#2563EB"/>
+  <text x="62" y="125" class="period-active" text-anchor="middle">Semaine</text>
+  <text x="152" y="125" class="period-inactive" text-anchor="middle">Mois</text>
+  <text x="240" y="125" class="period-inactive" text-anchor="middle">Trimestre</text>
+  <text x="330" y="125" class="period-inactive" text-anchor="middle">Année</text>
+
+  <!-- KPI Cards -->
+  <!-- Revenue -->
+  <rect x="16" y="156" width="175" height="90" rx="12" fill="#FFF"/>
+  <rect x="28" y="168" width="32" height="32" rx="8" fill="rgba(16,185,129,0.1)"/>
+  <text x="44" y="190" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">💰</text>
+  <text x="28" y="224" class="kpi-val" fill="#10B981">315K</text>
+  <text x="88" y="224" font-family="Arial, sans-serif" font-size="12" fill="#64748B">XOF</text>
+  <text x="28" y="240" class="kpi-label">Revenus</text>
+  <text x="165" y="180" class="kpi-delta" fill="#10B981" text-anchor="end">↗ +18%</text>
+
+  <!-- Reservations -->
+  <rect x="199" y="156" width="175" height="90" rx="12" fill="#FFF"/>
+  <rect x="211" y="168" width="32" height="32" rx="8" fill="rgba(37,99,235,0.1)"/>
+  <text x="227" y="190" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">📅</text>
+  <text x="211" y="224" class="kpi-val" fill="#2563EB">48</text>
+  <text x="211" y="240" class="kpi-label">Réservations</text>
+  <text x="348" y="180" class="kpi-delta" fill="#10B981" text-anchor="end">↗ +12%</text>
+
+  <!-- Occupation -->
+  <rect x="16" y="254" width="175" height="90" rx="12" fill="#FFF"/>
+  <rect x="28" y="266" width="32" height="32" rx="8" fill="rgba(245,158,11,0.1)"/>
+  <text x="44" y="288" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">📊</text>
+  <text x="28" y="322" class="kpi-val" fill="#F59E0B">72%</text>
+  <text x="28" y="338" class="kpi-label">Taux occupation</text>
+  <text x="165" y="278" class="kpi-delta" fill="#EF4444" text-anchor="end">↘ −3%</text>
+
+  <!-- Avis -->
+  <rect x="199" y="254" width="175" height="90" rx="12" fill="#FFF"/>
+  <rect x="211" y="266" width="32" height="32" rx="8" fill="rgba(139,92,246,0.1)"/>
+  <text x="227" y="288" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">⭐</text>
+  <text x="211" y="322" class="kpi-val" fill="#8B5CF6">4.8</text>
+  <text x="248" y="322" font-family="Arial, sans-serif" font-size="12" fill="#64748B">/5</text>
+  <text x="211" y="338" class="kpi-label">Note moyenne</text>
+  <text x="348" y="278" class="kpi-delta" fill="#10B981" text-anchor="end">↗ +0.2</text>
+
+  <!-- Revenue Chart -->
+  <text x="24" y="378" class="section">Revenus (7 derniers jours)</text>
+  <rect x="16" y="392" width="358" height="170" rx="12" fill="#FFF"/>
+  <!-- Y axis labels -->
+  <text x="24" y="418" class="chart-val" text-anchor="start">60K</text>
+  <text x="24" y="452" class="chart-val" text-anchor="start">40K</text>
+  <text x="24" y="486" class="chart-val" text-anchor="start">20K</text>
+  <text x="24" y="520" class="chart-val" text-anchor="start">0</text>
+  <!-- Grid lines -->
+  <line x1="50" y1="413" x2="358" y2="413" stroke="#F1F5F9" stroke-width="1"/>
+  <line x1="50" y1="447" x2="358" y2="447" stroke="#F1F5F9" stroke-width="1"/>
+  <line x1="50" y1="481" x2="358" y2="481" stroke="#F1F5F9" stroke-width="1"/>
+  <line x1="50" y1="515" x2="358" y2="515" stroke="#F1F5F9" stroke-width="1"/>
+  <!-- Chart line -->
+  <polyline points="72,470 116,455 160,478 204,440 248,430 292,415 336,425"
+            fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Area -->
+  <polygon points="72,470 116,455 160,478 204,440 248,430 292,415 336,425 336,515 72,515"
+           fill="rgba(37,99,235,0.08)"/>
+  <!-- Dots -->
+  <circle cx="72" cy="470" r="4" fill="#2563EB"/>
+  <circle cx="116" cy="455" r="4" fill="#2563EB"/>
+  <circle cx="160" cy="478" r="4" fill="#2563EB"/>
+  <circle cx="204" cy="440" r="4" fill="#2563EB"/>
+  <circle cx="248" cy="430" r="4" fill="#2563EB"/>
+  <circle cx="292" cy="415" r="4" fill="#2563EB"/>
+  <circle cx="336" cy="425" r="4" fill="#2563EB"/>
+  <!-- X axis -->
+  <text x="72" y="540" class="chart-label" text-anchor="middle">L</text>
+  <text x="116" y="540" class="chart-label" text-anchor="middle">M</text>
+  <text x="160" y="540" class="chart-label" text-anchor="middle">M</text>
+  <text x="204" y="540" class="chart-label" text-anchor="middle">J</text>
+  <text x="248" y="540" class="chart-label" text-anchor="middle">V</text>
+  <text x="292" y="540" class="chart-label" text-anchor="middle">S</text>
+  <text x="336" y="540" class="chart-label" text-anchor="middle">D</text>
+
+  <!-- Occupation bars -->
+  <text x="24" y="594" class="section">Occupation par créneau</text>
+  <rect x="16" y="608" width="358" height="130" rx="12" fill="#FFF"/>
+  <!-- Dejeuner bar -->
+  <text x="28" y="640" font-family="Arial, sans-serif" font-size="12" fill="#374151">Déjeuner</text>
+  <rect x="100" y="627" width="220" height="16" rx="4" fill="#E2E8F0"/>
+  <rect x="100" y="627" width="176" height="16" rx="4" fill="#2563EB"/>
+  <text x="340" y="640" font-family="Arial, sans-serif" font-size="12" fill="#2563EB" font-weight="600" text-anchor="end">80%</text>
+  <!-- Diner bar -->
+  <text x="28" y="672" font-family="Arial, sans-serif" font-size="12" fill="#374151">Dîner</text>
+  <rect x="100" y="659" width="220" height="16" rx="4" fill="#E2E8F0"/>
+  <rect x="100" y="659" width="143" height="16" rx="4" fill="#8B5CF6"/>
+  <text x="340" y="672" font-family="Arial, sans-serif" font-size="12" fill="#8B5CF6" font-weight="600" text-anchor="end">65%</text>
+  <!-- Weekend bar -->
+  <text x="28" y="704" font-family="Arial, sans-serif" font-size="12" fill="#374151">Weekend</text>
+  <rect x="100" y="691" width="220" height="16" rx="4" fill="#E2E8F0"/>
+  <rect x="100" y="691" width="198" height="16" rx="4" fill="#F59E0B"/>
+  <text x="340" y="704" font-family="Arial, sans-serif" font-size="12" fill="#F59E0B" font-weight="600" text-anchor="end">90%</text>
+
+  <!-- Top resources -->
+  <text x="24" y="774" class="section">Top ressources</text>
+  <rect x="16" y="788" width="358" height="130" rx="12" fill="#FFF"/>
+  <!-- #1 -->
+  <text x="36" y="816" class="top-rank">#1</text>
+  <text x="56" y="816" class="top-name">Table VIP T1</text>
+  <text x="350" y="816" font-family="Arial, sans-serif" font-size="13" fill="#10B981" text-anchor="end" font-weight="600">120K XOF</text>
+  <text x="56" y="834" class="top-info">32 réservations</text>
+  <line x1="28" y1="844" x2="358" y2="844" stroke="#F1F5F9" stroke-width="1"/>
+  <!-- #2 -->
+  <text x="36" y="868" class="top-rank">#2</text>
+  <text x="56" y="868" class="top-name">Table T3 Terrasse</text>
+  <text x="350" y="868" font-family="Arial, sans-serif" font-size="13" fill="#10B981" text-anchor="end" font-weight="600">96K XOF</text>
+  <text x="56" y="886" class="top-info">24 réservations</text>
+  <line x1="28" y1="896" x2="358" y2="896" stroke="#F1F5F9" stroke-width="1"/>
+  <!-- #3 -->
+  <text x="36" y="910" class="top-rank">#3</text>
+  <text x="56" y="910" class="top-name">Table T2 Standard</text>
+  <text x="350" y="910" font-family="Arial, sans-serif" font-size="13" fill="#10B981" text-anchor="end" font-weight="600">72K XOF</text>
+</svg>

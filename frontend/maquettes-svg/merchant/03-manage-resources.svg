@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 950" width="390" height="950">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1E293B; }
+      .section { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #1E293B; }
+      .subtitle { font-family: Arial, sans-serif; font-size: 14px; fill: #64748B; }
+      .stat-val { font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; }
+      .stat-label { font-family: Arial, sans-serif; font-size: 11px; fill: #64748B; }
+      .card-name { font-family: Arial, sans-serif; font-size: 15px; font-weight: 600; fill: #1E293B; }
+      .card-info { font-family: Arial, sans-serif; font-size: 12px; fill: #64748B; }
+      .card-price { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #2563EB; }
+      .chip-active { font-family: Arial, sans-serif; font-size: 12px; fill: #FFF; font-weight: 600; }
+      .chip-inactive { font-family: Arial, sans-serif; font-size: 12px; fill: #64748B; }
+      .dispo { font-family: Arial, sans-serif; font-size: 11px; font-weight: 600; }
+      .btn-text { font-family: Arial, sans-serif; font-size: 15px; font-weight: 600; fill: #FFF; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="950" fill="#F8FAFC"/>
+
+  <!-- Header -->
+  <rect width="390" height="90" fill="#FFF"/>
+  <rect x="16" y="40" width="40" height="40" rx="12" fill="#F1F5F9"/>
+  <text x="36" y="66" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="#1E293B">‹</text>
+  <text x="195" y="66" class="title" text-anchor="middle">Mes ressources</text>
+  <rect x="334" y="40" width="40" height="40" rx="12" fill="#F1F5F9"/>
+  <text x="354" y="66" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">🔍</text>
+
+  <!-- Summary banner -->
+  <rect x="16" y="100" width="358" height="70" rx="12" fill="#EFF6FF"/>
+  <text x="80" y="126" class="stat-val" fill="#2563EB">6</text>
+  <text x="80" y="142" class="stat-label" text-anchor="middle">Total</text>
+  <text x="195" y="126" class="stat-val" fill="#10B981">4</text>
+  <text x="195" y="142" class="stat-label" text-anchor="middle">Disponibles</text>
+  <text x="310" y="126" class="stat-val" fill="#EF4444">2</text>
+  <text x="310" y="142" class="stat-label" text-anchor="middle">Occupées</text>
+
+  <!-- Zone filters -->
+  <rect x="16" y="184" width="62" height="32" rx="16" fill="#2563EB"/>
+  <text x="47" y="205" class="chip-active" text-anchor="middle">Toutes</text>
+  <rect x="86" y="184" width="90" height="32" rx="16" fill="#F1F5F9"/>
+  <text x="131" y="205" class="chip-inactive" text-anchor="middle">Intérieur (3)</text>
+  <rect x="184" y="184" width="88" height="32" rx="16" fill="#F1F5F9"/>
+  <text x="228" y="205" class="chip-inactive" text-anchor="middle">Terrasse (2)</text>
+  <rect x="280" y="184" width="68" height="32" rx="16" fill="#F1F5F9"/>
+  <text x="314" y="205" class="chip-inactive" text-anchor="middle">VIP (1)</text>
+
+  <!-- Resource card 1 - Available -->
+  <rect x="16" y="232" width="358" height="110" rx="12" fill="#FFF"/>
+  <rect x="28" y="244" width="64" height="64" rx="12" fill="rgba(37,99,235,0.1)"/>
+  <text x="60" y="282" font-family="Arial, sans-serif" font-size="28" text-anchor="middle">🪑</text>
+  <text x="104" y="264" class="card-name">Table VIP T1</text>
+  <text x="104" y="282" class="card-info">Capacité : 8 pers. • Zone VIP</text>
+  <text x="104" y="300" class="card-price">5 000 XOF</text>
+  <text x="170" y="300" class="card-info">/réservation</text>
+  <rect x="104" y="310" width="72" height="20" rx="4" fill="#DCFCE7"/>
+  <text x="140" y="324" class="dispo" fill="#10B981" text-anchor="middle">Disponible</text>
+  <!-- Actions -->
+  <rect x="296" y="260" width="32" height="32" rx="8" fill="#F1F5F9"/>
+  <text x="312" y="282" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">✏️</text>
+  <rect x="334" y="260" width="32" height="32" rx="8" fill="#FEE2E2"/>
+  <text x="350" y="282" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">🗑</text>
+
+  <!-- Resource card 2 - Available -->
+  <rect x="16" y="354" width="358" height="110" rx="12" fill="#FFF"/>
+  <rect x="28" y="366" width="64" height="64" rx="12" fill="rgba(139,92,246,0.1)"/>
+  <text x="60" y="404" font-family="Arial, sans-serif" font-size="28" text-anchor="middle">🪑</text>
+  <text x="104" y="386" class="card-name">Table Standard T2</text>
+  <text x="104" y="404" class="card-info">Capacité : 4 pers. • Intérieur</text>
+  <text x="104" y="422" class="card-price">3 000 XOF</text>
+  <text x="170" y="422" class="card-info">/réservation</text>
+  <rect x="104" y="432" width="72" height="20" rx="4" fill="#DCFCE7"/>
+  <text x="140" y="446" class="dispo" fill="#10B981" text-anchor="middle">Disponible</text>
+  <rect x="296" y="382" width="32" height="32" rx="8" fill="#F1F5F9"/>
+  <text x="312" y="404" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">✏️</text>
+  <rect x="334" y="382" width="32" height="32" rx="8" fill="#FEE2E2"/>
+  <text x="350" y="404" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">🗑</text>
+
+  <!-- Resource card 3 - Occupied -->
+  <rect x="16" y="476" width="358" height="110" rx="12" fill="#FFF"/>
+  <rect x="28" y="488" width="64" height="64" rx="12" fill="rgba(245,158,11,0.1)"/>
+  <text x="60" y="526" font-family="Arial, sans-serif" font-size="28" text-anchor="middle">🪑</text>
+  <text x="104" y="508" class="card-name">Table Terrasse T3</text>
+  <text x="104" y="526" class="card-info">Capacité : 6 pers. • Terrasse</text>
+  <text x="104" y="544" class="card-price">4 000 XOF</text>
+  <text x="170" y="544" class="card-info">/réservation</text>
+  <rect x="104" y="554" width="64" height="20" rx="4" fill="#FEE2E2"/>
+  <text x="136" y="568" class="dispo" fill="#EF4444" text-anchor="middle">Occupée</text>
+  <rect x="296" y="504" width="32" height="32" rx="8" fill="#F1F5F9"/>
+  <text x="312" y="526" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">✏️</text>
+  <rect x="334" y="504" width="32" height="32" rx="8" fill="#FEE2E2"/>
+  <text x="350" y="526" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">🗑</text>
+
+  <!-- Resource card 4 - Available -->
+  <rect x="16" y="598" width="358" height="110" rx="12" fill="#FFF"/>
+  <rect x="28" y="610" width="64" height="64" rx="12" fill="rgba(16,185,129,0.1)"/>
+  <text x="60" y="648" font-family="Arial, sans-serif" font-size="28" text-anchor="middle">🪑</text>
+  <text x="104" y="630" class="card-name">Table Intérieur T4</text>
+  <text x="104" y="648" class="card-info">Capacité : 2 pers. • Intérieur</text>
+  <text x="104" y="666" class="card-price">2 500 XOF</text>
+  <text x="170" y="666" class="card-info">/réservation</text>
+  <rect x="104" y="676" width="72" height="20" rx="4" fill="#DCFCE7"/>
+  <text x="140" y="690" class="dispo" fill="#10B981" text-anchor="middle">Disponible</text>
+  <rect x="296" y="626" width="32" height="32" rx="8" fill="#F1F5F9"/>
+  <text x="312" y="648" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">✏️</text>
+  <rect x="334" y="626" width="32" height="32" rx="8" fill="#FEE2E2"/>
+  <text x="350" y="648" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">🗑</text>
+
+  <!-- FAB button -->
+  <circle cx="350" cy="880" r="28" fill="#2563EB"/>
+  <text x="350" y="888" font-family="Arial, sans-serif" font-size="24" fill="#FFF" text-anchor="middle">+</text>
+  <text x="350" y="930" font-family="Arial, sans-serif" font-size="11" fill="#2563EB" text-anchor="middle" font-weight="600">Ajouter</text>
+</svg>

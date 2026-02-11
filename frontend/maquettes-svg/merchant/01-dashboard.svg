@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 950" width="390" height="950">
+  <defs>
+    <style>
+      .greeting { font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; fill: #1E293B; }
+      .subtitle { font-family: Arial, sans-serif; font-size: 13px; fill: #64748B; }
+      .stat-val { font-family: Arial, sans-serif; font-size: 22px; font-weight: bold; fill: #1E293B; }
+      .stat-label { font-family: Arial, sans-serif; font-size: 11px; fill: #64748B; }
+      .stat-delta { font-family: Arial, sans-serif; font-size: 11px; font-weight: 600; }
+      .section { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #1E293B; }
+      .see-all { font-family: Arial, sans-serif; font-size: 13px; fill: #2563EB; font-weight: 600; }
+      .card-name { font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #1E293B; }
+      .card-info { font-family: Arial, sans-serif; font-size: 12px; fill: #64748B; }
+      .card-status { font-family: Arial, sans-serif; font-size: 11px; font-weight: 600; }
+      .quick-label { font-family: Arial, sans-serif; font-size: 11px; fill: #374151; font-weight: 500; }
+      .nav-label { font-family: Arial, sans-serif; font-size: 10px; }
+      .chart-label { font-family: Arial, sans-serif; font-size: 10px; fill: #94A3B8; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="950" fill="#F8FAFC"/>
+
+  <!-- Header -->
+  <rect width="390" height="110" fill="#FFF"/>
+  <rect x="24" y="44" width="44" height="44" rx="12" fill="#2563EB"/>
+  <text x="46" y="72" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#FFF" text-anchor="middle">M</text>
+  <text x="78" y="64" class="greeting">Dashboard</text>
+  <text x="78" y="82" class="subtitle">Le Ngor Restaurant</text>
+  <rect x="310" y="44" width="40" height="40" rx="12" fill="#F1F5F9"/>
+  <text x="330" y="70" font-family="Arial, sans-serif" font-size="18" text-anchor="middle">🔔</text>
+  <circle cx="340" cy="50" r="5" fill="#EF4444"/>
+
+  <!-- Stats grid (2x2) -->
+  <!-- Réservations du jour -->
+  <rect x="16" y="120" width="175" height="88" rx="12" fill="#FFF"/>
+  <rect x="28" y="132" width="36" height="36" rx="8" fill="rgba(37,99,235,0.1)"/>
+  <text x="46" y="156" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">📅</text>
+  <text x="28" y="188" class="stat-val">8</text>
+  <text x="28" y="202" class="stat-label">Réservations du jour</text>
+  <text x="165" y="146" class="stat-delta" fill="#10B981" text-anchor="end">+12%</text>
+
+  <!-- Revenus du jour -->
+  <rect x="199" y="120" width="175" height="88" rx="12" fill="#FFF"/>
+  <rect x="211" y="132" width="36" height="36" rx="8" fill="rgba(16,185,129,0.1)"/>
+  <text x="229" y="156" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">💰</text>
+  <text x="211" y="188" class="stat-val">45K</text>
+  <text x="260" y="188" font-family="Arial, sans-serif" font-size="12" fill="#64748B">XOF</text>
+  <text x="348" y="146" class="stat-delta" fill="#10B981" text-anchor="end">+8%</text>
+  <text x="211" y="202" class="stat-label">Revenus du jour</text>
+
+  <!-- Taux occupation -->
+  <rect x="16" y="216" width="175" height="88" rx="12" fill="#FFF"/>
+  <rect x="28" y="228" width="36" height="36" rx="8" fill="rgba(245,158,11,0.1)"/>
+  <text x="46" y="252" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">📊</text>
+  <text x="28" y="284" class="stat-val">72%</text>
+  <text x="28" y="298" class="stat-label">Taux d'occupation</text>
+  <text x="165" y="242" class="stat-delta" fill="#F59E0B" text-anchor="end">−3%</text>
+
+  <!-- Avis récents -->
+  <rect x="199" y="216" width="175" height="88" rx="12" fill="#FFF"/>
+  <rect x="211" y="228" width="36" height="36" rx="8" fill="rgba(139,92,246,0.1)"/>
+  <text x="229" y="252" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">⭐</text>
+  <text x="211" y="284" class="stat-val">4.8</text>
+  <text x="248" y="284" font-family="Arial, sans-serif" font-size="12" fill="#64748B">/5</text>
+  <text x="211" y="298" class="stat-label">Note moyenne</text>
+
+  <!-- Today's reservations -->
+  <text x="24" y="340" class="section">Réservations du jour</text>
+  <text x="366" y="340" class="see-all" text-anchor="end">Voir tout</text>
+
+  <!-- Reservation 1 -->
+  <rect x="16" y="354" width="358" height="68" rx="12" fill="#FFF"/>
+  <rect x="28" y="364" width="44" height="44" rx="10" fill="rgba(37,99,235,0.1)"/>
+  <text x="50" y="392" font-family="Arial, sans-serif" font-size="18" text-anchor="middle">👤</text>
+  <text x="82" y="382" class="card-name">Aminata Sow</text>
+  <text x="82" y="400" class="card-info">12:00 • Table VIP • 4 pers.</text>
+  <rect x="290" y="374" width="72" height="22" rx="6" fill="#DCFCE7"/>
+  <text x="326" y="389" class="card-status" fill="#10B981" text-anchor="middle">Confirmée</text>
+
+  <!-- Reservation 2 -->
+  <rect x="16" y="432" width="358" height="68" rx="12" fill="#FFF"/>
+  <rect x="28" y="442" width="44" height="44" rx="10" fill="rgba(245,158,11,0.1)"/>
+  <text x="50" y="470" font-family="Arial, sans-serif" font-size="18" text-anchor="middle">👤</text>
+  <text x="82" y="460" class="card-name">Moussa Ba</text>
+  <text x="82" y="478" class="card-info">13:30 • Table T2 • 2 pers.</text>
+  <rect x="290" y="452" width="72" height="22" rx="6" fill="#FEF3C7"/>
+  <text x="326" y="467" class="card-status" fill="#F59E0B" text-anchor="middle">En attente</text>
+
+  <!-- Reservation 3 -->
+  <rect x="16" y="510" width="358" height="68" rx="12" fill="#FFF"/>
+  <rect x="28" y="520" width="44" height="44" rx="10" fill="rgba(139,92,246,0.1)"/>
+  <text x="50" y="548" font-family="Arial, sans-serif" font-size="18" text-anchor="middle">👤</text>
+  <text x="82" y="538" class="card-name">Fatou Diop</text>
+  <text x="82" y="556" class="card-info">19:00 • Table T3 • 6 pers.</text>
+  <rect x="290" y="530" width="72" height="22" rx="6" fill="#DCFCE7"/>
+  <text x="326" y="545" class="card-status" fill="#10B981" text-anchor="middle">Confirmée</text>
+
+  <!-- Occupation chart -->
+  <text x="24" y="612" class="section">Occupation (cette semaine)</text>
+  <rect x="16" y="626" width="358" height="140" rx="12" fill="#FFF"/>
+  <!-- Chart bars -->
+  <text x="46" y="754" class="chart-label" text-anchor="middle">Lun</text>
+  <rect x="34" y="686" width="24" height="46" rx="4" fill="#2563EB"/>
+  <text x="96" y="754" class="chart-label" text-anchor="middle">Mar</text>
+  <rect x="84" y="672" width="24" height="60" rx="4" fill="#2563EB"/>
+  <text x="146" y="754" class="chart-label" text-anchor="middle">Mer</text>
+  <rect x="134" y="696" width="24" height="36" rx="4" fill="#2563EB"/>
+  <text x="196" y="754" class="chart-label" text-anchor="middle">Jeu</text>
+  <rect x="184" y="668" width="24" height="64" rx="4" fill="#2563EB"/>
+  <text x="246" y="754" class="chart-label" text-anchor="middle">Ven</text>
+  <rect x="234" y="650" width="24" height="82" rx="4" fill="#3B82F6"/>
+  <text x="296" y="754" class="chart-label" text-anchor="middle">Sam</text>
+  <rect x="284" y="642" width="24" height="90" rx="4" fill="#60A5FA"/>
+  <text x="346" y="754" class="chart-label" text-anchor="middle">Dim</text>
+  <rect x="334" y="660" width="24" height="72" rx="4" fill="#93C5FD"/>
+
+  <!-- Quick actions -->
+  <text x="24" y="798" class="section">Actions rapides</text>
+  <rect x="16" y="812" width="110" height="64" rx="12" fill="#FFF"/>
+  <text x="71" y="838" font-family="Arial, sans-serif" font-size="20" text-anchor="middle">➕</text>
+  <text x="71" y="862" class="quick-label" text-anchor="middle">Réservation</text>
+
+  <rect x="140" y="812" width="110" height="64" rx="12" fill="#FFF"/>
+  <text x="195" y="838" font-family="Arial, sans-serif" font-size="20" text-anchor="middle">🪑</text>
+  <text x="195" y="862" class="quick-label" text-anchor="middle">Ressources</text>
+
+  <rect x="264" y="812" width="110" height="64" rx="12" fill="#FFF"/>
+  <text x="319" y="838" font-family="Arial, sans-serif" font-size="20" text-anchor="middle">📊</text>
+  <text x="319" y="862" class="quick-label" text-anchor="middle">Statistiques</text>
+
+  <!-- Bottom Navigation -->
+  <rect x="0" y="890" width="390" height="60" fill="#FFF"/>
+  <line x1="0" y1="890" x2="390" y2="890" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="48" y="918" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#2563EB">📊</text>
+  <text x="48" y="936" class="nav-label" text-anchor="middle" fill="#2563EB" font-weight="600">Dashboard</text>
+  <text x="130" y="918" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#94A3B8">📅</text>
+  <text x="130" y="936" class="nav-label" text-anchor="middle" fill="#94A3B8">Réservations</text>
+  <text x="212" y="918" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#94A3B8">🏪</text>
+  <text x="212" y="936" class="nav-label" text-anchor="middle" fill="#94A3B8">Établissement</text>
+  <text x="295" y="918" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#94A3B8">🪑</text>
+  <text x="295" y="936" class="nav-label" text-anchor="middle" fill="#94A3B8">Ressources</text>
+  <text x="350" y="918" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#94A3B8">⚙</text>
+  <text x="350" y="936" class="nav-label" text-anchor="middle" fill="#94A3B8">Paramètres</text>
+</svg>
