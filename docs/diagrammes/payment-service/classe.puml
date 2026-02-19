@@ -1,0 +1,550 @@
+@startuml Payment Service - Diagramme de Classes
+
+title Payment Service - Diagramme de Classes
+
+' Styles
+skinparam class {
+    BackgroundColor PaleGreen
+    BorderColor Green
+    ArrowColor Green
+}
+
+package "Payment Service" {
+    class ServeurPaiement {
+        - application: FastifyInstance
+        - port: number
+        - db: PrismaClient
+        - stripe: StripeClient
+        + demarrer(): Promise<void>
+        + arreter(): Promise<void>
+        + enregistrerRoutes(): void
+        + configurerWebhooksStripe(): void
+    }
+
+    class ControleurPaiement {
+        + creerPaiement(req: Requete, res: Reponse): Promise<void>
+        + obtenirPaiement(req: Requete, res: Reponse): Promise<void>
+        + confirmerPaiement(req: Requete, res: Reponse): Promise<void>
+        + listerPaiements(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurRemboursement {
+        + demanderRemboursement(req: Requete, res: Reponse): Promise<void>
+        + obtenirRemboursement(req: Requete, res: Reponse): Promise<void>
+        + listerRemboursements(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurFacture {
+        + genererFacture(req: Requete, res: Reponse): Promise<void>
+        + obtenirFacture(req: Requete, res: Reponse): Promise<void>
+        + telechargerFacturePDF(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurWebhook {
+        + gererWebhookStripe(req: Requete, res: Reponse): Promise<void>
+        + validerSignature(req: Requete): boolean
+    }
+
+    class ServicePaiement {
+        - depotPaiement: DepotPaiement
+        - clientStripe: ClientStripe
+        - clientBooking: ClientBooking
+        - validateur: ValidateurPaiement
+        + creer(reservationId: string, montant: number): Promise<Paiement>
+        + confirmer(paiementId: string, stripePaymentId: string): Promise<Paiement>
+        + trouverParId(id: string): Promise<Paiement>
+        + trouverParReservation(reservationId: string): Promise<Paiement>
+        + annuler(paiementId: string): Promise<Paiement>
+    }
+
+    class ServiceRemboursement {
+        - depotRemboursement: DepotRemboursement
+        - clientStripe: ClientStripe
+        - calculateurRemboursement: CalculateurRemboursement
+        + creer(paiementId: string, montant: number, raison: string): Promise<Remboursement>
+        + traiter(remboursementId: string): Promise<Remboursement>
+        + trouverParId(id: string): Promise<Remboursement>
+        + lister(paiementId: string): Promise<Remboursement[]>
+    }
+
+    class ServiceFacture {
+        - depotFacture: DepotFacture
+        - generateur: GenerateurFacturePDF
+        + creer(paiementId: string): Promise<Facture>
+        + genererPDF(factureId: string): Promise<Buffer>
+        + trouverParId(id: string): Promise<Facture>
+        + envoyerParEmail(factureId: string, email: string): Promise<void>
+    }
+
+    class ServiceTransaction {
+        - depotTransaction: DepotTransaction
+        + enregistrer(paiementId: string, type: TypeTransaction, montant: number): Promise<Transaction>
+        + lister(paiementId: string): Promise<Transaction[]>
+        + calculerSolde(utilisateurId: string): Promise<number>
+    }
+
+    class ClientStripe {
+        - stripe: Stripe
+        - cleSecrete: string
+        + creerPaymentIntent(montant: number, devise: string, metadata: any): Promise<PaymentIntent>
+        + confirmerPaymentIntent(paymentIntentId: string): Promise<PaymentIntent>
+        + annulerPaymentIntent(paymentIntentId: string): Promise<PaymentIntent>
+        + creerRemboursement(paymentIntentId: string, montant: number): Promise<Refund>
+        + obtenirStatutPaiement(paymentIntentId: string): Promise<StatutPaiementStripe>
+    }
+
+    class GestionnaireWebhook {
+        - secretWebhook: string
+        + validerSignature(payload: string, signature: string): boolean
+        + traiterEvenement(evenement: EvenementStripe): Promise<void>
+        + gererPaiementReussi(evenement: any): Promise<void>
+        + gererPaiementEchoue(evenement: any): Promise<void>
+        + gererRemboursementReussi(evenement: any): Promise<void>
+    }
+
+    class CalculateurRemboursement {
+        + calculerMontant(reservation: Reservation, paiement: Paiement, dateAnnulation: Date): number
+        + appliquerPolitique(montantTotal: number, heuresAvantDebut: number, politique: PolitiqueAnnulation): number
+        + calculerFrais(montant: number): number
+    }
+
+    class GenerateurFacturePDF {
+        - template: string
+        + generer(facture: Facture, paiement: Paiement, reservation: Reservation): Promise<Buffer>
+        + genererNumeroFacture(): string
+        + calculerTVA(montant: number, tauxTVA: number): number
+    }
+
+    class DepotPaiement {
+        - db: PrismaClient
+        + creer(donnees: DonneesPaiement): Promise<Paiement>
+        + trouverParId(id: string): Promise<Paiement | null>
+        + trouverParReservation(reservationId: string): Promise<Paiement | null>
+        + trouverParStripeId(stripePaymentId: string): Promise<Paiement | null>
+        + mettreAJour(id: string, donnees: any): Promise<Paiement>
+        + lister(filtres: any): Promise<Paiement[]>
+    }
+
+    class DepotRemboursement {
+        - db: PrismaClient
+        + creer(donnees: DonneesRemboursement): Promise<Remboursement>
+        + trouverParId(id: string): Promise<Remboursement | null>
+        + lister(paiementId: string): Promise<Remboursement[]>
+        + mettreAJour(id: string, donnees: any): Promise<Remboursement>
+    }
+
+    class DepotFacture {
+        - db: PrismaClient
+        + creer(donnees: DonneesFacture): Promise<Facture>
+        + trouverParId(id: string): Promise<Facture | null>
+        + trouverParPaiement(paiementId: string): Promise<Facture | null>
+        + mettreAJour(id: string, donnees: any): Promise<Facture>
+    }
+
+    class DepotTransaction {
+        - db: PrismaClient
+        + creer(donnees: DonneesTransaction): Promise<Transaction>
+        + lister(paiementId: string): Promise<Transaction[]>
+        + listerParUtilisateur(utilisateurId: string): Promise<Transaction[]>
+    }
+
+    class DepotTransactionMobileMoney {
+        - db: PrismaClient
+        + creer(donnees: DonneesTransactionMobileMoney): Promise<TransactionMobileMoney>
+        + trouverParId(id: string): Promise<TransactionMobileMoney | null>
+        + trouverParCodeTransaction(codeTransaction: string): Promise<TransactionMobileMoney | null>
+        + mettreAJour(id: string, donnees: any): Promise<TransactionMobileMoney>
+    }
+
+    class DepotWebhookEvent {
+        - db: PrismaClient
+        + creer(donnees: DonneesWebhookEvent): Promise<WebhookEvent>
+        + trouverParId(id: string): Promise<WebhookEvent | null>
+        + lister(filtres: any): Promise<WebhookEvent[]>
+        + marquerTraite(id: string): Promise<WebhookEvent>
+    }
+
+    class Paiement <<entite>> {
+        + id: string
+        + reservationId: string
+        + clientId: string
+        + commercantId: string
+        + montant: number
+        + devise: string
+        + typePaiement: TypePaiement
+        + methodePaiement: MethodePaiement
+        + statut: StatutPaiement
+        + referenceExterne: string
+        + idTransactionProvider: string
+        + descriptionPaiement: string
+        + fraisTransaction: number
+        + montantNet: number
+        + dateCreation: Date
+        + dateConfirmation: Date
+        + dateEchec: Date
+        + motifEchec: string
+    }
+
+    class Remboursement <<entite>> {
+        + id: string
+        + paiementId: string
+        + montantRembourse: number
+        + devise: string
+        + raisonRemboursement: string
+        + statut: StatutRemboursement
+        + referenceExterne: string
+        + pourcentage: number
+        + dateCreation: Date
+        + dateTraitement: Date
+        + dateConfirmation: Date
+    }
+
+    class Facture <<entite>> {
+        + id: string
+        + paiementId: string
+        + numeroFacture: string
+        + clientNom: string
+        + clientAdresse: string
+        + commercantNom: string
+        + commercantAdresse: string
+        + lignesFacture: LigneFacture[]
+        + montantHT: number
+        + montantTVA: number
+        + montantTTC: number
+        + devise: string
+        + urlPDF: string
+        + dateEmission: Date
+    }
+
+    class LigneFacture <<value object>> {
+        + designation: string
+        + quantite: number
+        + prixUnitaire: number
+        + montantLigne: number
+    }
+
+    class Transaction <<entite>> {
+        + id: string
+        + paiementId: string
+        + typeTransaction: TypeTransaction
+        + montant: number
+        + statut: StatutTransaction
+        + dateTraitement: Date
+    }
+
+    class TransactionMobileMoney <<entite>> {
+        + id: string
+        + paiementId: string
+        + operateur: OperateurMobileMoney
+        + numeroTelephone: string
+        + codeTransaction: string
+        + nomTitulaire: string
+        + statut: StatutTransaction
+        + dateInitiation: Date
+        + dateValidation: Date
+    }
+
+    class WebhookEvent <<entite>> {
+        + id: string
+        + provider: string
+        + typeEvenement: string
+        + payloadJSON: string
+        + signatureRecue: string
+        + estValide: boolean
+        + estTraite: boolean
+        + dateReception: Date
+        + dateTraitement: Date
+    }
+
+    enum TypePaiement {
+        ACOMPTE
+        PAIEMENT_COMPLET
+        SOLDE
+        SUPPLEMENT
+        AUTRE
+    }
+
+    enum StatutPaiement {
+        EN_ATTENTE
+        EN_COURS
+        REUSSI
+        ECHOUE
+        ANNULE
+        REMBOURSE
+        PARTIELLEMENT_REMBOURSE
+        AUTRE
+    }
+
+    enum StatutRemboursement {
+        DEMANDE
+        EN_ATTENTE
+        EN_COURS
+        REUSSI
+        EFFECTUE
+        ECHOUE
+        REFUSE
+        AUTRE
+    }
+
+    enum MethodePaiement {
+        CARTE_CREDIT
+        CARTE_DEBIT
+        CARTE_BANCAIRE
+        MOBILE_MONEY
+        ESPECES
+        VIREMENT
+        CHEQUE
+        AUTRE
+    }
+
+    enum TypeTransaction {
+        PAIEMENT
+        REMBOURSEMENT
+        FRAIS
+        COMMISSION
+        AUTRE
+    }
+
+    enum StatutTransaction {
+        INITIEE
+        EN_ATTENTE
+        EN_ATTENTE_VALIDATION
+        TRAITE
+        VALIDEE
+        ECHOUE
+        ECHOUEE
+        EXPIREE
+        AUTRE
+    }
+
+    enum OperateurMobileMoney {
+        ORANGE_MONEY
+        MTN_MOBILE_MONEY
+        MOOV_MONEY
+        TELECEL_MONEY
+        WAVE
+        FREE_MONEY
+        AUTRE
+    }
+
+    class ClientBooking {
+        - urlBase: string
+        + confirmerReservation(reservationId: string, paiementId: string): Promise<void>
+        + annulerReservation(reservationId: string): Promise<void>
+    }
+
+    class ValidateurPaiement {
+        + validerMontant(montant: number): boolean
+        + validerDevise(devise: string): boolean
+        + validerMethodePaiement(methode: MethodePaiement): boolean
+    }
+
+    class PolitiqueAnnulation <<value object>> {
+        + delai24h: number
+        + delai12h: number
+        + delaiMoins12h: number
+        + calculerPourcentage(heuresAvant: number): number
+    }
+}
+
+' Relations
+ServeurPaiement "1" -- "1" ControleurPaiement : contient >
+ServeurPaiement "1" -- "1" ControleurRemboursement : contient >
+ServeurPaiement "1" -- "1" ControleurFacture : contient >
+ServeurPaiement "1" -- "1" ControleurWebhook : contient >
+
+ControleurPaiement "1" -- "1" ServicePaiement : utilise >
+ControleurRemboursement "1" -- "1" ServiceRemboursement : utilise >
+ControleurFacture "1" -- "1" ServiceFacture : utilise >
+ControleurWebhook "1" -- "1" GestionnaireWebhook : utilise >
+
+ServicePaiement "1" -- "1" DepotPaiement : utilise >
+ServicePaiement "1" -- "1" ClientStripe : utilise >
+ServicePaiement "1" -- "1" ClientBooking : utilise >
+ServicePaiement "1" -- "1" ValidateurPaiement : utilise >
+ServicePaiement "1" -- "1" ServiceTransaction : utilise >
+
+ServiceRemboursement "1" -- "1" DepotRemboursement : utilise >
+ServiceRemboursement "1" -- "1" ClientStripe : utilise >
+ServiceRemboursement "1" -- "1" CalculateurRemboursement : utilise >
+ServiceRemboursement "1" -- "1" ServiceTransaction : utilise >
+
+ServiceFacture "1" -- "1" DepotFacture : utilise >
+ServiceFacture "1" -- "1" GenerateurFacturePDF : utilise >
+
+ServiceTransaction "1" -- "1" DepotTransaction : utilise >
+
+GestionnaireWebhook "1" -- "1" ServicePaiement : utilise >
+GestionnaireWebhook "1" -- "1" ServiceRemboursement : utilise >
+
+DepotPaiement "1" -- "*" Paiement : gère >
+DepotRemboursement "1" -- "*" Remboursement : gère >
+DepotFacture "1" -- "*" Facture : gère >
+DepotTransaction "1" -- "*" Transaction : gère >
+DepotTransactionMobileMoney "1" -- "*" TransactionMobileMoney : gère >
+DepotWebhookEvent "1" -- "*" WebhookEvent : gère >
+
+Paiement "1" -- "1" TypePaiement : est de type >
+Paiement "1" -- "1" MethodePaiement : utilise >
+Paiement "1" -- "1" StatutPaiement : a un >
+Paiement "1" -- "*" Remboursement : peut avoir >
+Paiement "1" -- "0..1" Facture : génère >
+Paiement "1" -- "*" Transaction : génère >
+Paiement "1" -- "0..1" TransactionMobileMoney : associé à >
+
+Remboursement "1" -- "1" StatutRemboursement : a un >
+Facture "1" *-- "*" LigneFacture : contient >
+Transaction "1" -- "1" TypeTransaction : est un >
+Transaction "1" -- "1" StatutTransaction : a un >
+TransactionMobileMoney "1" -- "1" OperateurMobileMoney : utilise >
+TransactionMobileMoney "1" -- "1" StatutTransaction : a un >
+
+CalculateurRemboursement ..> PolitiqueAnnulation : utilise >
+
+note right of Paiement
+  Entité paiement:
+
+  Cycle de vie:
+  1. EN_ATTENTE
+     - PaymentIntent créé Stripe
+     - Attente confirmation client
+
+  2. REUSSI
+     - Paiement confirmé
+     - Réservation confirmée
+     - Facture générée
+
+  3. ECHOUE
+     - Carte refusée
+     - Fonds insuffisants
+     - Réservation annulée
+
+  4. REMBOURSE
+     - Remboursement traité
+     - Partial ou total
+end note
+
+note right of ClientStripe
+  Intégration Stripe:
+
+  Mode: Sandbox (test)
+  Clés:
+  - Publishable: pk_test_...
+  - Secret: sk_test_...
+  - Webhook: whsec_...
+
+  API utilisée:
+  - PaymentIntents API
+  - Refunds API
+  - Webhooks
+
+  Devises supportées:
+  - XOF (Franc CFA) *
+  - EUR, USD
+  - NGN (Naira)
+
+  * Mobile Money pour XOF
+    (Orange Money, MTN, Moov)
+end note
+
+note bottom of CalculateurRemboursement
+  Calcul remboursement selon politique:
+
+  Politique par défaut:
+  - Annulation >24h avant: 100%
+  - Annulation 12-24h avant: 50%
+  - Annulation <12h avant: 0%
+  - Commerçant annule: 100% + compensation
+
+  Calcul:
+  montantRemboursement =
+    montantTotal × pourcentage - frais
+
+  Frais transaction:
+  - Stripe: 2.9% + 100 XOF
+  - Non remboursable
+
+  Cas spéciaux:
+  - No-show: 0% remboursé
+  - Force majeure: 100% remboursé
+  - Annulation commerçant: 100% + 20%
+end note
+
+note right of GenerateurFacturePDF
+  Génération facture PDF:
+
+  Template:
+  - Logo entreprise
+  - Infos commerçant
+  - Infos client
+  - Numéro facture unique
+  - Date émission
+  - Détail réservation
+  - Montant HT/TVA/TTC
+  - Moyens paiement
+  - Mentions légales
+
+  Format numéro:
+  FACT-2026-00001, FACT-2026-00002, ...
+
+  Génération:
+  - Bibliothèque: PDFKit
+  - Stockage: S3 ou local
+  - URL téléchargement
+  - Envoi auto par email
+
+  TVA:
+  - Taux: 18% (standard Afrique Ouest)
+  - Exonération possible selon secteur
+end note
+
+note left of GestionnaireWebhook
+  Webhooks Stripe:
+
+  Événements écoutés:
+  - payment_intent.succeeded
+    → Confirmer paiement
+    → Confirmer réservation
+    → Générer facture
+    → Envoyer notification
+
+  - payment_intent.payment_failed
+    → Marquer ECHOUE
+    → Annuler réservation
+    → Notifier client
+
+  - charge.refunded
+    → Marquer REMBOURSE
+    → Notifier client
+
+  Sécurité:
+  - Validation signature HMAC
+  - Secret webhook Stripe
+  - Idempotence (même event 2×)
+  - Retry automatique Stripe
+end note
+
+note bottom of ServiceTransaction
+  Historique transactions:
+
+  Types enregistrés:
+  - PAIEMENT (charge client)
+  - REMBOURSEMENT (refund)
+  - FRAIS (Stripe fees)
+  - COMMISSION (plateforme %)
+
+  Utilité:
+  - Audit trail
+  - Comptabilité
+  - Reporting
+  - Détection fraude
+  - Réconciliation bancaire
+
+  Chaque transaction:
+  - Montant signé (+/-)
+  - Timestamp précis
+  - Référence externe (Stripe ID)
+  - Statut traitement
+end note
+
+@enduml

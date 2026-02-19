@@ -1,0 +1,101 @@
+**Sujet 2 :  (PING 8)**
+
+## Développement d’un micro-service de réservations pour une plateforme de services (restauration, hébergement, prestations) : allocation multi-ressources, optimisation d’occupation et disponibilité en temps réel.
+
+## Objectif : permettre aux commerçants de gérer tables, chambres, ticket de bus, évènement ou créneaux, d’éviter les conflits et de maximiser l’occupation, tout en offrant aux clients des créneaux alternatifs et des notifications (confirmation, rappel). 
+
+## le systeme doit etre adapter au context Africain first.
+### Portée : backend, frontend et documentation par micro-service. 
+Langages et outils (pour assurer la compatibilité avec la plateforme cible) : 
+#### - Backend : TypeScript ; Fastify ; Prisma (PostgreSQL) ; Redis ; Socket.io ou WebSocket (temps réel) ; Zod (validation) ; JWT (auth). 
+#### - Frontend** : Flutter (Dart) ; Dio (HTTP) ; Riverpod ou équivalent (état).
+
+
+
+BookingSysteme/
+├── backend/
+│   └── services/
+│       ├── auth-service/           (Port 3001)
+│       ├── booking-service/        (Port 3003)
+│       ├── accommodation-service/  (Port 3009)
+│       ├── restaurant-service/     (Port 3008)
+│       ├── transport-service/      (Port 3011)
+│       ├── payment-service/        (Port 3004)
+│       ├── notification-service/   (Port 3005)
+│       ├── service-provider/       (Port 3010)
+│       └── resource-core-service/  (Port 3002)
+├── frontend/
+│   └── mobile/                     (Flutter)
+├── infrastructure/
+│   ├── docker/
+│   └── kubernetes/
+└── docs/
+
+---
+
+##  Guide de Contribution
+
+### Pour les nouveaux collaborateurs
+
+1. **Configurer Git** (une seule fois)
+   ```bash
+   # Windows
+   .\setup-git.ps1
+   
+   # Linux/Mac
+   chmod +x setup-git.sh
+   ./setup-git.sh
+   ```
+
+2. **Configurer votre identité**
+   ```bash
+   git config user.name "Votre Nom"
+   git config user.email "votre.email@example.com"
+   ```
+
+3. **Lire la documentation**
+   - [CONTRIBUTING.md](CONTRIBUTING.md) - Guide complet de contribution
+   - [.github/GIT_GUIDE.md](.github/GIT_GUIDE.md) - Référence rapide Git
+
+### Convention de commits
+
+Format: `<type>(<scope>): <description>`
+
+**Exemples valides:**
+```bash
+feat(auth): ajout de l'authentification OAuth2
+fix(booking): correction du calcul de disponibilité
+docs(readme): mise à jour des instructions
+refactor(payment): simplification du traitement des paiements
+```
+
+**Types:** `feat` `fix` `docs` `style` `refactor` `perf` `test` `chore` `build` `ci`
+
+**Scopes:** `auth` `booking` `accommodation` `restaurant` `transport` `payment` `notification` `resource-core` `service-provider` `mobile` `infra` `docs` `global`
+
+### Workflow Git
+
+```bash
+# 1. Créer une branche
+git checkout -b feature/ma-fonctionnalite
+
+# 2. Faire vos modifications
+git add fichiers
+git commit -m "feat(scope): description"
+
+# 3. Garder la branche à jour
+git pull --rebase origin master
+
+# 4. Push et créer une Pull Request
+git push origin feature/ma-fonctionnalite
+```
+
+### Règles importantes
+
+- **Jamais de push direct sur `master`**
+- Toujours créer une Pull Request
+- Au moins 1 reviewer requis
+- Tests doivent passer avant merge
+- Pas de fichiers sensibles (.env, secrets)
+
+ **Documentation complète:** [CONTRIBUTING.md](CONTRIBUTING.md)

@@ -1,0 +1,483 @@
+@startuml Booking Service - Diagramme de Séquence
+
+title Booking Service - Processus complet de réservation avec détection conflits
+
+actor "Client" as Client
+participant "API Gateway" as Gateway
+participant "ControleurReservation" as Controleur
+participant "ValidateurReservation" as Validateur
+participant "ServiceReservation" as Service
+participant "DetecteurConflits" as Detecteur
+participant "ClientRestaurant" as RestaurantClient
+participant "ServiceRecherche" as Recherche
+participant "GenerateurSuggestions" as Suggestions
+participant "DepotReservation" as Depot
+participant "DepotConflit" as DepotConflit
+participant "ClientPaiement" as PaiementClient
+participant "GestionnaireWebSocket" as WebSocket
+database "PostgreSQL" as DB
+database "Redis" as Redis
+
+== Tentative de réservation ==
+Client -> Gateway : POST /bookings\n{ressourceId: "table-123", typeRessource: "TABLE",\ndateDebut: "2026-03-15T19:00", dateFin: "2026-03-15T21:00", personnes: 4}
+activate Gateway
+
+Gateway -> Controleur : creerReservation(req, res)
+activate Controleur
+
+Controleur -> Validateur : validerDates(dateDebut, dateFin)
+activate Validateur
+Validateur -> Validateur : vérifier dateFin > dateDebut
+Validateur -> Validateur : vérifier dateDebut >= maintenant + 1h (délai min)
+Validateur --> Controleur : {valide: true}
+deactivate Validateur
+
+Controleur -> Service : creer(utilisateurId, donnees)
+activate Service
+
+Service -> RestaurantClient : obtenirTable(ressourceId)
+activate RestaurantClient
+RestaurantClient --> Service : table {capaciteMin: 2, capaciteMax: 6}
+deactivate RestaurantClient
+
+Service -> Validateur : validerNombrePersonnes(4, capacite: 2-6)
+activate Validateur
+Validateur --> Service : true (4 personnes OK pour table 2-6)
+deactivate Validateur
+
+Service -> Detecteur : detecter(nouvelleReservation)
+activate Detecteur
+
+Detecteur -> Depot : trouverParRessource(ressourceId, plageDate)
+activate Depot
+Depot -> DB : SELECT * FROM bookings\nWHERE resource_id = ? AND date_debut < ? AND date_fin > ?\nAND status IN ('CONFIRMEE', 'EN_ATTENTE')
+DB --> Depot : [2 réservations existantes]
+Depot --> Detecteur : reservationsExistantes
+deactivate Depot
+
+loop Pour chaque réservation existante
+    Detecteur -> Detecteur : verifierChevauchementTemporel(nouvelle, existante)
+
+    note right
+      Réservation 1:
+      - Début: 17:00
+      - Fin: 19:00
+      Nouvelle: 19:00-21:00
+      → PAS de chevauchement ✓
+
+      Réservation 2:
+      - Début: 20:00
+      - Fin: 22:00
+      Nouvelle: 19:00-21:00
+      → CHEVAUCHEMENT ✗
+      (19:00 < 22:00 ET 21:00 > 20:00)
+    end note
+end
+
+alt Conflit détecté
+    Detecteur -> DepotConflit : creer(reservation1Id, reservation2Id, type: CHEVAUCHEMENT_TEMPOREL)
+    activate DepotConflit
+    DepotConflit -> DB : INSERT INTO conflicts (...)
+    DB --> DepotConflit : conflit enregistré
+    DepotConflit --> Detecteur : conflit
+    deactivate DepotConflit
+
+    Detecteur --> Service : [conflits: [{type: CHEVAUCHEMENT_TEMPOREL, ...}]]
+    deactivate Detecteur
+
+    Service -> Suggestions : genererSuggestions(donneesReservation)
+    activate Suggestions
+
+    ' Suggestion 1: Tables similaires
+    Suggestions -> RestaurantClient : GET /restaurants/:id/tables?capacite=4
+    activate RestaurantClient
+    RestaurantClient --> Suggestions : [table-456 (4-8 pers), table-789 (2-6 pers)]
+    deactivate RestaurantClient
+
+    loop Pour chaque table similaire
+        Suggestions -> RestaurantClient : verifierDisponibilite(tableId, date, creneau)
+        activate RestaurantClient
+        RestaurantClient --> Suggestions : {disponible: true/false}
+        deactivate RestaurantClient
+    end
+
+    ' Suggestion 2: Créneaux proches
+    Suggestions -> Suggestions : trouverCreneauxProches(19:00, delta: ±1h)
+    note right
+      Créneaux alternatifs:
+      - 17:00-19:00 (2h avant)
+      - 18:00-20:00 (1h avant)
+      - 21:00-23:00 (2h après)
+    end note
+
+    loop Pour chaque créneau proche
+        Suggestions -> RestaurantClient : verifierDisponibilite(ressourceId, date, creneauAlt)
+        activate RestaurantClient
+        RestaurantClient --> Suggestions : {disponible: true/false}
+        deactivate RestaurantClient
+    end
+
+    Suggestions -> Suggestions : calculerScores(suggestions)
+    note right
+      Score =
+        0.4 × (1 - deltaTemps/3h) +
+        0.4 × similariteRessource +
+        0.2 × (1 - deltaPrix/prixMax)
+
+      Exemple:
+      - Table-456 à 18:00: score 0.85
+      - Table-123 à 21:00: score 0.75
+      - Table-789 à 17:00: score 0.70
+    end note
+
+    Suggestions -> Suggestions : trierParScore(suggestions)
+    Suggestions -> Suggestions : limiter(10)
+
+    Suggestions --> Service : [10 suggestions triées]
+    deactivate Suggestions
+
+    Service --> Controleur : throw ConflictError({conflits, suggestions})
+    Controleur --> Gateway : 409 Conflict\n{message: "Table déjà réservée", suggestions: [...]}
+    Gateway --> Client : 409 Conflict\n{conflict: true, alternatives: [...]}
+
+else Aucun conflit
+    Detecteur --> Service : []
+    deactivate Detecteur
+
+    Service -> Depot : creer(donneesReservation)
+    activate Depot
+    Depot -> DB : INSERT INTO bookings\n(user_id, resource_id, resource_type, date_debut, date_fin, ..., status: 'EN_ATTENTE')
+    DB --> Depot : réservation créée
+    Depot --> Service : reservation
+    deactivate Depot
+
+    Service -> DepotHistoriqueStatut : creer(reservationId, null, EN_ATTENTE, "Création")
+    activate DepotHistoriqueStatut
+    DepotHistoriqueStatut -> DB : INSERT INTO booking_status_history (...)
+    DB --> DepotHistoriqueStatut : historique créé
+    DepotHistoriqueStatut --> Service : historique
+    deactivate DepotHistoriqueStatut
+
+    Service -> Redis : publish("booking.created", {reservationId, ressourceId, utilisateurId})
+    activate Redis
+    Redis --> Service : OK
+    deactivate Redis
+
+    Service -> WebSocket : diffuserNouvelleReservation(ressourceId, reservation)
+    activate WebSocket
+    WebSocket -> WebSocket : io.to("resource:" + ressourceId).emit("booking.created", reservation)
+    WebSocket --> Service : diffusé
+    deactivate WebSocket
+
+    Service --> Controleur : reservation
+    Controleur --> Gateway : 201 Created\n{reservationId, statut: "EN_ATTENTE", prixTotal: 50000, codeConfirmation: "PING-AB12CD"}
+    Gateway --> Client : 201 Created\n{bookingId, confirmationCode, status: "PENDING", totalPrice: 50000 XOF}
+end
+
+deactivate Service
+deactivate Controleur
+deactivate Gateway
+
+== Confirmation après paiement (webhook Payment Service) ==
+participant "Payment Service" as PaymentService
+
+PaymentService -> Gateway : PUT /bookings/:id/confirm\n{paiementId: "pay-xyz"}
+activate Gateway
+
+Gateway -> Controleur : confirmerReservation(req, res)
+activate Controleur
+
+Controleur -> Service : confirmer(reservationId, paiementId)
+activate Service
+
+Service -> Depot : trouverParId(reservationId)
+activate Depot
+Depot -> DB : SELECT * FROM bookings WHERE id = ?
+DB --> Depot : reservation {statut: EN_ATTENTE}
+Depot --> Service : reservation
+deactivate Depot
+
+alt Statut = EN_ATTENTE
+    Service -> Depot : mettreAJour(reservationId, {statut: CONFIRMEE, paiementId})
+    activate Depot
+    Depot -> DB : UPDATE bookings SET status = 'CONFIRMEE', payment_id = ? WHERE id = ?
+    DB --> Depot : réservation mise à jour
+    Depot --> Service : reservation
+    deactivate Depot
+
+    Service -> DepotHistoriqueStatut : creer(reservationId, EN_ATTENTE, CONFIRMEE, "Paiement validé")
+    activate DepotHistoriqueStatut
+    DepotHistoriqueStatut -> DB : INSERT INTO booking_status_history (...)
+    DB --> DepotHistoriqueStatut : historique
+    DepotHistoriqueStatut --> Service : historique
+    deactivate DepotHistoriqueStatut
+
+    Service -> Redis : publish("booking.confirmed", {reservationId, utilisateurId, paiementId})
+    activate Redis
+    note right: Notification Service écoute et envoie email
+    Redis --> Service : OK
+    deactivate Redis
+
+    Service -> WebSocket : diffuserMiseAJour(ressourceId, reservation)
+    activate WebSocket
+    WebSocket -> WebSocket : io.to("resource:" + ressourceId).emit("booking.confirmed", reservation)
+    WebSocket -> WebSocket : io.to("user:" + utilisateurId).emit("booking.confirmed", reservation)
+    WebSocket --> Service : diffusé
+    deactivate WebSocket
+
+    Service --> Controleur : reservation
+    Controleur --> Gateway : 200 OK\n{reservation, statut: "CONFIRMEE"}
+    Gateway --> PaymentService : 200 OK
+
+else Statut ≠ EN_ATTENTE
+    Service --> Controleur : throw InvalidStateError("Réservation déjà confirmée ou annulée")
+    Controleur --> Gateway : 400 Bad Request
+    Gateway --> PaymentService : 400 Bad Request
+end
+
+deactivate Service
+deactivate Controleur
+deactivate Gateway
+
+== Annulation de réservation ==
+Client -> Gateway : DELETE /bookings/:id\n{raison: "Imprévu"}
+activate Gateway
+
+Gateway -> Controleur : annulerReservation(req, res)
+activate Controleur
+
+Controleur -> Service : annuler(reservationId, raison)
+activate Service
+
+Service -> Depot : trouverParId(reservationId)
+activate Depot
+Depot -> DB : SELECT * FROM bookings WHERE id = ?
+DB --> Depot : reservation {dateDebut: 2026-03-15T19:00, statut: CONFIRMEE}
+Depot --> Service : reservation
+deactivate Depot
+
+Service -> Validateur : validerDelaiAnnulation(reservation)
+activate Validateur
+Validateur -> Validateur : calculerHeuresAvantDebut(dateDebut, maintenant)
+note right: 48 heures avant → OK
+
+alt Délai >= 24h (politique commercant)
+    Validateur --> Service : {autorise: true, remboursement: 100%}
+
+    Service -> Depot : mettreAJour(reservationId, {statut: ANNULEE})
+    activate Depot
+    Depot -> DB : UPDATE bookings SET status = 'ANNULEE' WHERE id = ?
+    DB --> Depot : réservation mise à jour
+    Depot --> Service : reservation
+    deactivate Depot
+
+    Service -> DepotHistoriqueStatut : creer(reservationId, CONFIRMEE, ANNULEE, raison)
+    activate DepotHistoriqueStatut
+    DepotHistoriqueStatut -> DB : INSERT INTO booking_status_history (...)
+    DB --> DepotHistoriqueStatut : historique
+    DepotHistoriqueStatut --> Service : historique
+    deactivate DepotHistoriqueStatut
+
+    Service -> PaiementClient : creerRemboursement(paiementId, montant: 50000, pourcentage: 100%)
+    activate PaiementClient
+    PaiementClient --> Service : {remboursementId, statut: EN_COURS}
+    deactivate PaiementClient
+
+    Service -> Redis : publish("booking.cancelled", {reservationId, utilisateurId, remboursement: 100%})
+    activate Redis
+    Redis --> Service : OK
+    deactivate Redis
+
+    Service -> WebSocket : diffuserAnnulation(ressourceId, reservationId)
+    activate WebSocket
+    WebSocket -> WebSocket : io.to("resource:" + ressourceId).emit("booking.cancelled", {reservationId})
+    WebSocket -> WebSocket : io.to("resource:" + ressourceId).emit("availability.changed", {disponibilite})
+    WebSocket --> Service : diffusé
+    deactivate WebSocket
+
+    Service --> Controleur : {reservation, remboursement: 100%}
+    Controleur --> Gateway : 200 OK\n{statut: "ANNULEE", remboursement: 50000}
+    Gateway --> Client : 200 OK\n{cancelled: true, refund: 100%}
+
+else Délai < 24h
+    Validateur --> Service : {autorise: false, raison: "Délai insuffisant"}
+    Service --> Controleur : throw ForbiddenError("Annulation impossible: délai < 24h")
+    Controleur --> Gateway : 403 Forbidden\n{message: "Délai d'annulation dépassé"}
+    Gateway --> Client : 403 Forbidden\n{cancelled: false}
+end
+
+deactivate Validateur
+deactivate Service
+deactivate Controleur
+deactivate Gateway
+
+== Modification de réservation ==
+Client -> Gateway : PUT /bookings/:id\n{nouvelleDateDebut: "2026-03-16T19:00", nouvelleDateFin: "2026-03-16T21:00"}
+activate Gateway
+
+Gateway -> Controleur : modifierReservation(req, res)
+activate Controleur
+
+Controleur -> Service : modifier(reservationId, donnees)
+activate Service
+
+Service -> Depot : trouverParId(reservationId)
+activate Depot
+Depot -> DB : SELECT * FROM bookings WHERE id = ?
+DB --> Depot : reservationActuelle
+Depot --> Service : reservationActuelle
+deactivate Depot
+
+Service -> Service : verifierPossibiliteModification(reservationActuelle)
+note right
+  Conditions:
+  - Statut = CONFIRMEE
+  - Délai >= 24h avant début
+  - Max 1 modification autorisée
+end note
+
+alt Modification autorisée
+    Service -> Detecteur : detecter(donneesModifiees)
+    activate Detecteur
+
+    Detecteur -> Depot : trouverParRessource(ressourceId, nouvellePlage)
+    activate Depot
+    Depot -> DB : SELECT * FROM bookings\nWHERE resource_id = ? AND id != ?\nAND date_debut < ? AND date_fin > ?
+    DB --> Depot : [réservations concurrentes]
+    Depot --> Detecteur : reservations
+    deactivate Depot
+
+    alt Aucun conflit sur nouveau créneau
+        Detecteur --> Service : []
+
+        Service -> Depot : mettreAJour(reservationId, {dateDebut, dateFin, nombreModifications: +1})
+        activate Depot
+        Depot -> DB : UPDATE bookings SET date_debut = ?, date_fin = ?, ..., WHERE id = ?
+        DB --> Depot : réservation modifiée
+        Depot --> Service : reservation
+        deactivate Depot
+
+        Service -> DepotHistoriqueStatut : creer(reservationId, CONFIRMEE, CONFIRMEE, "Modification dates")
+        activate DepotHistoriqueStatut
+        DepotHistoriqueStatut -> DB : INSERT INTO booking_status_history (...)
+        DB --> DepotHistoriqueStatut : historique
+        DepotHistoriqueStatut --> Service : historique
+        deactivate DepotHistoriqueStatut
+
+        Service -> Redis : publish("booking.updated", {reservationId, ancienneDate, nouvelleDate})
+        activate Redis
+        Redis --> Service : OK
+        deactivate Redis
+
+        Service -> WebSocket : diffuserMiseAJour(ressourceId, reservation)
+        activate WebSocket
+        WebSocket --> Service : diffusé
+        deactivate WebSocket
+
+        Service --> Controleur : reservation
+        Controleur --> Gateway : 200 OK\n{reservation, message: "Modifiée avec succès"}
+        Gateway --> Client : 200 OK\n{updated: true}
+
+    else Conflit sur nouveau créneau
+        Detecteur --> Service : [conflits]
+        deactivate Detecteur
+
+        Service -> Suggestions : genererSuggestions(donneesModifiees)
+        activate Suggestions
+        Suggestions --> Service : [suggestions alternatives]
+        deactivate Suggestions
+
+        Service --> Controleur : throw ConflictError({conflits, suggestions})
+        Controleur --> Gateway : 409 Conflict\n{suggestions: [...]}
+        Gateway --> Client : 409 Conflict\n{alternatives}
+    end
+
+else Modification non autorisée
+    Service --> Controleur : throw ForbiddenError("Modification impossible")
+    Controleur --> Gateway : 403 Forbidden
+    Gateway --> Client : 403 Forbidden
+end
+
+deactivate Service
+deactivate Controleur
+deactivate Gateway
+
+note right of Detecteur
+  Détection conflits avancée:
+
+  Types de conflits:
+  1. CHEVAUCHEMENT_TEMPOREL
+     - Même ressource, temps qui se croisent
+
+  2. DOUBLE_RESERVATION
+     - Utilisateur a déjà réservation
+       même date/heure
+
+  3. SURCAPACITE
+     - Nombre personnes > capacité max
+
+  4. RESSOURCE_INDISPONIBLE
+     - Statut ressource: MAINTENANCE,
+       HORS_SERVICE
+
+  Prévention:
+  - Lock optimiste (version row)
+  - Transaction DB SERIALIZABLE
+  - Vérification double (avant + après)
+end note
+
+note bottom of Suggestions
+  Génération suggestions:
+
+  Algorithme multi-critères:
+
+  1. Tables similaires (même resto):
+     - Capacité ±2 personnes
+     - Même zone si possible
+     - Prix équivalent
+
+  2. Créneaux proches (même table):
+     - ±1h: priorité haute
+     - ±2h: priorité moyenne
+     - Jour suivant: priorité basse
+
+  3. Ressources alternatives:
+     - Restaurants proches (rayon 5km)
+     - Même type cuisine
+     - Note ≥ 4/5
+
+  Scoring:
+  - Distance temporelle: 40%
+  - Similarité ressource: 40%
+  - Différence prix: 20%
+
+  Limite: 10 meilleures suggestions
+end note
+
+note right of WebSocket
+  Diffusion temps réel:
+
+  Événements:
+  - booking.created
+    → Tous clients vue ressource
+    → Merchant dashboard
+
+  - booking.confirmed
+    → Client concerné
+    → Merchant dashboard
+
+  - booking.cancelled
+    → Mise à jour disponibilité
+    → Autres clients en recherche
+
+  - availability.changed
+    → Refresh liste disponibilités
+    → Update calendrier
+
+  Avantages:
+  - Synchronisation instantanée
+  - Évite double-booking UI
+  - UX fluide et réactive
+end note
+
+@enduml

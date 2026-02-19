@@ -1,0 +1,178 @@
+@startuml Restaurant Service - Diagramme de Séquence
+
+title Restaurant Service - Création table et vérification disponibilité
+
+actor "Commerçant" as Merchant
+participant "API Gateway" as Gateway
+participant "ControleurTable" as Controleur
+participant "ValidateurTable" as Validateur
+participant "ServiceTable" as ServiceTable
+participant "ClientResourceCore" as CoreClient
+participant "ServiceDisponibilite" as ServiceDispo
+participant "ClientBookingService" as BookingClient
+participant "DepotTable" as Depot
+participant "GestionnaireCache" as Cache
+database "PostgreSQL" as DB
+database "Redis" as Redis
+
+== Création d'une table ==
+Merchant -> Gateway : POST /restaurants/:id/tables\n{numeroTable: "T12", capaciteMin: 2, capaciteMax: 6, zoneId: "zone-terrasse"}
+activate Gateway
+
+Gateway -> Controleur : creerTable(req, res)
+activate Controleur
+
+Controleur -> Validateur : validerNumeroTable("T12")
+activate Validateur
+Validateur -> Validateur : vérifier format (alphanumérique)
+Validateur --> Controleur : {valide: true}
+deactivate Validateur
+
+Controleur -> Validateur : validerCapacite(min: 2, max: 6)
+activate Validateur
+Validateur -> Validateur : vérifier min >= 1
+Validateur -> Validateur : vérifier max <= 20
+Validateur -> Validateur : vérifier min <= max
+Validateur --> Controleur : {valide: true}
+deactivate Validateur
+
+Controleur -> ServiceTable : creer(restaurantId, donnees)
+activate ServiceTable
+
+ServiceTable -> ServiceTable : verifierNumeroUnique(restaurantId, "T12")
+ServiceTable -> Depot : trouverParNumero(restaurantId, "T12")
+activate Depot
+Depot -> DB : SELECT * FROM tables\nWHERE restaurant_id = ? AND table_number = ?
+DB --> Depot : null (numéro disponible)
+Depot --> ServiceTable : null
+deactivate Depot
+
+ServiceTable -> CoreClient : validerRessource({nom: "Table T12", capacite: 6, type: "TABLE"})
+activate CoreClient
+CoreClient --> ServiceTable : {valide: true}
+deactivate CoreClient
+
+ServiceTable -> Depot : creer(donnees)
+activate Depot
+Depot -> DB : INSERT INTO tables\n(restaurant_id, table_number, capacity_min, capacity_max, zone_id, ...)
+DB --> Depot : table créée
+Depot --> ServiceTable : table
+deactivate Depot
+
+ServiceTable -> Redis : publish("resource.created", {tableId, restaurantId, type: "TABLE"})
+activate Redis
+Redis --> ServiceTable : OK
+deactivate Redis
+
+ServiceTable --> Controleur : table
+deactivate ServiceTable
+
+Controleur --> Gateway : 201 Created\n{tableId, numeroTable, capacite}
+deactivate Controleur
+
+Gateway --> Merchant : 201 Created\n{table}
+deactivate Gateway
+
+== Vérification de disponibilité ==
+actor "Client" as Client
+
+Client -> Gateway : GET /tables/:tableId/availability\n?date=2026-02-10&heureDebut=19:00&heureFin=21:00&personnes=4
+activate Gateway
+
+Gateway -> Controleur : verifierDisponibilite(req, res)
+activate Controleur
+
+Controleur -> ServiceTable : trouverParId(tableId)
+activate ServiceTable
+ServiceTable -> Depot : trouverParId(tableId)
+activate Depot
+Depot -> DB : SELECT * FROM tables WHERE id = ?
+DB --> Depot : table {capaciteMin: 2, capaciteMax: 6}
+Depot --> ServiceTable : table
+deactivate Depot
+
+ServiceTable -> ServiceTable : verifierCapaciteAdaptee(personnes: 4, table)
+
+alt Capacité adaptée (2 <= 4 <= 6)
+    ServiceTable -> ServiceDispo : verifierDisponibilite(tableId, date, heureDebut, heureFin)
+    activate ServiceDispo
+
+    ServiceDispo -> Cache : obtenirDisponibilite(tableId, date)
+    activate Cache
+    Cache -> Redis : GET "availability:table:" + tableId + ":" + date
+    Redis --> Cache : null (cache miss)
+    Cache --> ServiceDispo : null
+    deactivate Cache
+
+    ServiceDispo -> BookingClient : GET /bookings?tableId=&date=&status=CONFIRMED,PENDING
+    activate BookingClient
+    BookingClient --> ServiceDispo : [reservations pour cette table ce jour]
+    deactivate BookingClient
+
+    ServiceDispo -> ServiceDispo : verifierChevauchement(heureDebut: 19:00, heureFin: 21:00, reservations)
+
+    alt Aucun chevauchement
+        ServiceDispo -> Cache : cacherDisponibilite(tableId, date, {disponible: true})
+        activate Cache
+        Cache -> Redis : SETEX "availability:..." 300 {disponible: true}
+        Redis --> Cache : OK
+        deactivate Cache
+
+        ServiceDispo --> ServiceTable : {disponible: true, creneaux: [...]}
+        ServiceTable --> Controleur : {disponible: true}
+        Controleur --> Gateway : 200 OK\n{disponible: true, tableId, capacite: "2-6"}
+        Gateway --> Client : 200 OK\n{available: true}
+
+    else Chevauchement détecté
+        ServiceDispo -> ServiceDispo : calculerCreneauxAlternatifs(19:00)
+        ServiceDispo --> ServiceTable : {disponible: false, alternatives: ["17:00-19:00", "21:30-23:30"]}
+        ServiceTable --> Controleur : {disponible: false, alternatives}
+        Controleur --> Gateway : 200 OK\n{disponible: false, suggestions: [...]}
+        Gateway --> Client : 200 OK\n{available: false, alternatives}
+    end
+
+    deactivate ServiceDispo
+
+else Capacité inadaptée
+    ServiceTable --> Controleur : {disponible: false, raison: "Capacité table inadaptée"}
+    Controleur --> Gateway : 200 OK\n{disponible: false, raison: "Table pour 2-6 pers"}
+    Gateway --> Client : 200 OK\n{available: false}
+end
+
+deactivate ServiceTable
+deactivate Controleur
+deactivate Gateway
+
+note right of ServiceDispo
+  Algorithme de chevauchement:
+
+  Conflit SI:
+  (reservation.heureDebut < 21:00) ET
+  (reservation.heureFin > 19:00)
+
+  Marge de sécurité:
+  - Avant: 15min (nettoyage)
+  - Après: 15min (retard possible)
+end note
+
+note right of Cache
+  Cache Redis:
+  - Clé: availability:table:<id>:<date>
+  - TTL: 5 minutes
+  - Invalidé sur:
+    * Nouvelle réservation
+    * Annulation
+    * Modification
+end note
+
+note bottom of ServiceDispo
+  Optimisation occupation:
+
+  Si table demandée indisponible:
+  1. Chercher tables similaires (±2 pers)
+  2. Proposer créneaux proches (±1h)
+  3. Suggérer zones alternatives
+  4. Combiner tables si possible
+end note
+
+@enduml

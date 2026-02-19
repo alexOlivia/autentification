@@ -1,0 +1,626 @@
+@startuml Service Provider Service - Diagramme de Classes
+
+title Service Provider Service - Diagramme de Classes
+
+' Styles
+skinparam class {
+    BackgroundColor LightGoldenRodYellow
+    BorderColor Goldenrod
+    ArrowColor Goldenrod
+}
+
+package "Service Provider Service" {
+    class ServeurPrestataire {
+        - application: FastifyInstance
+        - port: number
+        - db: PrismaClient
+        - redis: ClientRedis
+        + demarrer(): Promise<void>
+        + arreter(): Promise<void>
+        + enregistrerRoutes(): void
+    }
+
+    class ControleurEtablissement {
+        + creerEtablissement(req: Requete, res: Reponse): Promise<void>
+        + obtenirEtablissement(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourEtablissement(req: Requete, res: Reponse): Promise<void>
+        + listerEtablissements(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurPrestataire {
+        + ajouterPrestataire(req: Requete, res: Reponse): Promise<void>
+        + obtenirPrestataire(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourPrestataire(req: Requete, res: Reponse): Promise<void>
+        + supprimerPrestataire(req: Requete, res: Reponse): Promise<void>
+        + listerPrestataires(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurService {
+        + creerService(req: Requete, res: Reponse): Promise<void>
+        + obtenirService(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourService(req: Requete, res: Reponse): Promise<void>
+        + supprimerService(req: Requete, res: Reponse): Promise<void>
+        + listerServices(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurPromotion {
+        + creerPromotion(req: Requete, res: Reponse): Promise<void>
+        + obtenirPromotion(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourPromotion(req: Requete, res: Reponse): Promise<void>
+        + supprimerPromotion(req: Requete, res: Reponse): Promise<void>
+        + listerPromotions(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurCreneau {
+        + creerCreneau(req: Requete, res: Reponse): Promise<void>
+        + genererCreneaux(req: Requete, res: Reponse): Promise<void>
+        + obtenirCreneauxDisponibles(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourCreneau(req: Requete, res: Reponse): Promise<void>
+        + supprimerCreneau(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ServiceEtablissement {
+        - depotEtablissement: DepotEtablissement
+        - clientResourceCore: ClientResourceCore
+        - validateur: ValidateurEtablissement
+        + creer(commercantId: string, donnees: DonneesEtablissement): Promise<Etablissement>
+        + trouverParId(id: string): Promise<Etablissement>
+        + trouverParCommercant(commercantId: string): Promise<Etablissement>
+        + mettreAJour(id: string, donnees: any): Promise<Etablissement>
+        + lister(filtres: FiltresEtablissement): Promise<Etablissement[]>
+    }
+
+    class ServicePrestataire {
+        - depotPrestataire: DepotPrestataire
+        - validateur: ValidateurPrestataire
+        + ajouter(etablissementId: string, donnees: DonneesPrestataire): Promise<Prestataire>
+        + trouverParId(id: string): Promise<Prestataire>
+        + lister(etablissementId: string): Promise<Prestataire[]>
+        + mettreAJour(id: string, donnees: any): Promise<Prestataire>
+        + supprimer(id: string): Promise<void>
+        + verifierDisponibilite(prestataireId: string, creneau: CreneauDisponibilite): Promise<boolean>
+    }
+
+    class ServiceService {
+        - depotService: DepotService
+        + creer(etablissementId: string, donnees: DonneesService): Promise<Service>
+        + trouverParId(id: string): Promise<Service>
+        + lister(etablissementId: string): Promise<Service[]>
+        + mettreAJour(id: string, donnees: any): Promise<Service>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class ServicePromotion {
+        - depotPromotion: DepotPromotion
+        + creer(etablissementId: string, donnees: DonneesPromotion): Promise<Promotion>
+        + trouverParId(id: string): Promise<Promotion>
+        + lister(etablissementId: string): Promise<Promotion[]>
+        + mettreAJour(id: string, donnees: any): Promise<Promotion>
+        + supprimer(id: string): Promise<void>
+        + calculerPrixAvecPromo(serviceId: string, prixBase: number): Promise<number>
+    }
+
+    class ServiceCreneau {
+        - depotCreneau: DepotCreneau
+        - serviceDisponibilite: ServiceDisponibilite
+        - generateur: GenerateurCreneaux
+        + creer(donnees: DonneesCreneau): Promise<CreneauDisponibilite>
+        + genererCreneauxAutomatiques(prestataireId: string, config: ConfigCreneaux): Promise<CreneauDisponibilite[]>
+        + obtenirDisponibles(filtres: FiltresCreneaux): Promise<CreneauDisponibilite[]>
+        + mettreAJour(id: string, donnees: any): Promise<CreneauDisponibilite>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class ServiceDisponibilite {
+        - depotCreneau: DepotCreneau
+        - clientBookingService: ClientBookingService
+        - cache: GestionnaireCache
+        + verifierDisponibilite(creneauId: string): Promise<boolean>
+        + obtenirCreneauxLibres(prestataireId: string, date: Date, serviceId: string): Promise<CreneauDisponibilite[]>
+        + verifierConflitPrestataire(prestataireId: string, creneau: CreneauDisponibilite): Promise<boolean>
+        + bloquerCreneau(creneauId: string): Promise<void>
+    }
+
+    class GenerateurCreneaux {
+        + generer(dateDebut: Date, dateFin: Date, config: ConfigCreneaux): Promise<CreneauDisponibilite[]>
+        + genererPourJour(date: Date, config: ConfigCreneaux): CreneauDisponibilite[]
+        + alignerSurGrille(heure: string, intervalleMin: number): string
+        + calculerPauses(creneaux: CreneauDisponibilite[], pauseMin: number): CreneauDisponibilite[]
+    }
+
+    class DepotEtablissement {
+        - db: PrismaClient
+        + creer(donnees: DonneesEtablissement): Promise<Etablissement>
+        + trouverParId(id: string): Promise<Etablissement | null>
+        + trouverParCommercant(commercantId: string): Promise<Etablissement | null>
+        + mettreAJour(id: string, donnees: any): Promise<Etablissement>
+        + lister(filtres: any): Promise<Etablissement[]>
+    }
+
+    class DepotPrestataire {
+        - db: PrismaClient
+        + creer(donnees: DonneesPrestataire): Promise<Prestataire>
+        + trouverParId(id: string): Promise<Prestataire | null>
+        + lister(etablissementId: string): Promise<Prestataire[]>
+        + mettreAJour(id: string, donnees: any): Promise<Prestataire>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotService {
+        - db: PrismaClient
+        + creer(donnees: DonneesService): Promise<Service>
+        + trouverParId(id: string): Promise<Service | null>
+        + lister(etablissementId: string): Promise<Service[]>
+        + mettreAJour(id: string, donnees: any): Promise<Service>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotPromotion {
+        - db: PrismaClient
+        + creer(donnees: DonneesPromotion): Promise<Promotion>
+        + trouverParId(id: string): Promise<Promotion | null>
+        + lister(etablissementId: string): Promise<Promotion[]>
+        + listerActives(etablissementId: string): Promise<Promotion[]>
+        + mettreAJour(id: string, donnees: any): Promise<Promotion>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotCreneau {
+        - db: PrismaClient
+        + creer(donnees: DonneesCreneau): Promise<CreneauDisponibilite>
+        + trouverParId(id: string): Promise<CreneauDisponibilite | null>
+        + listerParPrestataire(prestataireId: string, date: Date): Promise<CreneauDisponibilite[]>
+        + listerParService(serviceId: string, date: Date): Promise<CreneauDisponibilite[]>
+        + mettreAJour(id: string, donnees: any): Promise<CreneauDisponibilite>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class Etablissement <<entite>> {
+        + id: string
+        + commercantId: string
+        + typeService: TypeService
+        + nomEtablissement: string
+        + description: string
+        + capaciteSimultanee: number
+        + accepteRendezVousEnLigne: boolean
+        + delaiAnnulationHeures: number
+        + dateCreation: Date
+    }
+
+    class Prestataire <<entite>> {
+        + id: string
+        + etablissementId: string
+        + prenom: string
+        + nom: string
+        + specialite: string
+        + anneesExperience: number
+        + description: string
+        + urlPhoto: string
+        + noteGlobale: number
+        + nombreAvis: number
+        + estActif: boolean
+        + dateCreation: Date
+    }
+
+    class Service <<entite>> {
+        + id: string
+        + etablissementId: string
+        + nomService: string
+        + description: string
+        + categorieService: CategorieService
+        + dureeMinutes: number
+        + prixBase: number
+        + devise: string
+        + estActif: boolean
+        + dateCreation: Date
+    }
+
+    class CreneauDisponibilite <<entite>> {
+        + id: string
+        + prestataireId: string
+        + serviceId: string
+        + date: Date
+        + heureDebut: string
+        + heureFin: string
+        + statut: StatutCreneau
+        + capaciteMax: number
+        + placesReservees: number
+        + estRecurrent: boolean
+        + recurrencePattern: string
+    }
+
+    class Promotion <<entite>> {
+        + id: string
+        + etablissementId: string
+        + serviceId: string
+        + libelle: string
+        + typeReduction: TypeReduction
+        + valeurReduction: number
+        + dateDebut: Date
+        + dateFin: Date
+        + estActive: boolean
+    }
+
+    enum TypeService {
+        COIFFURE
+        BARBIER
+        ESTHETIQUE
+        SPA
+        MASSAGE
+        MANUCURE_PEDICURE
+        MAQUILLAGE
+        TRESSAGE
+        TATTOO_PIERCING
+        PHOTOGRAPHIE
+        VIDEOGRAPHIE
+        AUTRE
+    }
+
+
+    enum CategorieService {
+        COUPE_HOMME
+        COUPE_FEMME
+        COUPE_ENFANT
+        COLORATION
+        DEFRISAGE
+        TISSAGE
+        NATTES_AFRICAINES
+        TRESSES_SENEGALAISES
+        SOIN_VISAGE
+        SOIN_CORPS
+        EPILATION
+        MASSAGE_RELAXANT
+        MASSAGE_THERAPEUTIQUE
+        ONGLERIE
+        MAQUILLAGE_MARIEE
+        SEANCE_PHOTO
+        AUTRE
+    }
+
+
+    enum StatutCreneau {
+        DISPONIBLE
+        RESERVE
+        OCCUPE
+        TERMINE
+        ANNULE
+        BLOQUE
+        AUTRE
+    }
+
+    enum TypeReduction {
+        POURCENTAGE
+        MONTANT_FIXE
+        AUTRE
+    }
+
+    class ClientResourceCore {
+        - urlBase: string
+        + validerRessource(donnees: any): Promise<ResultatValidation>
+        + obtenirCommercant(id: string): Promise<Commercant>
+    }
+
+    class ClientBookingService {
+        - urlBase: string
+        + obtenirReservations(creneauId: string, date: Date): Promise<Reservation[]>
+    }
+
+    class ValidateurEtablissement {
+        + validerTypeService(type: TypeService): boolean
+        + validerCapacite(capacite: number): boolean
+        + validerDelaiAnnulation(heures: number): boolean
+    }
+
+    class ValidateurPrestataire {
+        + validerNom(nom: string): boolean
+        + validerSpecialite(specialite: string): boolean
+        + validerExperience(annees: number): boolean
+    }
+
+    class ValidateurCreneau {
+        + validerDuree(debut: string, fin: string): boolean
+        + validerAlignement(heure: string, grille: number): boolean
+        + validerNonChevauchement(creneaux: Creneau[]): boolean
+    }
+
+    class GestionnaireCache {
+        - redis: ClientRedis
+        + obtenirCreneaux(prestataireId: string, date: Date): Promise<CreneauDisponibilite[]>
+        + cacherCreneaux(prestataireId: string, date: Date, creneaux: CreneauDisponibilite[]): Promise<void>
+        + invaliderCache(prestataireId: string): Promise<void>
+    }
+
+    class ConfigCreneaux <<dto>> {
+        + heureDebutJournee: string
+        + heureFinJournee: string
+        + dureeCreneauMinutes: number
+        + pauseEntreCreneauxMinutes: number
+        + joursActifs: JourSemaine[]
+        + pauseDejeuner: PlageHoraire
+    }
+
+    class PlageHoraire <<value object>> {
+        + heureDebut: string
+        + heureFin: string
+        + estDans(heure: string): boolean
+    }
+}
+
+' Relations
+ServeurPrestataire "1" -- "1" ControleurEtablissement : contient >
+ServeurPrestataire "1" -- "1" ControleurPrestataire : contient >
+ServeurPrestataire "1" -- "1" ControleurService : contient >
+ServeurPrestataire "1" -- "1" ControleurPromotion : contient >
+ServeurPrestataire "1" -- "1" ControleurCreneau : contient >
+
+ControleurEtablissement "1" -- "1" ServiceEtablissement : utilise >
+ControleurPrestataire "1" -- "1" ServicePrestataire : utilise >
+ControleurService "1" -- "1" ServiceService : utilise >
+ControleurPromotion "1" -- "1" ServicePromotion : utilise >
+ControleurCreneau "1" -- "1" ServiceCreneau : utilise >
+
+ServiceEtablissement "1" -- "1" DepotEtablissement : utilise >
+ServiceEtablissement "1" -- "1" ClientResourceCore : utilise >
+ServiceEtablissement "1" -- "1" ValidateurEtablissement : utilise >
+
+ServicePrestataire "1" -- "1" DepotPrestataire : utilise >
+ServicePrestataire "1" -- "1" ValidateurPrestataire : utilise >
+
+ServiceService "1" -- "1" DepotService : utilise >
+
+ServicePromotion "1" -- "1" DepotPromotion : utilise >
+
+ServiceCreneau "1" -- "1" DepotCreneau : utilise >
+ServiceCreneau "1" -- "1" ServiceDisponibilite : utilise >
+ServiceCreneau "1" -- "1" GenerateurCreneaux : utilise >
+ServiceCreneau "1" -- "1" ValidateurCreneau : utilise >
+
+ServiceDisponibilite "1" -- "1" ClientBookingService : utilise >
+ServiceDisponibilite "1" -- "1" GestionnaireCache : utilise >
+
+DepotEtablissement "1" -- "*" Etablissement : gère >
+DepotPrestataire "1" -- "*" Prestataire : gère >
+DepotService "1" -- "*" Service : gère >
+DepotPromotion "1" -- "*" Promotion : gère >
+DepotCreneau "1" -- "*" CreneauDisponibilite : gère >
+
+Etablissement "1" -- "1" TypeService : offre >
+Etablissement "1" *-- "*" Prestataire : emploie >
+Etablissement "1" *-- "*" Service : propose >
+Etablissement "1" *-- "*" Promotion : offre >
+
+Prestataire "*" --> "1" Etablissement : travaille pour >
+Prestataire "1" -- "*" CreneauDisponibilite : a des créneaux >
+
+Service "*" --> "1" Etablissement : de >
+Service "1" -- "1" CategorieService : appartient à >
+Service "1" -- "*" CreneauDisponibilite : associé à >
+
+CreneauDisponibilite "1" -- "1" StatutCreneau : a un statut >
+CreneauDisponibilite "*" --> "1" Prestataire : assigné à >
+CreneauDisponibilite "*" --> "1" Service : pour >
+
+Promotion "*" --> "1" Etablissement : de >
+Promotion "*" --> "0..1" Service : sur >
+Promotion "1" -- "1" TypeReduction : type >
+
+GenerateurCreneaux ..> ConfigCreneaux : utilise >
+ConfigCreneaux "1" -- "*" PlageHoraire : contient >
+
+note right of Etablissement
+  **Établissement de services**
+
+  Salon de coiffure, spa, centre esthétique,
+  studio photo, etc.
+
+  **Types service contexte africain:**
+
+  - **COIFFURE/BARBIER:**
+    Salons très nombreux (rue, marché)
+    Coiffure afro spécialisée
+
+  - **ESTHETIQUE/SPA:**
+    Soins peau noire spécifiques
+    Massages traditionnels
+
+  - **TRESSAGE:**
+    Nattes africaines, tresses sénégalaises
+    Durée longue (3-8 heures)
+
+  - **MAQUILLAGE:**
+    Mariages, baptêmes (événements fréquents)
+    Maquillage peau noire
+
+  - **PHOTOGRAPHIE/VIDEOGRAPHIE:**
+    Shootings, événements familiaux
+    Forte demande (réseaux sociaux)
+
+  **Capacité simultanée:**
+  Nombre de clients pouvant être
+  servis en même temps (ex: 5 coiffeuses)
+
+  **Délai annulation:**
+  Heures min avant rendez-vous
+  pour annuler sans frais (ex: 24h)
+end note
+
+note right of Prestataire
+  **Prestataire/Personnel**
+
+  Coiffeur, esthéticienne, masseuse,
+  photographe, etc.
+
+  **Spécialité:**
+  - "Coiffure afro et tissages"
+  - "Nattes sénégalaises"
+  - "Massage relaxant aux huiles"
+  - "Maquillage mariée"
+  - "Portraits studio"
+
+  **Expérience:**
+  Années d'expérience professionnelle
+  (critère de choix client)
+
+  **Note globale:**
+  Moyenne avis clients (1-5 étoiles)
+  après prestations effectuées
+
+  **Statut:**
+  - estActif = true: accepte rendez-vous
+  - estActif = false: congés, maladie
+end note
+
+note bottom of Service
+  **Service/Prestation proposé(e)**
+
+  **Exemples catégories:**
+
+  **Coiffure homme:**
+  - Coupe classique (30min, 2000 XOF)
+  - Coupe + barbe (45min, 3000 XOF)
+  - Coloration (60min, 5000 XOF)
+
+  **Coiffure femme:**
+  - Coupe + brushing (60min, 5000 XOF)
+  - Défrisage (90min, 8000 XOF)
+  - Tissage (120min, 15000 XOF)
+
+  **Tressage africain:**
+  - Nattes collées (180min, 10000 XOF)
+  - Tresses sénégalaises (300min, 15000 XOF)
+  - Vanilles (240min, 12000 XOF)
+
+  **Esthétique:**
+  - Soin visage (60min, 8000 XOF)
+  - Épilation complète (90min, 10000 XOF)
+  - Manucure + pédicure (60min, 6000 XOF)
+
+  **Massage:**
+  - Massage relaxant (60min, 12000 XOF)
+  - Massage aux pierres chaudes (90min, 18000 XOF)
+
+  **Photographie:**
+  - Séance portrait (60min, 25000 XOF)
+  - Shooting événement (180min, 50000 XOF)
+
+  **Durée:**
+  Durée estimée en minutes
+  (utilisée pour calcul créneaux disponibles)
+
+  **Prix:**
+  Prix de base (peut varier selon prestataire,
+  promotions, demande spéciale)
+end note
+
+note right of CreneauDisponibilite
+  **Créneau de disponibilité**
+
+  Plage horaire pendant laquelle un
+  prestataire peut effectuer un service.
+
+  **Génération créneaux:**
+  Basée sur:
+  - Horaires ouverture établissement
+  - Disponibilité prestataire
+  - Durée service
+
+  **Exemple:**
+  Service "Coupe homme" (30min)
+  Prestataire disponible 9h-17h
+  → Créneaux: 9h, 9h30, 10h, 10h30, ... 16h30
+
+  **Statuts:**
+  - DISPONIBLE: créneau libre
+  - RESERVE: client a réservé
+  - OCCUPE: prestation en cours
+  - TERMINE: prestation terminée
+  - BLOQUE: indisponibilité (pause, absence)
+  - ANNULE: réservation annulée
+
+  **Capacité:**
+  - capaciteMax: nb clients simultanés possible
+  - placesReservees: nb réservations actuelles
+
+  Exemple: cours collectif
+  capaciteMax = 15, placesReservees = 8
+  → encore 7 places disponibles
+
+  **Flexibilité africaine:**
+  - Tolérance retard client (15min)
+  - Ajustement durée si nécessaire
+  - Créneaux Flexible (sans rendez-vous)
+
+  **Récurrence:**
+  - estRecurrent: true si créneau hebdomadaire
+  - recurrencePattern: ex "WEEKLY_MON_WED_FRI"
+end note
+
+note bottom of Promotion
+  **Promotion commerciale**
+
+  **Types réduction:**
+
+  - **POURCENTAGE:**
+    Ex: -20% sur tous les services
+    valeurReduction = 20
+
+  - **MONTANT_FIXE:**
+    Ex: -2000 XOF sur tissages
+    valeurReduction = 2000
+
+  **Exemples promotions africaines:**
+
+  - "Happy Hours" (9h-12h): -30%
+  - "Promo étudiant" (lundi-mercredi): -15%
+  - "Forfait mariée" (maquillage + coiffure): -4000 XOF
+  - "Parrainage": 1 amie = -10% pour 2
+  - "Fête des Mères" (mai): -25%
+  - "Rentrée scolaire" (octobre): coupe enfant -50%
+
+  **Période validité:**
+  - dateDebut → dateFin
+  - estActive: activation manuelle
+
+  **Application:**
+  - Sur établissement entier: serviceId = null
+  - Sur service spécifique: serviceId renseigné
+
+  **Calcul prix final:**
+  prixFinal = prixBase - réduction
+  Si POURCENTAGE: réduction = prixBase × (valeur/100)
+  Si MONTANT_FIXE: réduction = valeur
+end note
+
+note right of GenerateurCreneaux
+  Génération automatique:
+
+  Configuration:
+  - Horaires travail: 9h-18h
+  - Durée créneau: 30min
+  - Pause entre: 5min
+  - Pause déjeuner: 12h-13h
+  - Jours: Lun-Sam
+
+  Génère:
+  9h00-9h30, 9h35-10h05,
+  10h10-10h40, ..., 12h00
+  [Pause déjeuner]
+  13h00-13h30, ..., 18h00
+end note
+
+note bottom of ServiceDisponibilite
+  Vérification disponibilité:
+
+  Contraintes:
+  - Un personnel ne peut avoir
+    2 créneaux simultanés
+  - Pause minimum entre créneaux
+  - Respect horaires travail
+  - Jours de repos
+
+  Cache:
+  - Redis 10min par personnel/jour
+  - Invalidé sur modification
+end note
+
+@enduml

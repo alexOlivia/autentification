@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 1120" width="390" height="1120">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #FFF; }
+      .subtitle-w { font-family: Arial, sans-serif; font-size: 13px; fill: rgba(255,255,255,0.7); }
+      .label { font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #374151; }
+      .hint { font-family: Arial, sans-serif; font-size: 13px; fill: #94A3B8; }
+      .btn-text { font-family: Arial, sans-serif; font-size: 16px; font-weight: 600; fill: #FFF; }
+      .btn-outline { font-family: Arial, sans-serif; font-size: 16px; font-weight: 600; fill: #64748B; }
+      .step-text { font-family: Arial, sans-serif; font-size: 16px; font-weight: 600; fill: #64748B; }
+      .step-label { font-family: Arial, sans-serif; font-size: 11px; }
+      .badge { font-family: Arial, sans-serif; font-size: 11px; fill: #94A3B8; font-weight: 500; }
+      .chip-text { font-family: Arial, sans-serif; font-size: 14px; }
+      .info-text { font-family: Arial, sans-serif; font-size: 11px; fill: #94A3B8; }
+    </style>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FF6B35"/>
+      <stop offset="100%" style="stop-color:#E85D26"/>
+    </linearGradient>
+    <filter id="shadow" x="-2%" y="-10%" width="104%" height="120%">
+      <feDropShadow dx="0" dy="-4" stdDeviation="5" flood-color="rgba(0,0,0,0.05)"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="1120" fill="#FFF"/>
+
+  <!-- AppBar -->
+  <text x="20" y="44" font-family="Arial, sans-serif" font-size="22" fill="#1E293B">‹</text>
+  <text x="160" y="44" class="step-text" text-anchor="middle">Étape 2/4</text>
+
+  <!-- Progress bar -->
+  <rect x="24" y="62" width="82" height="4" rx="2" fill="#2563EB"/>
+  <rect x="112" y="62" width="82" height="4" rx="2" fill="#2563EB"/>
+  <rect x="200" y="62" width="82" height="4" rx="2" fill="#E2E8F0"/>
+  <rect x="288" y="62" width="82" height="4" rx="2" fill="#E2E8F0"/>
+
+  <!-- Step labels -->
+  <text x="44" y="82" class="step-label" fill="#10B981" text-anchor="middle">Personnel</text>
+  <text x="150" y="82" class="step-label" fill="#2563EB" font-weight="600" text-anchor="middle">Entreprise</text>
+  <text x="240" y="82" class="step-label" fill="#94A3B8" text-anchor="middle">Documents</text>
+  <text x="338" y="82" class="step-label" fill="#94A3B8" text-anchor="middle">Confirmation</text>
+
+  <!-- Header card (orange) -->
+  <rect x="24" y="100" width="342" height="72" rx="16" fill="url(#grad2)"/>
+  <rect x="36" y="112" width="48" height="48" rx="12" fill="rgba(255,255,255,0.2)"/>
+  <text x="60" y="143" font-family="Arial, sans-serif" font-size="24" fill="#FFF" text-anchor="middle">🏪</text>
+  <text x="96" y="133" class="title">Votre entreprise</text>
+  <text x="96" y="152" class="subtitle-w">Décrivez votre activité commerciale</text>
+
+  <!-- Nom entreprise -->
+  <text x="24" y="200" class="label">Nom de l'entreprise / Établissement *</text>
+  <rect x="24" y="210" width="342" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="52" y="238" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8">🏢</text>
+  <text x="72" y="240" class="hint">Ex: Restaurant Le Djolof</text>
+
+  <!-- Type d'activité -->
+  <text x="24" y="286" class="label">Type d'activité *</text>
+
+  <!-- Restaurant chip (selected) -->
+  <rect x="24" y="298" width="142" height="42" rx="12" fill="rgba(239,68,68,0.1)" stroke="#EF4444" stroke-width="2"/>
+  <text x="44" y="324" font-family="Arial, sans-serif" font-size="16">🍽️</text>
+  <text x="66" y="324" class="chip-text" font-weight="600" fill="#EF4444">Restaurant</text>
+  <text x="145" y="324" font-family="Arial, sans-serif" font-size="14" fill="#EF4444">✓</text>
+
+  <!-- Hôtel chip -->
+  <rect x="176" y="298" width="105" height="42" rx="12" fill="#FFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="196" y="324" font-family="Arial, sans-serif" font-size="16">🏨</text>
+  <text x="218" y="324" class="chip-text" fill="#374151">Hôtel</text>
+
+  <!-- Service chip -->
+  <rect x="24" y="350" width="170" height="42" rx="12" fill="#FFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="44" y="376" font-family="Arial, sans-serif" font-size="16">💆</text>
+  <text x="66" y="376" class="chip-text" fill="#374151">Service / Prestation</text>
+
+  <!-- Transport chip -->
+  <rect x="204" y="350" width="130" height="42" rx="12" fill="#FFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="224" y="376" font-family="Arial, sans-serif" font-size="16">🚌</text>
+  <text x="246" y="376" class="chip-text" fill="#374151">Transport</text>
+
+  <!-- NINEA -->
+  <text x="24" y="424" class="label">NINEA (N° Identification Nationale)</text>
+  <rect x="239" y="411" width="62" height="18" rx="4" fill="#F1F5F9"/>
+  <text x="270" y="424" class="badge" text-anchor="middle">Optionnel</text>
+  <rect x="24" y="434" width="342" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="52" y="462" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8">🪪</text>
+  <text x="72" y="464" class="hint">Ex: 005234567 2G3</text>
+
+  <!-- Info NINEA -->
+  <text x="40" y="500" font-family="Arial, sans-serif" font-size="12" fill="#94A3B8">ℹ️</text>
+  <text x="56" y="500" class="info-text">Le NINEA peut être fourni plus tard, mais sera</text>
+  <text x="56" y="514" class="info-text">nécessaire pour valider votre compte.</text>
+
+  <!-- Registre de Commerce -->
+  <text x="24" y="546" class="label">N° Registre de Commerce</text>
+  <rect x="198" y="533" width="62" height="18" rx="4" fill="#F1F5F9"/>
+  <text x="229" y="546" class="badge" text-anchor="middle">Optionnel</text>
+  <rect x="24" y="556" width="342" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="52" y="584" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8">📋</text>
+  <text x="72" y="586" class="hint">Ex: SN-DKR-2024-A-12345</text>
+
+  <!-- Adresse + Ville -->
+  <text x="24" y="632" class="label">Adresse *</text>
+  <rect x="24" y="642" width="220" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="52" y="670" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8">📍</text>
+  <text x="72" y="672" class="hint">Rue / Quartier</text>
+
+  <text x="260" y="632" class="label">Ville *</text>
+  <rect x="260" y="642" width="106" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="276" y="672" class="hint">Dakar</text>
+
+  <!-- Tél pro -->
+  <text x="24" y="718" class="label">Téléphone professionnel</text>
+  <rect x="206" y="705" width="62" height="18" rx="4" fill="#F1F5F9"/>
+  <text x="237" y="718" class="badge" text-anchor="middle">Optionnel</text>
+  <rect x="24" y="728" width="342" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="52" y="756" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8">📞</text>
+  <text x="72" y="758" class="hint">+221 33 820 XX XX</text>
+
+  <!-- Email pro -->
+  <text x="24" y="804" class="label">Email professionnel</text>
+  <rect x="164" y="791" width="62" height="18" rx="4" fill="#F1F5F9"/>
+  <text x="195" y="804" class="badge" text-anchor="middle">Optionnel</text>
+  <rect x="24" y="814" width="342" height="48" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="52" y="842" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8">@</text>
+  <text x="72" y="844" class="hint">contact@monentreprise.sn</text>
+
+  <!-- Description -->
+  <text x="24" y="890" class="label">Description de votre activité</text>
+  <rect x="222" y="877" width="62" height="18" rx="4" fill="#F1F5F9"/>
+  <text x="253" y="890" class="badge" text-anchor="middle">Optionnel</text>
+  <rect x="24" y="900" width="342" height="88" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="40" y="930" class="hint">Décrivez votre entreprise,</text>
+  <text x="40" y="948" class="hint">vos services, spécialités...</text>
+
+  <!-- Bottom buttons -->
+  <rect x="0" y="1010" width="390" height="110" fill="#FFF" filter="url(#shadow)"/>
+
+  <!-- Précédent -->
+  <rect x="24" y="1030" width="110" height="52" rx="12" fill="#FFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="52" y="1062" class="btn-outline">Précédent</text>
+
+  <!-- Continuer -->
+  <rect x="150" y="1030" width="216" height="52" rx="12" fill="#2563EB"/>
+  <text x="215" y="1062" class="btn-text">Continuer</text>
+  <text x="305" y="1062" font-family="Arial, sans-serif" font-size="18" fill="#FFF">→</text>
+</svg>

@@ -1,0 +1,569 @@
+@startuml Notification Service - Diagramme de Classes
+
+title Notification Service - Diagramme de Classes
+
+' Styles
+skinparam class {
+    BackgroundColor Lavender
+    BorderColor Purple
+    ArrowColor Purple
+}
+
+package "Notification Service" {
+    class ServeurNotification {
+        - application: FastifyInstance
+        - port: number
+        - db: PrismaClient
+        - redis: ClientRedis
+        + demarrer(): Promise<void>
+        + arreter(): Promise<void>
+        + enregistrerRoutes(): void
+        + ecouterEvenementsRedis(): void
+    }
+
+    class ControleurNotification {
+        + envoyerNotification(req: Requete, res: Reponse): Promise<void>
+        + obtenirNotification(req: Requete, res: Reponse): Promise<void>
+        + listerNotifications(req: Requete, res: Reponse): Promise<void>
+        + marquerCommeL ue(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurPreference {
+        + obtenirPreferences(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourPreferences(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurTemplate {
+        + creerTemplate(req: Requete, res: Reponse): Promise<void>
+        + obtenirTemplate(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourTemplate(req: Requete, res: Reponse): Promise<void>
+        + listerTemplates(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ServiceNotification {
+        - depotNotification: DepotNotification
+        - dispatcheur: DispatcheurNotification
+        - validateur: ValidateurNotification
+        - serviceTemplate: ServiceTemplate
+        + envoyer(destinataireId: string, type: TypeNotification, priorite: PrioriteNotification, donnees: any): Promise<Notification>
+        + envoyerMultiple(destinataireIds: string[], type: TypeNotification, donnees: any): Promise<Notification[]>
+        + trouverParId(id: string): Promise<Notification>
+        + lister(destinataireId: string, filtres: any): Promise<Notification[]>
+        + marquerLue(notificationId: string): Promise<void>
+        + reessayer(notificationId: string): Promise<void>
+    }
+
+    class DispatcheurNotification {
+        - serviceEmail: ServiceEmail
+        - servicePush: ServicePush
+        - serviceSMS: ServiceSMS
+        - depotPreferenceNotification: DepotPreferenceNotification
+        - depotHistoriqueEnvoi: DepotHistoriqueEnvoi
+        + dispatcher(notification: Notification): Promise<void>
+        + verifierPreferences(utilisateurId: string, canal: CanalNotification, type: TypeNotification): Promise<boolean>
+        + selectionnerCanaux(utilisateurId: string, type: TypeNotification): Promise<CanalNotification[]>
+        + enregistrerHistorique(notificationId: string, canal: CanalNotification, resultat: ResultatEnvoi): Promise<void>
+    }
+
+    class ServiceEmail {
+        - clientSendGrid: SendGridClient
+        - moteurTemplate: MoteurTemplate
+        + envoyer(destinataire: string, sujet: string, corps: string): Promise<ResultatEnvoi>
+        + envoyerAvecTemplate(destinataire: string, templateId: string, variables: any): Promise<ResultatEnvoi>
+        + envoyerAvecPieceJointe(destinataire: string, sujet: string, corps: string, fichier: Buffer): Promise<ResultatEnvoi>
+    }
+
+    class ServicePush {
+        - clientFirebase: FirebaseAdmin
+        - depotTokenPush: DepotTokenPush
+        + envoyer(utilisateurId: string, titre: string, corps: string, donnees: any): Promise<ResultatEnvoi>
+        + envoyerMultiple(utilisateurIds: string[], titre: string, corps: string): Promise<ResultatEnvoi[]>
+        + enregistrerToken(utilisateurId: string, tokenDevice: string, plateforme: PlateformeMobile): Promise<void>
+        + supprimerToken(tokenDevice: string): Promise<void>
+    }
+
+    class ServiceSMS {
+        - clientTwilio: TwilioClient
+        + envoyer(numeroTelephone: string, message: string): Promise<ResultatEnvoi>
+        + envoyerMultiple(numeros: string[], message: string): Promise<ResultatEnvoi[]>
+    }
+
+    class ServiceTemplate {
+        - depotTemplateNotification: DepotTemplateNotification
+        - moteurTemplate: MoteurTemplate
+        + creer(code: string, typeNotification: TypeNotification, donnees: any): Promise<TemplateNotification>
+        + trouverParCode(code: string): Promise<TemplateNotification>
+        + rendre(templateCode: string, variables: any): Promise<string>
+        + lister(): Promise<TemplateNotification[]>
+    }
+
+    class EcouteurEvenements {
+        - redis: ClientRedis
+        - serviceNotification: ServiceNotification
+        + ecouter(canal: string, handler: Function): void
+        + gererReservationConfirmee(donnees: any): Promise<void>
+        + gererPaiementReussi(donnees: any): Promise<void>
+        + gererRappelReservation(donnees: any): Promise<void>
+        + gererAnnulation(donnees: any): Promise<void>
+    }
+
+    class MoteurTemplate {
+        + compiler(template: string): Function
+        + rendre(templateCompile: Function, variables: any): string
+        + validerVariables(variables: any, schema: any): boolean
+    }
+
+    class DepotNotification {
+        - db: PrismaClient
+        + creer(donnees: DonneesNotification): Promise<Notification>
+        + trouverParId(id: string): Promise<Notification | null>
+        + lister(utilisateurId: string, filtres: any): Promise<Notification[]>
+        + marquerLue(id: string): Promise<void>
+        + supprimerAnciennes(joursConservation: number): Promise<number>
+    }
+
+    class DepotPreferenceNotification {
+        - db: PrismaClient
+        + creer(utilisateurId: string, typeNotification: TypeNotification): Promise<PreferenceNotification>
+        + trouverParUtilisateur(utilisateurId: string): Promise<PreferenceNotification[]>
+        + mettreAJour(id: string, donnees: any): Promise<PreferenceNotification>
+    }
+
+    class DepotTemplateNotification {
+        - db: PrismaClient
+        + creer(donnees: DonneesTemplate): Promise<TemplateNotification>
+        + trouverParCode(code: string): Promise<TemplateNotification | null>
+        + lister(): Promise<TemplateNotification[]>
+        + mettreAJour(id: string, donnees: any): Promise<TemplateNotification>
+    }
+
+    class DepotTokenPush {
+        - db: PrismaClient
+        + creer(utilisateurId: string, token: string, plateforme: PlateformeMobile): Promise<TokenPush>
+        + trouverParUtilisateur(utilisateurId: string): Promise<TokenPush[]>
+        + supprimer(token: string): Promise<void>
+        + desactiverToken(token: string): Promise<void>
+    }
+
+    class DepotHistoriqueEnvoi {
+        - db: PrismaClient
+        + creer(donnees: DonneesHistorique): Promise<HistoriqueEnvoi>
+        + trouverParNotification(notificationId: string): Promise<HistoriqueEnvoi[]>
+        + lister(filtres: any): Promise<HistoriqueEnvoi[]>
+    }
+
+    class Notification <<entite>> {
+        + id: string
+        + destinataireId: string
+        + typeNotification: TypeNotification
+        + canal: CanalNotification
+        + priorite: PrioriteNotification
+        + titre: string
+        + message: string
+        + donneesJSON: string
+        + statut: StatutNotification
+        + dateCreation: Date
+        + dateEnvoi: Date
+        + dateLecture: Date
+        + nombreTentatives: number
+        + erreurDernier: string
+    }
+
+    class PreferenceNotification <<entite>> {
+        + id: string
+        + utilisateurId: string
+        + typeNotification: TypeNotification
+        + canalEmail: boolean
+        + canalPush: boolean
+        + canalSMS: boolean
+        + estActive: boolean
+        + dateModification: Date
+    }
+
+    class TemplateNotification <<entite>> {
+        + id: string
+        + code: string
+        + typeNotification: TypeNotification
+        + canal: CanalNotification
+        + langue: string
+        + sujet: string
+        + corpsTexte: string
+        + corpsHTML: string
+        + variables: string[]
+        + estActif: boolean
+        + dateCreation: Date
+    }
+
+    class TokenPush <<entite>> {
+        + id: string
+        + utilisateurId: string
+        + token: string
+        + plateforme: PlateformeMobile
+        + modeleAppareil: string
+        + versionApp: string
+        + estActif: boolean
+        + dateCreation: Date
+        + dateDerniereUtilisation: Date
+    }
+
+    class HistoriqueEnvoi <<entite>> {
+        + id: string
+        + notificationId: string
+        + canal: CanalNotification
+        + adresseDestination: string
+        + statut: StatutEnvoi
+        + codeReponseProvider: string
+        + messageErreur: string
+        + tempsTraitementMs: number
+        + dateEnvoi: Date
+    }
+
+    enum TypeNotification {
+        RESERVATION_CONFIRMEE
+        RESERVATION_ANNULEE
+        PAIEMENT_REUSSI
+        PAIEMENT_ECHOUE
+        RAPPEL_RESERVATION
+        DEMANDE_AVIS
+        NOUVEAU_MESSAGE
+        PROMOTION
+        ALERTE_PRIX
+        MISE_A_JOUR_STATUT
+        AUTRE
+    }
+
+    enum CanalNotification {
+        EMAIL
+        PUSH
+        SMS
+        IN_APP
+    }
+
+    enum PrioriteNotification {
+        BASSE
+        NORMALE
+        HAUTE
+        URGENTE
+    }
+
+    enum StatutNotification {
+        EN_ATTENTE
+        EN_COURS_ENVOI
+        ENVOYEE
+        LIVREE
+        ECHOUEE
+        LUE
+    }
+
+    enum StatutEnvoi {
+        SUCCES
+        ECHEC_TEMPORAIRE
+        ECHEC_PERMANENT
+    }
+
+    enum PlateformeMobile {
+        ANDROID
+        IOS
+        WEB
+    }
+
+    class SendGridClient {
+        - cleAPI: string
+        + envoyerEmail(destinataire: string, sujet: string, html: string): Promise<any>
+    }
+
+    class FirebaseAdmin {
+        - app: FirebaseApp
+        + envoyerMessage(token: string, notification: any, donnees: any): Promise<any>
+        + envoyerMulticast(tokens: string[], notification: any): Promise<any>
+    }
+
+    class TwilioClient {
+        - accountSid: string
+        - authToken: string
+        + envoyerSMS(numero: string, message: string): Promise<any>
+    }
+
+    class ResultatEnvoi <<dto>> {
+        + succes: boolean
+        + messageId: string
+        + erreur: string
+        + dateEnvoi: Date
+    }
+
+    class ValidateurNotification {
+        + validerEmail(email: string): boolean
+        + validerTelephone(tel: string): boolean
+        + validerContenu(contenu: string, maxLength: number): boolean
+    }
+}
+
+' Relations
+ServeurNotification "1" -- "1" ControleurNotification : contient >
+ServeurNotification "1" -- "1" ControleurPreference : contient >
+ServeurNotification "1" -- "1" ControleurTemplate : contient >
+ServeurNotification "1" -- "1" EcouteurEvenements : contient >
+
+ControleurNotification "1" -- "1" ServiceNotification : utilise >
+ControleurPreference "1" -- "1" DepotPreferenceNotification : utilise >
+ControleurTemplate "1" -- "1" ServiceTemplate : utilise >
+
+ServiceNotification "1" -- "1" DepotNotification : utilise >
+ServiceNotification "1" -- "1" DispatcheurNotification : utilise >
+ServiceNotification "1" -- "1" ValidateurNotification : utilise >
+ServiceNotification "1" -- "1" ServiceTemplate : utilise >
+
+DispatcheurNotification "1" -- "1" ServiceEmail : utilise >
+DispatcheurNotification "1" -- "1" ServicePush : utilise >
+DispatcheurNotification "1" -- "1" ServiceSMS : utilise >
+DispatcheurNotification "1" -- "1" DepotPreferenceNotification : utilise >
+DispatcheurNotification "1" -- "1" DepotHistoriqueEnvoi : utilise >
+
+ServiceEmail "1" -- "1" SendGridClient : utilise >
+ServiceEmail "1" -- "1" MoteurTemplate : utilise >
+ServicePush "1" -- "1" FirebaseAdmin : utilise >
+ServicePush "1" -- "1" DepotTokenPush : utilise >
+ServiceSMS "1" -- "1" TwilioClient : utilise >
+
+ServiceTemplate "1" -- "1" DepotTemplateNotification : utilise >
+ServiceTemplate "1" -- "1" MoteurTemplate : utilise >
+
+EcouteurEvenements "1" -- "1" ServiceNotification : utilise >
+
+DepotNotification "1" -- "*" Notification : gère >
+DepotPreferenceNotification "1" -- "*" PreferenceNotification : gère >
+DepotTemplateNotification "1" -- "*" TemplateNotification : gère >
+DepotTokenPush "1" -- "*" TokenPush : gère >
+DepotHistoriqueEnvoi "1" -- "*" HistoriqueEnvoi : gère >
+
+Notification "1" -- "1" TypeNotification : est de type >
+Notification "1" -- "1" CanalNotification : utilise >
+Notification "1" -- "1" PrioriteNotification : a une priorité >
+Notification "1" -- "1" StatutNotification : a un statut >
+Notification "1" -- "*" HistoriqueEnvoi : génère >
+
+TemplateNotification "1" -- "1" TypeNotification : pour >
+TemplateNotification "1" -- "1" CanalNotification : sur >
+
+PreferenceNotification "*" --> "1" TypeNotification : pour >
+
+TokenPush "1" -- "1" PlateformeMobile : sur >
+
+HistoriqueEnvoi "1" -- "1" CanalNotification : par >
+HistoriqueEnvoi "1" -- "1" StatutEnvoi : a un statut >
+HistoriqueEnvoi "*" --> "1" Notification : de >
+
+ServiceEmail ..> ResultatEnvoi : retourne >
+ServicePush ..> ResultatEnvoi : retourne >
+ServiceSMS ..> ResultatEnvoi : retourne >
+
+note right of ServiceNotification
+  Service central de notification
+
+  Responsabilités:
+  - Recevoir demandes notification
+  - Dispatcher selon canal
+  - Respecter préférences utilisateur
+  - Logger toutes notifications
+  - Gérer échecs et retry
+end note
+
+note right of DispatcheurNotification
+  Logique de dispatch intelligente:
+
+  1. Vérifier préférences utilisateur
+  2. Sélectionner canaux actifs
+  3. Envoyer via canaux appropriés:
+     - Email: toujours pour confirmations
+     - Push: si app installée
+     - SMS: optionnel, événements critiques
+
+  4. Logger résultat par canal
+  5. Retry si échec (max 3×)
+
+  Priorisation:
+  - Critique: Email + Push + SMS
+  - Important: Email + Push
+  - Info: Push uniquement
+end note
+
+note bottom of EcouteurEvenements
+  Écoute événements Redis Pub/Sub:
+
+  Événements écoutés:
+  - booking.confirmed
+    → Email confirmation
+    → Push notification
+
+  - payment.success
+    → Email reçu paiement
+    → Facture PDF attachée
+
+  - booking.reminder (J-1)
+    → Email rappel
+    → Push rappel
+
+  - booking.cancelled
+    → Email annulation
+    → Détails remboursement
+
+  - refund.processed
+    → Email remboursement effectué
+    → Délai créditation
+
+  Pattern:
+  - Subscribe canaux Redis au démarrage
+  - Handler async par type événement
+  - Idempotence (même event 2×)
+  - Error handling et retry
+end note
+
+note right of ServiceEmail
+  Service email (SendGrid):
+
+  Templates:
+  - CONFIRMATION_RESERVATION
+  - RAPPEL_RESERVATION
+  - ANNULATION_RESERVATION
+  - PAIEMENT_REUSSI
+  - REMBOURSEMENT_TRAITE
+
+  Contenu email:
+  - HTML responsive (mobile-friendly)
+  - Version texte (fallback)
+  - Logo entreprise
+  - Boutons CTA
+  - Infos complètes réservation
+  - Lien vers app
+
+  Pièces jointes:
+  - Facture PDF
+  - QR code réservation
+  - Plan d'accès (optionnel)
+
+  Délai envoi: <30 secondes
+end note
+
+note left of ServicePush
+  Notifications push (Firebase):
+
+  Configuration:
+  - Firebase Cloud Messaging
+  - Certificats iOS (APNs)
+  - Clés Android (FCM)
+
+  Payload:
+  {
+    notification: {
+      title: "Réservation confirmée",
+      body: "Table T12 le 15 mars à 19h"
+    },
+    data: {
+      reservationId: "res-123",
+      type: "BOOKING_CONFIRMED",
+      action: "open_booking"
+    }
+  }
+
+  Gestion tokens:
+  - Enregistrement au login
+  - Suppression au logout
+  - Nettoyage tokens invalides
+  - Multi-devices par utilisateur
+
+  Actions:
+  - Tap notification → Ouvre app
+  - Deep link vers réservation
+end note
+
+note right of ServiceSMS
+  SMS (Twilio) - Optionnel:
+
+  Use cases:
+  - Confirmation critique
+  - Rappel 24h (si pas lu email)
+  - Code vérification 2FA
+  - Urgences
+
+  Coût:
+  - ~50 XOF par SMS
+  - Réservé événements importants
+  - Désactivable par utilisateur
+
+  Format:
+  - Max 160 caractères
+  - Unicode (français, accents)
+  - Raccourcissement URLs
+
+  Exemple:
+  "PING: Réservation confirmée!
+  Table T12 le 15/03 à 19h.
+  Code: PING-AB12CD
+  Bon appétit!"
+end note
+
+note bottom of PreferencesNotification
+  Préférences utilisateur:
+
+  Par défaut (nouveau compte):
+  - Email: ✓ Activé
+  - Push: ✓ Activé
+  - SMS: ✗ Désactivé
+  - Fréquence: Temps réel
+
+  Granularité:
+  - Par type notification
+  - Par canal
+  - Horaires (ne pas déranger)
+
+  Exemples:
+  - "Email uniquement confirmations"
+  - "Push tous sauf promotions"
+  - "SMS jamais"
+  - "Digest quotidien 8h"
+
+  Respect RGPD:
+  - Opt-in explicite
+  - Désinscription facile
+  - Suppression historique
+end note
+
+note right of MoteurTemplate
+  Moteur de templates:
+
+  Bibliothèque: Handlebars
+
+  Template exemple:
+  ```
+  Bonjour {{prenom}},
+
+  Votre réservation est confirmée!
+
+  Détails:
+  - Restaurant: {{restaurant.nom}}
+  - Table: {{table.numero}}
+  - Date: {{date | format "DD/MM/YYYY"}}
+  - Heure: {{heure}}
+  - Personnes: {{nombrePersonnes}}
+  - Prix: {{prix}} {{devise}}
+
+  Code confirmation: {{codeConfirmation}}
+
+  À bientôt!
+  L'équipe PING
+  ```
+
+  Variables dynamiques:
+  - Utilisateur (nom, email)
+  - Réservation (date, heure, lieu)
+  - Paiement (montant, devise)
+  - Commerçant (nom, adresse)
+
+  Helpers:
+  - format date/heure
+  - format devise
+  - format téléphone
+  - traductions (i18n)
+end note
+
+@enduml

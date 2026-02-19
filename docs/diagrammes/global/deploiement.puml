@@ -1,0 +1,355 @@
+@startuml Diagramme de Déploiement
+
+title Plateforme PING - Architecture de Déploiement Docker
+
+!define CONTAINER_COLOR #E3F2FD
+!define DATABASE_COLOR #FFF9C4
+!define CACHE_COLOR #FCE4EC
+
+' Nœud physique / serveur
+node "Serveur Application\n(Docker Host)" as AppServer {
+
+    ' Réseau Docker
+    cloud "Réseau Docker: ping-network" as DockerNetwork {
+
+        ' Conteneurs services
+        node "Container: API Gateway\nPort: 3000" as ContainerGW CONTAINER_COLOR {
+            component "Fastify App" as AppGW
+            artifact "Dockerfile" as DockerGW
+        }
+
+        node "Container: Auth Service\nPort: 3001" as ContainerAuth CONTAINER_COLOR {
+            component "Fastify App" as AppAuth
+            artifact "Dockerfile" as DockerAuth
+        }
+
+        node "Container: Resource Core\nPort: 3002" as ContainerCore CONTAINER_COLOR {
+            component "Fastify App" as AppCore
+            artifact "Dockerfile" as DockerCore
+        }
+
+        node "Container: Restaurant\nPort: 3008" as ContainerResto CONTAINER_COLOR {
+            component "Fastify App" as AppResto
+            artifact "Dockerfile" as DockerResto
+        }
+
+        node "Container: Accommodation\nPort: 3009" as ContainerAccom CONTAINER_COLOR {
+            component "Fastify App" as AppAccom
+            artifact "Dockerfile" as DockerAccom
+        }
+
+        node "Container: Service Provider\nPort: 3010" as ContainerProvider CONTAINER_COLOR {
+            component "Fastify App" as AppProvider
+            artifact "Dockerfile" as DockerProvider
+        }
+
+        node "Container: Transport\nPort: 3011" as ContainerTransport CONTAINER_COLOR {
+            component "Fastify App" as AppTransport
+            artifact "Dockerfile" as DockerTransport
+        }
+
+        node "Container: Booking\nPort: 3003" as ContainerBooking CONTAINER_COLOR {
+            component "Fastify App + Socket.io" as AppBooking
+            artifact "Dockerfile" as DockerBooking
+        }
+
+        node "Container: Payment\nPort: 3004" as ContainerPayment CONTAINER_COLOR {
+            component "Fastify App" as AppPayment
+            artifact "Dockerfile" as DockerPayment
+        }
+
+        node "Container: Notification\nPort: 3005" as ContainerNotif CONTAINER_COLOR {
+            component "Fastify App" as AppNotif
+            artifact "Dockerfile" as DockerNotif
+        }
+
+        ' Base de données
+        node "Container: PostgreSQL\nPort: 5432" as ContainerPostgres DATABASE_COLOR {
+            database "PostgreSQL 16" as PostgresDB {
+                storage "10 Schemas isolés" as Schemas
+            }
+            folder "Volume: postgres_data" as VolPostgres
+        }
+
+        ' Cache Redis
+        node "Container: Redis\nPort: 6379" as ContainerRedis CACHE_COLOR {
+            database "Redis 7" as RedisDB {
+                storage "Cache" as RedisCache
+                storage "Pub/Sub" as RedisPubSub
+            }
+            folder "Volume: redis_data" as VolRedis
+        }
+    }
+}
+
+' Services externes (hors Docker)
+cloud "Services Cloud Externes" as CloudServices {
+    node "Stripe API" as StripeCloud {
+        component "Payment Processing" as StripeAPI
+    }
+
+    node "SendGrid" as SendGridCloud {
+        component "Email Delivery" as SendGridAPI
+    }
+
+    node "Firebase" as FirebaseCloud {
+        component "Cloud Messaging" as FirebaseAPI
+    }
+
+    node "Twilio (optionnel)" as TwilioCloud {
+        component "SMS API" as TwilioAPI
+    }
+}
+
+' Clients
+node "Client Mobile\n(iOS/Android)" as MobileDevice {
+    component "App Flutter" as FlutterApp
+}
+
+node "Client Web\n(Admin Dashboard)" as WebBrowser {
+    component "React App" as ReactApp
+}
+
+' ============= CONNEXIONS =============
+
+' Clients -> Gateway
+FlutterApp --> AppGW : HTTPS :3000
+ReactApp --> AppGW : HTTPS :3000
+
+' Gateway -> Services
+AppGW --> AppAuth : HTTP :3001
+AppGW --> AppBooking : HTTP :3003
+AppGW --> AppPayment : HTTP :3004
+AppGW --> AppResto : HTTP :3008
+AppGW --> AppAccom : HTTP :3009
+AppGW --> AppProvider : HTTP :3010
+AppGW --> AppTransport : HTTP :3011
+
+' Services -> Resource Core
+AppResto --> AppCore : HTTP :3002
+AppAccom --> AppCore : HTTP :3002
+AppProvider --> AppCore : HTTP :3002
+AppTransport --> AppCore : HTTP :3002
+
+' Booking -> Resource Services
+AppBooking --> AppResto : HTTP :3008
+AppBooking --> AppAccom : HTTP :3009
+AppBooking --> AppProvider : HTTP :3010
+AppBooking --> AppTransport : HTTP :3011
+
+' Payment -> Booking
+AppPayment --> AppBooking : HTTP :3003
+
+' Services -> PostgreSQL
+AppAuth --> PostgresDB : TCP :5432\nschema: auth
+AppCore --> PostgresDB : TCP :5432\nschema: resource_core
+AppResto --> PostgresDB : TCP :5432\nschema: restaurant
+AppAccom --> PostgresDB : TCP :5432\nschema: accommodation
+AppProvider --> PostgresDB : TCP :5432\nschema: service_provider
+AppTransport --> PostgresDB : TCP :5432\nschema: transport
+AppBooking --> PostgresDB : TCP :5432\nschema: booking
+AppPayment --> PostgresDB : TCP :5432\nschema: payment
+AppNotif --> PostgresDB : TCP :5432\nschema: notification
+
+' Services -> Redis
+AppGW --> RedisCache : TCP :6379\nRate limiting
+AppResto --> RedisCache : TCP :6379\nCache
+AppAccom --> RedisCache : TCP :6379\nCache
+AppProvider --> RedisCache : TCP :6379\nCache
+AppTransport --> RedisCache : TCP :6379\nCache
+AppBooking --> RedisCache : TCP :6379\nCache
+
+' Pub/Sub
+AppBooking --> RedisPubSub : Publish events
+AppPayment --> RedisPubSub : Publish events
+AppNotif --> RedisPubSub : Subscribe events
+
+' WebSocket
+FlutterApp --> AppBooking : WebSocket :3003\n(temps réel)
+
+' Payment -> Stripe
+AppPayment --> StripeAPI : HTTPS\nPaymentIntent, Refunds
+StripeCloud --> AppPayment : HTTPS\nWebhooks
+
+' Notification -> Services externes
+AppNotif --> SendGridAPI : HTTPS\nEmail API
+AppNotif --> FirebaseAPI : HTTPS\nFCM API
+AppNotif --> TwilioAPI : HTTPS\nSMS API (optionnel)
+
+' Volumes persistants
+PostgresDB -down-> VolPostgres : Persistance données
+RedisDB -down-> VolRedis : Persistance cache
+
+' Notes déploiement
+note right of AppServer
+  **Configuration Serveur**
+
+  Prérequis:
+  - Docker 24.x
+  - Docker Compose 2.x
+  - 8 GB RAM minimum
+  - 50 GB disque
+  - Ubuntu 22.04 LTS / Debian 12
+
+  Commandes:
+  docker-compose up -d
+  docker-compose ps
+  docker-compose logs -f <service>
+  docker-compose down
+
+  Variables d'environnement:
+  - .env.development
+  - .env.production
+  - Secrets via Docker secrets
+end note
+
+note bottom of DockerNetwork
+  **Réseau Docker isolé**
+
+  Type: Bridge network
+  Nom: ping-network
+
+  Isolation:
+  - Services communiquent via noms
+  - Pas d'accès externe direct
+  - Seul API Gateway exposé
+
+  DNS interne:
+  - auth-service:3001
+  - booking-service:3003
+  - restaurant-service:3008
+  - etc.
+
+  Sécurité:
+  - Firewall rules
+  - Ports internes uniquement
+  - TLS inter-services (prod)
+end note
+
+note right of ContainerPostgres
+  **PostgreSQL 16 Alpine**
+
+  Configuration:
+  - Max connections: 100
+  - Shared buffers: 256MB
+  - Work mem: 4MB
+  - Encoding: UTF-8
+  - Timezone: Africa/Dakar
+
+  10 Schemas:
+  - auth (users, tokens)
+  - resource_core (merchants, schedules)
+  - restaurant (tables, zones)
+  - accommodation (rooms, pricing)
+  - service_provider (staff, slots)
+  - transport (vehicles, trips, seats)
+  - booking (reservations, conflicts)
+  - payment (payments, refunds)
+  - notification (notifications, templates)
+
+  Backup:
+  - Dump quotidien 3h00
+  - Rétention: 7 jours
+  - Stockage: S3 ou local
+end note
+
+note right of ContainerRedis
+  **Redis 7 Alpine**
+
+  Utilisation:
+  1. Cache (90%):
+     - Disponibilités
+     - Recherches
+     - Rate limiting
+     - Sessions (optionnel)
+
+  2. Pub/Sub (10%):
+     - Événements inter-services
+     - Invalidation cache
+     - Notifications
+
+  Configuration:
+  - Max memory: 512MB
+  - Eviction: allkeys-lru
+  - Persistence: AOF
+  - Snapshot: Désactivé (cache)
+
+  Performance:
+  - ~100k ops/sec
+  - Latence <1ms
+end note
+
+note bottom of CloudServices
+  **Services Cloud Tiers**
+
+  Stripe:
+  - Mode: Sandbox (dev) / Live (prod)
+  - Webhook endpoint: /webhooks/stripe
+  - Retry: 3 jours
+
+  SendGrid:
+  - Plan: Free (100 emails/jour dev)
+  - Plan: Essential (prod)
+  - Templates: Dynamic templates
+
+  Firebase:
+  - Plan: Spark (gratuit)
+  - Notifications illimitées
+  - Analytics inclus
+
+  Twilio (optionnel):
+  - Pay-as-you-go
+  - ~50 XOF/SMS
+  - Pool numéros locaux
+end note
+
+note left of MobileDevice
+  **App Mobile Flutter**
+
+  Plateformes:
+  - iOS 12+
+  - Android 7.0+
+
+  Features:
+  - Navigation (Go Router)
+  - State (Riverpod)
+  - HTTP (Dio + intercepteurs)
+  - WebSocket (Socket.io client)
+  - Push (Firebase Messaging)
+  - Paiement (Stripe SDK)
+  - Cache local (Hive)
+
+  Build:
+  - Dev: flutter run
+  - Prod: flutter build apk/ipa
+  - CI/CD: GitHub Actions
+end note
+
+' Scalabilité
+note bottom of LoadBalancer
+  **Scalabilité Horizontale**
+
+  Réplication services:
+  ```yaml
+  restaurant-service:
+    deploy:
+      replicas: 3
+  ```
+
+  Load balancing:
+  - Round Robin
+  - Health checks
+  - Auto-scaling (k8s futur)
+
+  Stateless:
+  - Pas de session locale
+  - État dans Redis/PostgreSQL
+  - Instances interchangeables
+
+  Performance:
+  - 1 instance: ~500 req/s
+  - 3 instances: ~1500 req/s
+  - Linear scaling
+end note
+
+@enduml

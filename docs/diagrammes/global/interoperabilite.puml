@@ -1,0 +1,404 @@
+@startuml Architecture Globale - Diagramme d'Interopérabilité
+
+title Plateforme PING - Architecture Microservices & Interopérabilité
+
+!define RECTANGLE_COLOR(color) <color:color>
+
+' Clients externes
+actor "Client Mobile\n(Flutter)" as ClientMobile #LightBlue
+actor "Commerçant\n(Flutter)" as MerchantMobile #LightGreen
+actor "Admin\n(Web)" as AdminWeb #LightGray
+
+cloud "Services Externes" {
+    component "Stripe API" as Stripe #Green
+    component "SendGrid" as SendGrid #Blue
+    component "Firebase FCM" as Firebase #Orange
+    component "Twilio SMS" as Twilio #Red
+}
+
+' Infrastructure
+database "PostgreSQL\n(10 schemas)" as Postgres #LightCyan {
+    storage "auth" as DBAuth
+    storage "resource_core" as DBCore
+    storage "restaurant" as DBRestaurant
+    storage "accommodation" as DBAccommodation
+    storage "service_provider" as DBProvider
+    storage "transport" as DBTransport
+    storage "booking" as DBBooking
+    storage "payment" as DBPayment
+    storage "notification" as DBNotification
+}
+
+database "Redis\n(Cache & Pub/Sub)" as Redis #Pink
+
+' API Gateway
+package "API Gateway\nPort 3000" as Gateway #LightBlue {
+    component "Routeur" as Router
+    component "Auth Middleware" as AuthMW
+    component "Rate Limiter" as RateLimiter
+    component "Circuit Breaker" as CircuitBreaker
+    component "Load Balancer" as LoadBalancer
+}
+
+' Microservices - Couche Auth
+package "Auth Service\nPort 3001" as AuthService #LightGreen {
+    component "Gestion Utilisateurs" as UserMgmt
+    component "JWT Manager" as JWTMgr
+    component "RBAC" as RBAC
+}
+
+' Microservices - Couche Resource
+package "Resource Management Layer" as ResourceLayer {
+    package "Resource Core\nPort 3002" as ResourceCore #LightYellow {
+        component "Gestion Commerçants" as MerchantMgmt
+        component "Validation Ressources" as ResourceValidation
+        component "Gestion Horaires" as ScheduleMgmt
+    }
+
+    package "Restaurant Service\nPort 3008" as RestaurantService #LightCoral {
+        component "Gestion Tables" as TableMgmt
+        component "Gestion Zones" as ZoneMgmt
+        component "Disponibilité Tables" as TableAvailability
+    }
+
+    package "Accommodation\nPort 3009" as AccommodationService #LightCyan {
+        component "Gestion Chambres" as RoomMgmt
+        component "Tarification" as PricingMgmt
+        component "Disponibilité Chambres" as RoomAvailability
+    }
+
+    package "Service Provider\nPort 3010" as ProviderService #Wheat {
+        component "Gestion Personnel" as StaffMgmt
+        component "Gestion Créneaux" as SlotMgmt
+        component "Disponibilité Créneaux" as SlotAvailability
+    }
+
+    package "Transport Service\nPort 3011" as TransportService #LightSteelBlue {
+        component "Gestion Véhicules" as VehicleMgmt
+        component "Gestion Trajets" as TripMgmt
+        component "Gestion Places" as SeatMgmt
+        component "Disponibilité Transport" as TransportAvailability
+        component "Calculateur Itinéraire" as RouteCalculator
+    }
+}
+
+' Microservices - Couche Business
+package "Booking Service\nPort 3003\n(SERVICE CŒUR)" as BookingService #LightSalmon {
+    component "Gestion Réservations" as BookingMgmt
+    component "Détection Conflits" as ConflictDetection
+    component "Générateur Suggestions" as SuggestionGen
+    component "WebSocket Server" as WebSocketServer
+    component "Optimisation Occupation" as Optimization
+}
+
+' Microservices - Couche Services Externes
+package "Payment Service\nPort 3004" as PaymentService #PaleGreen {
+    component "Gestion Paiements" as PaymentMgmt
+    component "Gestion Remboursements" as RefundMgmt
+    component "Génération Factures" as InvoiceGen
+    component "Webhook Manager" as WebhookMgr
+}
+
+package "Notification Service\nPort 3005" as NotificationService #Lavender {
+    component "Dispatcheur" as Dispatcher
+    component "Email Sender" as EmailSender
+    component "Push Sender" as PushSender
+    component "SMS Sender" as SMSSender
+    component "Event Listener" as EventListener
+}
+
+' ============= FLUX SYNCHRONES (HTTP REST) =============
+
+' Client -> Gateway
+ClientMobile -down-> Router : HTTPS
+MerchantMobile -down-> Router : HTTPS
+AdminWeb -down-> Router : HTTPS
+
+' Gateway -> Services
+Router -down-> AuthMW : Validation JWT
+AuthMW -right-> UserMgmt : POST /validate-token
+
+Router -down-> CircuitBreaker : Protection pannes
+CircuitBreaker -down-> LoadBalancer : Répartition charge
+
+LoadBalancer -down-> BookingMgmt : POST /bookings
+LoadBalancer -down-> TableMgmt : GET /tables
+LoadBalancer -down-> RoomMgmt : GET /rooms
+LoadBalancer -down-> TripMgmt : GET /trips
+LoadBalancer -down-> PaymentMgmt : POST /payments
+
+' Booking -> Resource Services
+BookingMgmt -right-> TableAvailability : GET /availability
+BookingMgmt -right-> RoomAvailability : GET /availability
+BookingMgmt -right-> SlotAvailability : GET /availability
+BookingMgmt -right-> TransportAvailability : GET /availability
+
+' Resource Domain -> Resource Core
+TableMgmt -up-> ResourceValidation : POST /validate-resource
+RoomMgmt -up-> ResourceValidation : POST /validate-resource
+SlotMgmt -up-> ResourceValidation : POST /validate-resource
+VehicleMgmt -up-> ResourceValidation : POST /validate-resource
+
+TableMgmt -up-> MerchantMgmt : GET /merchants/:id
+RoomMgmt -up-> MerchantMgmt : GET /merchants/:id
+SlotMgmt -up-> MerchantMgmt : GET /merchants/:id
+VehicleMgmt -up-> MerchantMgmt : GET /merchants/:id
+
+' Booking -> Payment
+BookingMgmt -down-> PaymentMgmt : Initier paiement
+
+' Payment -> Booking
+PaymentMgmt -up-> BookingMgmt : PUT /bookings/:id/confirm
+
+' Suggestions
+ConflictDetection -right-> SuggestionGen : Générer alternatives
+SuggestionGen -right-> TableMgmt : Chercher tables similaires
+SuggestionGen -right-> RoomMgmt : Chercher chambres similaires
+SuggestionGen -right-> SlotMgmt : Chercher créneaux similaires
+SuggestionGen -right-> TripMgmt : Chercher trajets similaires
+
+' Payment -> Stripe
+PaymentMgmt -down-> Stripe : PaymentIntent API
+RefundMgmt -down-> Stripe : Refunds API
+Stripe -up-> WebhookMgr : Webhooks
+
+' ============= FLUX ASYNCHRONES (REDIS PUB/SUB) =============
+
+' Booking -> Redis -> Notification
+BookingMgmt -right-> Redis : publish(\n"booking.confirmed"\n)
+PaymentMgmt -left-> Redis : publish(\n"payment.success"\n)
+BookingMgmt -right-> Redis : publish(\n"booking.cancelled"\n)
+RefundMgmt -left-> Redis : publish(\n"refund.processed"\n)
+
+Redis -down-> EventListener : subscribe(\nevents\n)
+
+EventListener -right-> Dispatcher : Traiter événement
+
+' Notification -> Services externes
+EmailSender -down-> SendGrid : API Email
+PushSender -down-> Firebase : FCM API
+SMSSender -down-> Twilio : SMS API
+
+' Resource Services -> Redis (cache invalidation)
+TableMgmt -up-> Redis : Cache tables
+RoomMgmt -up-> Redis : Cache chambres
+SlotMgmt -up-> Redis : Cache créneaux
+TripMgmt -up-> Redis : Cache trajets
+
+' ============= WEBSOCKET TEMPS RÉEL =============
+
+WebSocketServer -up-> ClientMobile : Socket.io\n(bidirectionnel)
+WebSocketServer -up-> MerchantMobile : Socket.io\n(bidirectionnel)
+
+' ============= ACCÈS BASE DE DONNÉES =============
+
+AuthService -down-> DBAuth : Prisma ORM
+ResourceCore -down-> DBCore : Prisma ORM
+RestaurantService -down-> DBRestaurant : Prisma ORM
+AccommodationService -down-> DBAccommodation : Prisma ORM
+ProviderService -down-> DBProvider : Prisma ORM
+TransportService -down-> DBTransport : Prisma ORM
+BookingService -down-> DBBooking : Prisma ORM
+PaymentService -down-> DBPayment : Prisma ORM
+NotificationService -down-> DBNotification : Prisma ORM
+
+' Légende
+legend right
+  |= Type Communication |= Protocole |= Usage |
+  | <back:blue> HTTP REST Synchrone </back> | HTTPS | Opérations critiques nécessitant réponse immédiate |
+  | <back:pink> Redis Pub/Sub Asynchrone </back> | Redis | Événements non-critiques, notifications |
+  | <back:orange> WebSocket Temps Réel </back> | Socket.io | Mises à jour instantanées, dashboard live |
+  | <back:cyan> Base de Données </back> | PostgreSQL | Persistance données, transactions ACID |
+
+  |= Pattern de Résilience |= Implémentation |
+  | Circuit Breaker | Opossum (seuil 50%, timeout 30s) |
+  | Cache | Redis (TTL 5-15min) |
+  | Retry | Exponential backoff (3 tentatives) |
+  | Load Balancing | Round Robin entre instances |
+
+  |= Ports Services |
+  | API Gateway: 3000 |
+  | Auth: 3001 |
+  | Resource Core: 3002 |
+  | Booking: 3003 |
+  | Payment: 3004 |
+  | Notification: 3005 |
+  | Restaurant: 3008 |
+  | Accommodation: 3009 |
+  | Service Provider: 3010 |
+  | Transport: 3011 |
+endlegend
+
+' Notes architecture
+note right of Gateway
+  **Point d'entrée unique**
+
+  Responsabilités:
+  - Routage intelligent
+  - Authentification JWT
+  - Rate limiting (100 req/15min)
+  - Circuit breaker
+  - CORS
+  - Logging centralisé
+
+  Avantages:
+  - Sécurité renforcée
+  - Monitoring centralisé
+  - Versioning API
+  - Découplage client/services
+end note
+
+note bottom of ResourceLayer
+  **Isolation par domaine**
+
+  Avantages nouvelle architecture:
+   Si Restaurant tombe → Accommodation fonctionne
+   Scalabilité indépendante par domaine
+   Déploiements sans risque global
+   Optimisation spécifique par type
+
+  Resource Core:
+  - Logique commune réutilisée
+  - Évite duplication code
+  - Service léger et stable
+end note
+
+note right of BookingService
+  **Cœur du système**
+
+  Orchestre:
+  - Recherche multi-domaines
+  - Détection conflits (anti-double-booking)
+  - Suggestions intelligentes
+  - WebSocket temps réel
+  - Optimisation occupation
+
+  Dépend de:
+  - Restaurant Service
+  - Accommodation Service
+  - Service Provider Service
+  - Payment Service
+
+  Mais isolation: si un domaine tombe,
+  autres domaines continuent de fonctionner
+end note
+
+note right of PaymentService
+  **Intégration Stripe sécurisée**
+
+  PCI-DSS Compliant:
+  - Aucune carte stockée
+  - Tokens temporaires uniquement
+  - Webhooks HMAC-SHA256
+  - HTTPS obligatoire
+
+  Devises supportées:
+  - XOF (Franc CFA Ouest)
+  - XAF (Franc CFA Central)
+  - NGN (Naira Nigeria)
+  - EUR, USD
+
+  Mobile Money:
+  - Orange Money
+  - MTN Mobile Money
+  - Moov Money
+end note
+
+note left of NotificationService
+  **Communication multi-canal**
+
+  Événements Redis:
+  - booking.confirmed
+  - booking.cancelled
+  - booking.reminder
+  - payment.success
+  - payment.failed
+  - refund.processed
+
+  Canaux:
+  - Email (SendGrid)
+  - Push (Firebase)
+  - SMS (Twilio - optionnel)
+
+  Résilience:
+  - Retry automatique
+  - Canal alternatif si échec
+  - Queue Redis
+end note
+
+note right of TransportService
+  **Gestion mobilité multimodale**
+
+  Types transport:
+  - Bus (urbain, interurbain)
+  - Train (TER, grandes lignes)
+  - Avion (vols domestiques)
+  - Metro (transport urbain)
+  - VTC (courses privées)
+
+  Fonctionnalités:
+  - Recherche trajets multi-critères
+  - Calcul itinéraire GPS (Haversine)
+  - Gestion places numérotées
+  - Classes tarifaires
+  - Arrêts intermédiaires
+  - Disponibilité temps réel
+
+  Spécificités africaines:
+  - Routes non cartographiées
+  - Trafic imprévisible
+  - Multi-compagnies informelles
+  - Paiement Mobile Money
+  - Langues locales
+
+  Intégration:
+  - Booking Service (réservations)
+  - Resource Core (véhicules)
+  - Payment Service (tickets)
+  - Notification (rappels départ)
+end note
+
+note bottom of Postgres
+  **Database per Service Pattern**
+
+  10 schémas isolés:
+  - Isolation données par service
+  - Migrations indépendantes
+  - Backup sélectif possible
+  - Performance (index optimisés)
+
+  Mais:
+  - Même instance PostgreSQL
+  - Transactions ACID garanties
+  - Connexion pooling partagé
+  - Coût infrastructure réduit
+
+  Évolution future:
+  - Sharding par commerçant
+  - Read replicas
+  - Multi-région
+end note
+
+note bottom of Redis
+  **Cache & Pub/Sub centralisé**
+
+  Cache (TTL 5-15min):
+  - Disponibilités ressources
+  - Profils commerçants
+  - Recherches fréquentes
+  - Rate limiting counters
+
+  Pub/Sub (événements):
+  - booking.*
+  - payment.*
+  - resource.*
+  - notification.*
+
+  Avantages:
+  - Performance accrue
+  - Découplage services
+  - Résilience (fallback cache)
+  - Scalabilité horizontale
+end note
+
+@enduml

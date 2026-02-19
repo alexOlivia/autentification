@@ -1,0 +1,530 @@
+@startuml Booking Service - Diagramme de Classes
+
+title Booking Service - Diagramme de Classes (SERVICE CŒUR)
+
+' Styles
+skinparam class {
+    BackgroundColor LightSalmon
+    BorderColor DarkRed
+    ArrowColor DarkRed
+}
+
+package "Booking Service" {
+    class ServeurReservation {
+        - application: FastifyInstance
+        - port: number
+        - db: PrismaClient
+        - redis: ClientRedis
+        - socketIO: Server
+        + demarrer(): Promise<void>
+        + arreter(): Promise<void>
+        + enregistrerRoutes(): void
+        + configurerWebSocket(): void
+    }
+
+    class ControleurReservation {
+        + creerReservation(req: Requete, res: Reponse): Promise<void>
+        + obtenirReservation(req: Requete, res: Reponse): Promise<void>
+        + modifierReservation(req: Requete, res: Reponse): Promise<void>
+        + annulerReservation(req: Requete, res: Reponse): Promise<void>
+        + listerReservations(req: Requete, res: Reponse): Promise<void>
+        + confirmerReservation(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurRecherche {
+        + rechercherDisponibilites(req: Requete, res: Reponse): Promise<void>
+        + obtenirSuggestions(req: Requete, res: Reponse): Promise<void>
+        + rechercherMultiCriteres(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ServiceReservation {
+        - depotReservation: DepotReservation
+        - detecteurConflits: DetecteurConflits
+        - servicePaiement: ClientPaiement
+        - validateur: ValidateurReservation
+        + creer(utilisateurId: string, donnees: DonneesReservation): Promise<Reservation>
+        + trouverParId(id: string): Promise<Reservation>
+        + modifier(id: string, donnees: any): Promise<Reservation>
+        + annuler(id: string, raison: string): Promise<Reservation>
+        + confirmer(id: string, paiementId: string): Promise<Reservation>
+        + verifierPossibiliteModification(reservation: Reservation): boolean
+    }
+
+    class ServiceRecherche {
+        - clientRestaurant: ClientRestaurant
+        - clientHebergement: ClientHebergement
+        - clientPrestataire: ClientPrestataire
+        - cache: GestionnaireCache
+        + rechercherDisponibilites(criteres: CriteresRecherche): Promise<ResultatRecherche>
+        + rechercherTousTypes(criteres: CriteresRecherche): Promise<ResultatRecherche[]>
+        + filtrerParPrix(resultats: any[], prixMax: number): any[]
+        + trierResultats(resultats: any[], critere: CritreTri): any[]
+    }
+
+    class DetecteurConflits {
+        - depotReservation: DepotReservation
+        + detecter(nouvelleReservation: DonneesReservation): Promise<Conflit[]>
+        + verifierChevauchementTemporel(res1: Reservation, res2: Reservation): boolean
+        + verifierMemeRessource(res1: Reservation, res2: Reservation): boolean
+        + resoudreConflits(conflits: Conflit[]): Promise<void>
+    }
+
+    class GenerateurSuggestions {
+        - clientRestaurant: ClientRestaurant
+        - clientHebergement: ClientHebergement
+        - clientPrestataire: ClientPrestataire
+        + genererSuggestions(reservationEchouee: DonneesReservation): Promise<Suggestion[]>
+        + trouverRessourcesSimilaires(ressourceId: string, type: TypeRessource): Promise<Ressource[]>
+        + trouverCreneauxProches(dateHeure: Date, deltaHeures: number): Promise<Creneau[]>
+        + calculerScore(suggestion: Suggestion, criteresOriginaux: any): number
+    }
+
+    class OptimisateurOccupation {
+        - depotReservation: DepotReservation
+        + calculerTauxOccupation(ressourceId: string, periode: Periode): Promise<number>
+        + suggererCreneauxOptimaux(ressourceId: string): Promise<Creneau[]>
+        + identifierPeriodesCreuses(ressourceId: string): Promise<Periode[]>
+        + maximiserRevenu(ressourceId: string, contraintes: any): Promise<PlanOccupation>
+    }
+
+    class GestionnaireWebSocket {
+        - io: Server
+        - redis: ClientRedis
+        + rejoindreRessource(socket: Socket, ressourceId: string): void
+        + quitterRessource(socket: Socket, ressourceId: string): void
+        + diffuserNouvelleReservation(ressourceId: string, reservation: Reservation): void
+        + diffuserAnnulation(ressourceId: string, reservationId: string): void
+        + diffuserMiseAJourDisponibilite(ressourceId: string, disponibilite: any): void
+    }
+
+    class DepotReservation {
+        - db: PrismaClient
+        + creer(donnees: DonneesReservation): Promise<Reservation>
+        + trouverParId(id: string): Promise<Reservation | null>
+        + trouverParUtilisateur(utilisateurId: string): Promise<Reservation[]>
+        + trouverParRessource(ressourceId: string, plage: PlageDate): Promise<Reservation[]>
+        + trouverParCommercant(commercantId: string): Promise<Reservation[]>
+        + mettreAJour(id: string, donnees: any): Promise<Reservation>
+        + supprimerLogiquemet(id: string): Promise<void>
+    }
+
+    class DepotHistoriqueStatut {
+        - db: PrismaClient
+        + creer(reservationId: string, ancienStatut: Statut, nouveauStatut: Statut, raison: string): Promise<HistoriqueStatut>
+        + lister(reservationId: string): Promise<HistoriqueStatut[]>
+    }
+
+    class DepotConflit {
+        - db: PrismaClient
+        + creer(reservation1Id: string, reservation2Id: string, type: TypeConflit): Promise<Conflit>
+        + lister(reservationId: string): Promise<Conflit[]>
+        + marquerResolu(id: string): Promise<void>
+    }
+
+    class Participant <<entite>> {
+        + id: string
+        + reservationId: string
+        + nom: string
+        + prenom: string
+        + telephone: string
+        + email: string
+        + age: number
+        + estTitulaire: boolean
+    }
+
+    class PolitiqueAnnulation <<entite>> {
+        + id: string
+        + commercantId: string
+        + typeRessource: TypeRessource
+        + delaiHeures: number
+        + pourcentageRemboursement: number
+        + fraisAnnulation: number
+        + description: string
+    }
+
+    class DepotParticipant {
+        - db: PrismaClient
+        + creer(donnees: DonneesParticipant): Promise<Participant>
+        + lister(reservationId: string): Promise<Participant[]>
+        + mettreAJour(id: string, donnees: any): Promise<Participant>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotPolitiqueAnnulation {
+        - db: PrismaClient
+        + creer(donnees: DonneesPolitique): Promise<PolitiqueAnnulation>
+        + trouverParCommercant(commercantId: string, typeRessource: TypeRessource): Promise<PolitiqueAnnulation | null>
+        + mettreAJour(id: string, donnees: any): Promise<PolitiqueAnnulation>
+    }
+
+    class DepotSuggestion {
+        - db: PrismaClient
+        + creer(reservationId: string, suggestion: DonneesSuggestion): Promise<Suggestion>
+        + lister(reservationId: string): Promise<Suggestion[]>
+        + accepter(id: string): Promise<void>
+    }
+
+    class Reservation <<entite>> {
+        + id: string
+        + numeroReservation: string
+        + utilisateurId: string
+        + commercantId: string
+        + ressourceId: string
+        + typeRessource: TypeRessource
+        + statut: StatutReservation
+        + dateDebut: Date
+        + dateFin: Date
+        + heureDebut: string
+        + heureFin: string
+        + nombrePersonnes: number
+        + montantTotal: number
+        + montantAcompte: number
+        + devise: string
+        + paiementId: string
+        + notesClient: string
+        + codeConfirmation: string
+        + dateCreation: Date
+        + dateConfirmation: Date
+        + dateAnnulation: Date
+        + motifAnnulation: string
+        + dateMiseAJour: Date
+    }
+
+    class HistoriqueStatut <<entite>> {
+        + id: string
+        + reservationId: string
+        + ancienStatut: StatutReservation
+        + nouveauStatut: StatutReservation
+        + raison: string
+        + auteur: string
+        + dateChangement: Date
+    }
+
+    class Conflit <<entite>> {
+        + id: string
+        + reservation1Id: string
+        + reservation2Id: string
+        + typeConflit: TypeConflit
+        + ressourceId: string
+        + dateDetection: Date
+        + estResolu: boolean
+        + modeResolution: string
+        + dateResolution: Date
+    }
+
+    class Suggestion <<entite>> {
+        + id: string
+        + reservationRefuseeId: string
+        + typeRessource: TypeRessource
+        + ressourceId: string
+        + commercantId: string
+        + dateDebut: Date
+        + dateFin: Date
+        + montantEstime: number
+        + scorePertinence: number
+        + raisonSuggestion: string
+        + estAcceptee: boolean
+    }
+
+    enum StatutReservation {
+        EN_ATTENTE_PAIEMENT
+        CONFIRMEE
+        EN_COURS
+        TERMINEE
+        ANNULEE_CLIENT
+        ANNULEE_COMMERCANT
+        EXPIREE
+        NO_SHOW
+        AUTRE
+    }
+
+    enum TypeRessource {
+        CHAMBRE
+        SALLE_EVENEMENT
+        JARDIN
+        PISCINE
+        TABLE_RESTAURANT
+        ZONE_RESTAURANT
+        CRENEAU_SERVICE
+        PLACE_TRANSPORT
+        VEHICULE_VTC
+        AUTRE
+    }
+
+    enum TypeConflit {
+        DOUBLE_RESERVATION
+        CHEVAUCHEMENT_HORAIRE
+        SURRESERVATION
+        RESSOURCE_INDISPONIBLE
+        AUTRE
+    }
+
+    class ClientRestaurant {
+        - urlBase: string
+        - coupeCircuit: CoupeCircuit
+        + obtenirTable(id: string): Promise<Table>
+        + verifierDisponibilite(tableId: string, date: Date, creneau: Creneau): Promise<boolean>
+    }
+
+    class ClientHebergement {
+        - urlBase: string
+        - coupeCircuit: CoupeCircuit
+        + obtenirChambre(id: string): Promise<Chambre>
+        + verifierDisponibilite(chambreId: string, plage: PlageDate): Promise<boolean>
+    }
+
+    class ClientPrestataire {
+        - urlBase: string
+        - coupeCircuit: CoupeCircuit
+        + obtenirCreneau(id: string): Promise<Creneau>
+        + verifierDisponibilite(creneauId: string): Promise<boolean>
+    }
+
+    class ClientPaiement {
+        - urlBase: string
+        + creerPaiement(reservationId: string, montant: number): Promise<Paiement>
+        + verifierStatutPaiement(paiementId: string): Promise<StatutPaiement>
+    }
+
+    class ValidateurReservation {
+        + validerDates(dateDebut: Date, dateFin: Date): ResultatValidation
+        + validerNombrePersonnes(nombre: number, capaciteRessource: number): boolean
+        + validerDelaiReservation(dateDebut: Date): boolean
+        + validerDelaiAnnulation(reservation: Reservation): boolean
+    }
+
+    class GestionnaireCache {
+        - redis: ClientRedis
+        + obtenirReservations(ressourceId: string, date: Date): Promise<Reservation[]>
+        + cacherReservations(ressourceId: string, date: Date, reservations: Reservation[]): Promise<void>
+        + invaliderCache(ressourceId: string): Promise<void>
+    }
+
+    class CriteresRecherche <<dto>> {
+        + typeRessource: TypeRessource
+        + dateDebut: Date
+        + dateFin: Date
+        + nombrePersonnes: number
+        + ville: string
+        + prixMax: number
+        + filtres: Map<string, any>
+    }
+
+    class ResultatRecherche <<dto>> {
+        + ressources: Ressource[]
+        + disponibilites: Disponibilite[]
+        + tarifEstimatif: number
+        + nombreResultats: number
+    }
+
+    class PlanOccupation <<dto>> {
+        + ressourceId: string
+        + creneauxOptimaux: Creneau[]
+        + revenuEstime: number
+        + tauxOccupationCible: number
+    }
+
+    enum CritreTri {
+        PRIX_CROISSANT
+        PRIX_DECROISSANT
+        POPULARITE
+        DISPONIBILITE
+        DISTANCE
+        AUTRE
+    }
+}
+
+' Relations
+ServeurReservation "1" -- "1" ControleurReservation : contient >
+ServeurReservation "1" -- "1" ControleurRecherche : contient >
+ServeurReservation "1" -- "1" GestionnaireWebSocket : contient >
+
+ControleurReservation "1" -- "1" ServiceReservation : utilise >
+ControleurRecherche "1" -- "1" ServiceRecherche : utilise >
+
+ServiceReservation "1" -- "1" DepotReservation : utilise >
+ServiceReservation "1" -- "1" DetecteurConflits : utilise >
+ServiceReservation "1" -- "1" ClientPaiement : utilise >
+ServiceReservation "1" -- "1" ValidateurReservation : utilise >
+ServiceReservation "1" -- "1" DepotHistoriqueStatut : utilise >
+
+ServiceRecherche "1" -- "1" ClientRestaurant : utilise >
+ServiceRecherche "1" -- "1" ClientHebergement : utilise >
+ServiceRecherche "1" -- "1" ClientPrestataire : utilise >
+ServiceRecherche "1" -- "1" GestionnaireCache : utilise >
+
+DetecteurConflits "1" -- "1" DepotConflit : utilise >
+DetecteurConflits "1" -- "1" GenerateurSuggestions : utilise >
+
+GenerateurSuggestions "1" -- "1" DepotSuggestion : utilise >
+GenerateurSuggestions "1" -- "1" ClientRestaurant : utilise >
+GenerateurSuggestions "1" -- "1" ClientHebergement : utilise >
+GenerateurSuggestions "1" -- "1" ClientPrestataire : utilise >
+
+OptimisateurOccupation "1" -- "1" DepotReservation : utilise >
+
+DepotReservation "1" -- "*" Reservation : gère >
+DepotHistoriqueStatut "1" -- "*" HistoriqueStatut : gère >
+DepotConflit "1" -- "*" Conflit : gère >
+DepotSuggestion "1" -- "*" Suggestion : gère >
+DepotParticipant "1" -- "*" Participant : gère >
+DepotPolitiqueAnnulation "1" -- "*" PolitiqueAnnulation : gère >
+
+Reservation "1" -- "1" StatutReservation : a un >
+Reservation "1" -- "1" TypeRessource : pour un >
+Reservation "1" *-- "*" Participant : inclut >
+Reservation "1" -- "*" HistoriqueStatut : possède >
+Reservation "1" -- "*" Conflit : peut avoir >
+Reservation "1" -- "*" Suggestion : peut avoir >
+
+Participant "*" --> "1" Reservation : de >
+
+Conflit "1" -- "1" TypeConflit : est un >
+Conflit "*" --> "1" Reservation : concerne 1 >
+Conflit "*" --> "1" Reservation : concerne 2 >
+
+Suggestion "*" --> "1" Reservation : pour >
+Suggestion "1" -- "1" TypeRessource : suggère >
+
+PolitiqueAnnulation "1" -- "1" TypeRessource : pour >
+
+GestionnaireWebSocket ..> Reservation : diffuse >
+
+ServiceRecherche ..> CriteresRecherche : utilise >
+ServiceRecherche ..> ResultatRecherche : retourne >
+OptimisateurOccupation ..> PlanOccupation : retourne >
+
+note right of Reservation
+  Entité centrale du système
+
+  Cycle de vie:
+  1. EN_ATTENTE_PAIEMENT (création)
+  2. CONFIRMEE (après paiement)
+  3. EN_COURS (heure début atteinte)
+  4. TERMINEE (heure fin passée)
+
+  Ou bien:
+  2. ANNULEE_CLIENT (par client)
+  2. ANNULEE_COMMERCANT (par commerçant)
+  2. EXPIREE (délai paiement dépassé)
+  3. NO_SHOW (client absent)
+
+  Numéro réservation: {TYPE}-{DATE}-{SEQUENCE}
+  Ex: CHAMBRE-20250204-0123
+
+  Code confirmation: 6 caractères alphanumériques
+  Ex: A8F2K9
+end note
+
+note right of DetecteurConflits
+  Algorithme anti-double-booking:
+
+  Conflit SI:
+  - Même ressource ET
+  - Chevauchement temporel:
+    (res1.debut < res2.fin) ET
+    (res1.fin > res2.debut)
+
+  Types détectés:
+  - DOUBLE_RESERVATION (2 confirmées même période)
+  - CHEVAUCHEMENT_HORAIRE (chevauchement partiel)
+  - SURRESERVATION (capacité dépassée)
+  - RESSOURCE_INDISPONIBLE
+
+  Action:
+  - Bloquer création
+  - Logger conflit
+  - Générer suggestions
+end note
+
+note bottom of GenerateurSuggestions
+  Génération suggestions intelligentes:
+
+  Stratégies:
+  1. Ressources similaires:
+     - Même type
+     - Capacité ±2 personnes
+     - Même zone/établissement
+     - Score similarité
+
+  2. Créneaux proches:
+     - ±1 heure
+     - ±2 heures
+     - Jour suivant même heure
+     - Weekend si jour semaine
+
+  3. Combinaisons:
+     - Ressources × Créneaux
+     - Triées par score
+     - Max 10 suggestions
+
+  Score basé sur:
+  - Distance temporelle (poids: 40%)
+  - Similarité ressource (poids: 40%)
+  - Prix (poids: 20%)
+end note
+
+note right of OptimisateurOccupation
+  Optimisation occupation:
+
+  Objectifs:
+  - Maximiser taux occupation
+  - Maximiser revenu
+  - Minimiser temps creux
+  - Équilibrer charge
+
+  Méthodes:
+  - Analyse historique
+  - Prédiction demande
+  - Tarification dynamique
+  - Suggestions réorganisation
+
+  KPIs:
+  - Taux occupation global
+  - Taux occupation par période
+  - Revenu par ressource
+  - Durée moyenne utilisation
+end note
+
+note left of GestionnaireWebSocket
+  WebSocket temps réel:
+
+  Événements émis:
+  - booking.created
+  - booking.updated
+  - booking.cancelled
+  - availability.changed
+  - suggestion.generated
+
+  Salles (rooms):
+  - resource:<resourceId>
+  - user:<userId>
+  - merchant:<merchantId>
+
+  Utilité:
+  - Mises à jour instantanées
+  - Synchronisation multi-clients
+  - Dashboard temps réel merchant
+  - Notifications push
+end note
+
+note bottom of ServiceRecherche
+  Recherche unifiée multi-types:
+
+  Peut chercher simultanément:
+  - Tables restaurant
+  - Chambres hôtel
+  - Créneaux prestations
+
+  Filtres communs:
+  - Dates/heures
+  - Nombre personnes
+  - Ville/région
+  - Prix max
+  - Note minimum (si avis)
+
+  Agrège résultats et trie
+  par pertinence
+end note
+
+@enduml

@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <defs>
+    <style>
+      .greeting { font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; fill: #1E293B; }
+      .location { font-family: Arial, sans-serif; font-size: 13px; fill: #64748B; }
+      .search-hint { font-family: Arial, sans-serif; font-size: 14px; fill: #94A3B8; }
+      .section-title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1E293B; }
+      .see-all { font-family: Arial, sans-serif; font-size: 14px; fill: #2563EB; font-weight: 600; }
+      .card-name { font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #1E293B; }
+      .card-cat { font-family: Arial, sans-serif; font-size: 12px; fill: #64748B; }
+      .card-price { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #2563EB; }
+      .cat-label { font-family: Arial, sans-serif; font-size: 11px; fill: #374151; }
+      .rating { font-family: Arial, sans-serif; font-size: 12px; font-weight: 600; fill: #F59E0B; }
+      .nav-label { font-family: Arial, sans-serif; font-size: 10px; }
+      .promo-title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #FFF; }
+      .promo-sub { font-family: Arial, sans-serif; font-size: 13px; fill: rgba(255,255,255,0.8); }
+    </style>
+    <linearGradient id="promoGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="844" fill="#F8FAFC"/>
+
+  <!-- Header -->
+  <rect width="390" height="120" fill="#FFF"/>
+  <!-- Avatar -->
+  <rect x="24" y="50" width="44" height="44" rx="12" fill="#2563EB"/>
+  <text x="46" y="78" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#FFF" text-anchor="middle">AD</text>
+  <!-- Greeting -->
+  <text x="78" y="68" class="greeting">Bonjour Amadou 👋</text>
+  <text x="78" y="86" class="location">📍 Dakar, Sénégal</text>
+  <!-- Notification bell -->
+  <rect x="336" y="50" width="40" height="40" rx="12" fill="#F1F5F9"/>
+  <text x="356" y="76" font-family="Arial, sans-serif" font-size="18" text-anchor="middle">🔔</text>
+  <circle cx="364" cy="54" r="6" fill="#EF4444"/>
+  <text x="364" y="57" font-family="Arial, sans-serif" font-size="8" fill="#FFF" text-anchor="middle">3</text>
+
+  <!-- Search bar -->
+  <rect x="24" y="108" width="296" height="48" rx="12" fill="#F1F5F9"/>
+  <text x="50" y="137" font-family="Arial, sans-serif" font-size="16" fill="#94A3B8">🔍</text>
+  <text x="72" y="138" class="search-hint">Rechercher un service...</text>
+  <rect x="332" y="108" width="44" height="48" rx="12" fill="#2563EB"/>
+  <text x="354" y="138" font-family="Arial, sans-serif" font-size="18" fill="#FFF" text-anchor="middle">⚙</text>
+
+  <!-- Categories -->
+  <!-- Restaurant -->
+  <rect x="24" y="172" width="76" height="76" rx="16" fill="rgba(239,68,68,0.1)"/>
+  <text x="62" y="204" font-family="Arial, sans-serif" font-size="28" text-anchor="middle">🍽️</text>
+  <text x="62" y="240" class="cat-label" text-anchor="middle">Restaurants</text>
+
+  <!-- Hébergements -->
+  <rect x="112" y="172" width="76" height="76" rx="16" fill="rgba(59,130,246,0.1)"/>
+  <text x="150" y="204" font-family="Arial, sans-serif" font-size="28" text-anchor="middle">🏨</text>
+  <text x="150" y="240" class="cat-label" text-anchor="middle">Hôtels</text>
+
+  <!-- Services -->
+  <rect x="200" y="172" width="76" height="76" rx="16" fill="rgba(139,92,246,0.1)"/>
+  <text x="238" y="204" font-family="Arial, sans-serif" font-size="28" text-anchor="middle">💆</text>
+  <text x="238" y="240" class="cat-label" text-anchor="middle">Services</text>
+
+  <!-- Transport -->
+  <rect x="288" y="172" width="76" height="76" rx="16" fill="rgba(245,158,11,0.1)"/>
+  <text x="326" y="204" font-family="Arial, sans-serif" font-size="28" text-anchor="middle">🚌</text>
+  <text x="326" y="240" class="cat-label" text-anchor="middle">Transport</text>
+
+  <!-- Promo banner -->
+  <rect x="24" y="264" width="342" height="120" rx="16" fill="url(#promoGrad)"/>
+  <text x="40" y="300" class="promo-title">-20% Première réservation</text>
+  <text x="40" y="320" class="promo-sub">Profitez de votre offre de bienvenue</text>
+  <rect x="40" y="340" width="100" height="32" rx="8" fill="#FFF"/>
+  <text x="90" y="361" font-family="Arial, sans-serif" font-size="12" font-weight="600" fill="#2563EB" text-anchor="middle">En profiter →</text>
+
+  <!-- Section: Populaires -->
+  <text x="24" y="418" class="section-title">Populaires 🔥</text>
+  <text x="366" y="418" class="see-all" text-anchor="end">Voir tout</text>
+
+  <!-- Card 1 -->
+  <rect x="24" y="432" width="180" height="200" rx="16" fill="#FFF"/>
+  <rect x="24" y="432" width="180" height="110" rx="16" fill="#E2E8F0"/>
+  <rect x="24" y="525" width="180" height="17" rx="0 0 16 16" fill="#FFF"/>
+  <!-- Heart -->
+  <circle cx="180" cy="452" r="14" fill="rgba(255,255,255,0.9)"/>
+  <text x="180" y="457" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">♡</text>
+  <text x="40" y="562" class="card-name">Le Ngor Restaurant</text>
+  <text x="40" y="578" class="card-cat">Restaurant • Dakar</text>
+  <text x="40" y="596" class="rating">⭐ 4.8</text>
+  <text x="80" y="596" font-family="Arial, sans-serif" font-size="12" fill="#94A3B8">(120 avis)</text>
+  <text x="40" y="618" class="card-price">5 000 XOF</text>
+  <text x="110" y="618" font-family="Arial, sans-serif" font-size="11" fill="#94A3B8">/personne</text>
+
+  <!-- Card 2 -->
+  <rect x="216" y="432" width="180" height="200" rx="16" fill="#FFF"/>
+  <rect x="216" y="432" width="180" height="110" rx="16" fill="#DBEAFE"/>
+  <circle cx="372" cy="452" r="14" fill="rgba(255,255,255,0.9)"/>
+  <text x="372" y="457" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">♡</text>
+  <text x="232" y="562" class="card-name">Hôtel Teranga</text>
+  <text x="232" y="578" class="card-cat">Hébergement • Dakar</text>
+  <text x="232" y="596" class="rating">⭐ 4.5</text>
+  <text x="272" y="596" font-family="Arial, sans-serif" font-size="12" fill="#94A3B8">(85 avis)</text>
+  <text x="232" y="618" class="card-price">25 000 XOF</text>
+  <text x="312" y="618" font-family="Arial, sans-serif" font-size="11" fill="#94A3B8">/nuit</text>
+
+  <!-- Section: Services à proximité -->
+  <text x="24" y="668" class="section-title">À proximité</text>
+
+  <!-- Service tile 1 -->
+  <rect x="24" y="682" width="342" height="68" rx="12" fill="#FFF"/>
+  <rect x="36" y="694" width="44" height="44" rx="10" fill="rgba(139,92,246,0.1)"/>
+  <text x="58" y="722" font-family="Arial, sans-serif" font-size="22" text-anchor="middle">💇</text>
+  <text x="92" y="710" class="card-name">Salon Beauté Fatou</text>
+  <text x="92" y="728" class="card-cat">Coiffure • 0.8 km</text>
+  <rect x="296" y="706" width="60" height="22" rx="6" fill="#DCFCE7"/>
+  <text x="326" y="721" font-family="Arial, sans-serif" font-size="10" fill="#10B981" text-anchor="middle" font-weight="600">Dispo</text>
+
+  <!-- Bottom Navigation -->
+  <rect x="0" y="784" width="390" height="60" fill="#FFF"/>
+  <line x1="0" y1="784" x2="390" y2="784" stroke="#E2E8F0" stroke-width="1"/>
+  <!-- Accueil (active) -->
+  <text x="39" y="812" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#2563EB">🏠</text>
+  <text x="39" y="830" class="nav-label" text-anchor="middle" fill="#2563EB" font-weight="600">Accueil</text>
+  <!-- Rechercher -->
+  <text x="117" y="812" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#94A3B8">🔍</text>
+  <text x="117" y="830" class="nav-label" text-anchor="middle" fill="#94A3B8">Rechercher</text>
+  <!-- Réservations -->
+  <text x="195" y="812" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#94A3B8">📅</text>
+  <text x="195" y="830" class="nav-label" text-anchor="middle" fill="#94A3B8">Réservations</text>
+  <!-- Favoris -->
+  <text x="273" y="812" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#94A3B8">❤️</text>
+  <text x="273" y="830" class="nav-label" text-anchor="middle" fill="#94A3B8">Favoris</text>
+  <!-- Profil -->
+  <text x="351" y="812" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#94A3B8">👤</text>
+  <text x="351" y="830" class="nav-label" text-anchor="middle" fill="#94A3B8">Profil</text>
+</svg>

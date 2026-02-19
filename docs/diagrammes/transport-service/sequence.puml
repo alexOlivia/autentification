@@ -1,0 +1,334 @@
+@startuml Transport Service - Diagramme de Séquence
+
+title Transport Service - Recherche trajet et réservation place
+
+actor "Client" as Client
+participant "API Gateway" as Gateway
+participant "ControleurTrajet" as ControleurTrajet
+participant "ServiceTrajet" as ServiceTrajet
+participant "CalculateurItineraire" as Calculateur
+participant "ServiceDisponibilite" as ServiceDispo
+participant "ServicePlace" as ServicePlace
+participant "ClientBookingService" as BookingClient
+participant "DepotTrajet" as DepotTrajet
+participant "DepotArret" as DepotArret
+participant "DepotPlace" as DepotPlace
+participant "GestionnaireCache" as Cache
+database "PostgreSQL" as DB
+database "Redis" as Redis
+
+== Recherche de trajets disponibles ==
+Client -> Gateway : GET /transport/search?\norigine=Dakar&destination=Thiès&date=2026-03-15&passagers=2
+activate Gateway
+
+Gateway -> ControleurTrajet : rechercherTrajets(req, res)
+activate ControleurTrajet
+
+ControleurTrajet -> ServiceTrajet : rechercher(origine, destination, date)
+activate ServiceTrajet
+
+ServiceTrajet -> DepotTrajet : rechercher({origine, destination, date})
+activate DepotTrajet
+DepotTrajet -> DB : SELECT * FROM trips\nWHERE origin = 'Dakar'\nAND destination = 'Thiès'\nAND departure_time::date = '2026-03-15'\nAND status != 'ANNULE'
+DB --> DepotTrajet : [3 trajets trouvés]
+DepotTrajet --> ServiceTrajet : trajets
+deactivate DepotTrajet
+
+loop Pour chaque trajet
+    ServiceTrajet -> ServiceDispo : obtenirPlacesDisponibles(trajetId)
+    activate ServiceDispo
+
+    ServiceDispo -> Cache : obtenirDisponibilite(trajetId)
+    activate Cache
+    Cache -> Redis : GET "availability:trip:" + trajetId
+    Redis --> Cache : null (cache miss)
+    Cache --> ServiceDispo : null
+    deactivate Cache
+
+    ServiceDispo -> DepotPlace : lister(vehiculeId)
+    activate DepotPlace
+    DepotPlace -> DB : SELECT * FROM seats WHERE vehicle_id = ?
+    DB --> DepotPlace : [50 places du bus]
+    DepotPlace --> ServiceDispo : places
+    deactivate DepotPlace
+
+    ServiceDispo -> BookingClient : GET /bookings?trajetId=&statut=CONFIRMEE
+    activate BookingClient
+    BookingClient --> ServiceDispo : [12 réservations confirmées]
+    deactivate BookingClient
+
+    ServiceDispo -> ServiceDispo : calculerPlacesDisponibles(places, reservations)
+    note right: 50 places - 12 réservées = 38 disponibles
+
+    ServiceDispo -> Cache : cacherDisponibilite(trajetId, {disponibles: 38})
+    activate Cache
+    Cache -> Redis : SETEX "availability:..." 600 {disponibles: 38}
+    note right: TTL 10 minutes
+    Redis --> Cache : OK
+    deactivate Cache
+
+    ServiceDispo --> ServiceTrajet : {placesDisponibles: 38}
+    deactivate ServiceDispo
+end
+
+ServiceTrajet --> ControleurTrajet : trajets avec disponibilités
+deactivate ServiceTrajet
+
+ControleurTrajet --> Gateway : 200 OK\n{trajets: [...]}
+deactivate ControleurTrajet
+
+Gateway --> Client : 200 OK\n[
+  {
+    trajetId: "trip-123",
+    compagnie: "Dakar Dem Dikk",
+    vehicule: "Bus Mercedes 50 places",
+    depart: "08:00", arrivee: "10:30",
+    duree: "2h30", distance: "70 km",
+    placesDisponibles: 38,
+    prixEco: 2500 XOF,
+    prixBusiness: 4000 XOF
+  },
+  ...
+]
+deactivate Gateway
+
+== Création d'un nouveau trajet (Commerçant) ==
+participant "Commerçant" as Merchant
+
+Merchant -> Gateway : POST /transport/trips\n{vehiculeId, ligneId, heureDepart, arrets: [...]}
+activate Gateway
+
+Gateway -> ControleurTrajet : creerTrajet(req, res)
+activate ControleurTrajet
+
+ControleurTrajet -> ServiceTrajet : creer(vehiculeId, ligneId, donnees)
+activate ServiceTrajet
+
+ServiceTrajet -> DepotTrajet : trouverParId(vehiculeId)
+activate DepotTrajet
+DepotTrajet -> DB : SELECT * FROM vehicles WHERE id = ?
+DB --> DepotTrajet : vehicule {type: BUS, capacite: 50}
+DepotTrajet --> ServiceTrajet : vehicule
+deactivate DepotTrajet
+
+ServiceTrajet -> Calculateur : calculerDistance(origine, destination)
+activate Calculateur
+Calculateur -> Calculateur : haversineFormula(coord1, coord2)
+note right
+  Distance Dakar-Thiès:
+  Coord Dakar: (14.7167, -17.4677)
+  Coord Thiès: (14.7889, -16.9264)
+  Distance: ~70 km
+end note
+Calculateur --> ServiceTrajet : distance = 70 km
+deactivate Calculateur
+
+ServiceTrajet -> Calculateur : calculerDuree(distance: 70, vitesseMoyenne: 60)
+activate Calculateur
+Calculateur -> Calculateur : duree = distance / vitesse + margeArrets
+note right
+  Durée = 70 km / 60 km/h = 1h10
+  + Arrêts (3 × 5min) = 15min
+  + Marge trafic = 5min
+  Total: 1h30
+end note
+Calculateur --> ServiceTrajet : duree = 90 minutes
+deactivate Calculateur
+
+ServiceTrajet -> Calculateur : calculerHeureArrivee(heureDepart: 08:00, duree: 90)
+activate Calculateur
+Calculateur --> ServiceTrajet : heureArrivee = 09:30
+deactivate Calculateur
+
+ServiceTrajet -> DepotTrajet : creer({vehiculeId, ligneId, origine, destination, ...})
+activate DepotTrajet
+DepotTrajet -> DB : INSERT INTO trips\n(vehicle_id, line_id, origin, destination, departure_time, arrival_time, duration, distance, status)
+DB --> DepotTrajet : trajet créé
+DepotTrajet --> ServiceTrajet : trajet
+deactivate DepotTrajet
+
+ServiceTrajet -> DepotArret : creerMultiple(trajetId, arrets)
+activate DepotArret
+
+loop Pour chaque arrêt
+    DepotArret -> DepotArret : calculerHeureArrivee(ordre, duree)
+    note right
+      Arrêt 1: Rufisque - 08:20
+      Arrêt 2: Diamniadio - 08:45
+      Arrêt 3: Sébikotane - 09:00
+      Destination: Thiès - 09:30
+    end note
+    DepotArret -> DB : INSERT INTO stops\n(trip_id, name, city, order, arrival_time, ...)
+    DB --> DepotArret : arrêt créé
+end
+
+DepotArret --> ServiceTrajet : [4 arrêts créés]
+deactivate DepotArret
+
+ServiceTrajet -> Redis : publish("trip.created", {trajetId, compagnie, origine, destination})
+activate Redis
+Redis --> ServiceTrajet : OK
+deactivate Redis
+
+ServiceTrajet --> ControleurTrajet : trajet
+deactivate ServiceTrajet
+
+ControleurTrajet --> Gateway : 201 Created\n{trajetId, heureDepart, heureArrivee}
+deactivate ControleurTrajet
+
+Gateway --> Merchant : 201 Created\n{trip}
+deactivate Gateway
+
+== Vérification disponibilité place spécifique ==
+Client -> Gateway : GET /transport/seats/:placeId/availability?trajetId=trip-123
+activate Gateway
+
+Gateway -> ControleurPlace : verifierDisponibilite(req, res)
+activate ControleurPlace
+
+ControleurPlace -> ServicePlace : trouverParId(placeId)
+activate ServicePlace
+ServicePlace -> DepotPlace : trouverParId(placeId)
+activate DepotPlace
+DepotPlace -> DB : SELECT * FROM seats WHERE id = ?
+DB --> DepotPlace : place {numero: "A12", classe: BUSINESS, prix: 4000}
+DepotPlace --> ServicePlace : place
+deactivate DepotPlace
+
+ServicePlace -> ServiceDispo : verifierDisponibilite(placeId, trajetId)
+activate ServiceDispo
+
+ServiceDispo -> BookingClient : GET /bookings?placeId=&trajetId=&statut=CONFIRMEE,EN_ATTENTE
+activate BookingClient
+BookingClient --> ServiceDispo : []
+deactivate BookingClient
+
+alt Place libre
+    ServiceDispo --> ServicePlace : {disponible: true}
+    ServicePlace --> ControleurPlace : {disponible: true, place}
+    ControleurPlace --> Gateway : 200 OK\n{disponible: true, numero: "A12", classe: "BUSINESS", prix: 4000}
+    Gateway --> Client : 200 OK\n{available: true, seatNumber: "A12", price: 4000 XOF}
+
+else Place déjà réservée
+    ServiceDispo --> ServicePlace : {disponible: false}
+    ServicePlace --> ControleurPlace : {disponible: false}
+    ControleurPlace --> Gateway : 200 OK\n{disponible: false, message: "Place déjà réservée"}
+    Gateway --> Client : 200 OK\n{available: false}
+end
+
+deactivate ServiceDispo
+deactivate ServicePlace
+deactivate ControleurPlace
+deactivate Gateway
+
+== Génération automatique des places pour un véhicule ==
+Merchant -> Gateway : POST /transport/vehicles/:vehiculeId/generate-seats\n{capacite: 50, classes: {ECONOMIQUE: 40, BUSINESS: 10}}
+activate Gateway
+
+Gateway -> ControleurPlace : creerPlaces(req, res)
+activate ControleurPlace
+
+ControleurPlace -> ServicePlace : creerPlaces(vehiculeId, config)
+activate ServicePlace
+
+ServicePlace -> ServicePlace : genererNumerotation(type: BUS, capacite: 50)
+note right
+  Numérotation bus:
+  Places 1-40: Classe ECONOMIQUE
+  Places 41-50: Classe BUSINESS
+
+  Répartition:
+  - Rangées de 4 (2 de chaque côté)
+  - Numéros impairs: côté fenêtre gauche
+  - Numéros pairs: côté couloir/fenêtre droite
+end note
+
+loop Pour chaque place (1 à 50)
+    ServicePlace -> ServicePlace : determinerClasse(numero)
+    ServicePlace -> ServicePlace : determinerType(numero)
+    note right
+      Place 1: FENETRE gauche
+      Place 2: COULOIR gauche
+      Place 3: COULOIR droit
+      Place 4: FENETRE droite
+      etc.
+    end note
+
+    ServicePlace -> DepotPlace : creer({vehiculeId, numero, classe, type, prix})
+    activate DepotPlace
+    DepotPlace -> DB : INSERT INTO seats (vehicle_id, seat_number, class, type, price)
+    DB --> DepotPlace : place créée
+    DepotPlace --> ServicePlace : place
+    deactivate DepotPlace
+end
+
+ServicePlace --> ControleurPlace : [50 places créées]
+deactivate ServicePlace
+
+ControleurPlace --> Gateway : 201 Created\n{nombrePlaces: 50}
+deactivate ControleurPlace
+
+Gateway --> Merchant : 201 Created\n{seatsGenerated: 50}
+deactivate Gateway
+
+note right of Calculateur
+  Formule Haversine (distance GPS):
+
+  a = sin²(Δlat/2) + cos(lat1) × cos(lat2) × sin²(Δlon/2)
+  c = 2 × atan2(√a, √(1−a))
+  distance = R × c
+
+  Où:
+  - R = rayon Terre = 6371 km
+  - Δlat = différence latitudes
+  - Δlon = différence longitudes
+
+  Précision: ±0.5% pour distances courtes
+end note
+
+note bottom of ServiceDispo
+  Gestion disponibilité temps réel:
+
+  Stratégie:
+  1. Cache Redis (10min) par trajet
+  2. Vérification Booking Service
+  3. Calcul places libres
+  4. Invalidation sur réservation
+
+  Statuts places:
+  - DISPONIBLE: libre réservation
+  - BLOQUEE: réservation en cours (15min)
+  - RESERVEE: payée et confirmée
+  - HORS_SERVICE: maintenance/problème
+
+  Performance:
+  - Cache évite surcharge DB
+  - Recherche rapide (<100ms)
+  - Scalable (milliers trajets/jour)
+end note
+
+note right of DepotArret
+  Arrêts intermédiaires:
+
+  Calcul horaires:
+  - Ordre séquentiel (1, 2, 3...)
+  - Durée entre arrêts (distance/vitesse)
+  - Temps d'arrêt (5-15min selon type)
+  - Heure cumulative
+
+  Exemples:
+  Dakar → Thiès (70 km, 1h30):
+  1. Départ Dakar: 08:00
+  2. Rufisque (15 km): 08:20
+  3. Diamniadio (30 km): 08:45
+  4. Sébikotane (50 km): 09:00
+  5. Arrivée Thiès (70 km): 09:30
+
+  Chaque arrêt:
+  - Nom, ville, coordonnées GPS
+  - Heure arrivée prévue
+  - Heure départ prévue
+  - Durée arrêt
+end note
+
+@enduml

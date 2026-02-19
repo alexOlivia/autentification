@@ -1,0 +1,370 @@
+@startuml Restaurant Service - Diagramme de Classes
+
+title Restaurant Service - Diagramme de Classes
+
+' Styles
+skinparam class {
+    BackgroundColor LightCoral
+    BorderColor DarkRed
+    ArrowColor DarkRed
+}
+
+package "Restaurant Service" {
+    class ServeurRestaurant {
+        - application: FastifyInstance
+        - port: number
+        - db: PrismaClient
+        - redis: ClientRedis
+        + demarrer(): Promise<void>
+        + arreter(): Promise<void>
+        + enregistrerRoutes(): void
+    }
+
+    class ControleurRestaurant {
+        + creerRestaurant(req: Requete, res: Reponse): Promise<void>
+        + obtenirRestaurant(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourRestaurant(req: Requete, res: Reponse): Promise<void>
+        + listerRestaurants(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurTable {
+        + creerTable(req: Requete, res: Reponse): Promise<void>
+        + obtenirTable(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourTable(req: Requete, res: Reponse): Promise<void>
+        + supprimerTable(req: Requete, res: Reponse): Promise<void>
+        + listerTables(req: Requete, res: Reponse): Promise<void>
+        + verifierDisponibilite(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurZone {
+        + creerZone(req: Requete, res: Reponse): Promise<void>
+        + obtenirZones(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourZone(req: Requete, res: Reponse): Promise<void>
+        + supprimerZone(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurPeriodeService {
+        + creerPeriode(req: Requete, res: Reponse): Promise<void>
+        + obtenirPeriodes(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourPeriode(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ServiceRestaurant {
+        - depotRestaurant: DepotRestaurant
+        - clientResourceCore: ClientResourceCore
+        - validateur: ValidateurRestaurant
+        + creer(commercantId: string, donnees: DonneesRestaurant): Promise<Restaurant>
+        + trouverParId(id: string): Promise<Restaurant>
+        + trouverParCommercant(commercantId: string): Promise<Restaurant>
+        + mettreAJour(id: string, donnees: any): Promise<Restaurant>
+        + lister(filtres: FiltresRestaurant): Promise<Restaurant[]>
+    }
+
+    class ServiceTable {
+        - depotTable: DepotTable
+        - serviceDisponibilite: ServiceDisponibilite
+        - validateur: ValidateurTable
+        + creer(restaurantId: string, donnees: DonneesTable): Promise<Table>
+        + trouverParId(id: string): Promise<Table>
+        + lister(restaurantId: string, filtres: any): Promise<Table[]>
+        + mettreAJour(id: string, donnees: any): Promise<Table>
+        + supprimer(id: string): Promise<void>
+        + verifierNumeroUnique(restaurantId: string, numeroTable: string): Promise<boolean>
+    }
+
+    class ServiceDisponibilite {
+        - depotTable: DepotTable
+        - clientBookingService: ClientBookingService
+        - cache: GestionnaireCache
+        + verifierDisponibilite(tableId: string, date: Date, heureDebut: string, heureFin: string): Promise<boolean>
+        + obtenirCreneauxDisponibles(tableId: string, date: Date): Promise<Creneau[]>
+        + bloquerTable(tableId: string, creneau: Creneau): Promise<void>
+        + debloquerTable(tableId: string, creneau: Creneau): Promise<void>
+    }
+
+    class ServiceZone {
+        - depotZone: DepotZone
+        + creer(restaurantId: string, donnees: DonneesZone): Promise<Zone>
+        + lister(restaurantId: string): Promise<Zone[]>
+        + mettreAJour(id: string, donnees: any): Promise<Zone>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class ServicePeriodeService {
+        - depotPeriode: DepotPeriodeService
+        + creer(restaurantId: string, donnees: DonneesPeriode): Promise<PeriodeService>
+        + lister(restaurantId: string): Promise<PeriodeService[]>
+        + obtenirPeriodeCourante(restaurantId: string, dateHeure: Date): Promise<PeriodeService>
+    }
+
+    class DepotRestaurant {
+        - db: PrismaClient
+        + creer(donnees: DonneesRestaurant): Promise<Restaurant>
+        + trouverParId(id: string): Promise<Restaurant | null>
+        + trouverParCommercant(commercantId: string): Promise<Restaurant | null>
+        + mettreAJour(id: string, donnees: any): Promise<Restaurant>
+        + lister(filtres: any): Promise<Restaurant[]>
+    }
+
+    class DepotTable {
+        - db: PrismaClient
+        + creer(donnees: DonneesTable): Promise<Table>
+        + trouverParId(id: string): Promise<Table | null>
+        + trouverParNumero(restaurantId: string, numero: string): Promise<Table | null>
+        + lister(restaurantId: string, filtres: any): Promise<Table[]>
+        + mettreAJour(id: string, donnees: any): Promise<Table>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotZone {
+        - db: PrismaClient
+        + creer(donnees: DonneesZone): Promise<Zone>
+        + lister(restaurantId: string): Promise<Zone[]>
+        + mettreAJour(id: string, donnees: any): Promise<Zone>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotPeriodeService {
+        - db: PrismaClient
+        + creer(donnees: DonneesPeriode): Promise<PeriodeService>
+        + lister(restaurantId: string): Promise<PeriodeService[]>
+        + trouverParHoraire(restaurantId: string, heure: string): Promise<PeriodeService>
+    }
+
+    class Restaurant <<entite>> {
+        + id: string
+        + commercantId: string
+        + typeCuisine: string
+        + capaciteTotale: number
+        + accepteReservations: boolean
+        + accepteReservationComplete: boolean
+        + tarifReservationComplete: number
+        + capaciteMaxEvenement: number
+        + dureeReservationMoyenne: number
+        + tempsRotationTable: number
+        + dateCreation: Date
+    }
+
+    class Table <<entite>> {
+        + id: string
+        + restaurantId: string
+        + numeroTable: string
+        + capaciteMin: number
+        + capaciteMax: number
+        + zoneId: string
+        + forme: FormeTable
+        + statut: StatutTable
+        + estFumeur: boolean
+        + positionX: number
+        + positionY: number
+    }
+
+    class Zone <<entite>> {
+        + id: string
+        + restaurantId: string
+        + nomZone: string
+        + typeZone: TypeZone
+        + description: string
+        + capacite: number
+        + ordre: number
+        + estExterieure: boolean
+        + aClimatisation: boolean
+    }
+
+    class PeriodeService <<entite>> {
+        + id: string
+        + restaurantId: string
+        + typePeriode: TypePeriode
+        + heureDebut: string
+        + heureFin: string
+        + joursActifs: JourSemaine[]
+    }
+
+    enum FormeTable {
+        RONDE
+        CARREE
+        RECTANGULAIRE
+        OVALE
+        HAUTE
+        AUTRE
+    }
+
+    enum StatutTable {
+        DISPONIBLE
+        OCCUPEE
+        RESERVEE
+        HORS_SERVICE
+        AUTRE
+    }
+
+    enum TypePeriode {
+        PETIT_DEJEUNER
+        DEJEUNER
+        GOUTER
+        DINER
+        BRUNCH
+        AUTRE
+    }
+
+    enum TypeZone {
+        INTERIEUR
+        TERRASSE
+        ESPACE_GRILLADE
+        VIP
+        BAR
+        JARDIN
+        SALLE_PRIVEE
+        AUTRE
+    }
+
+    enum JourSemaine {
+        LUNDI
+        MARDI
+        MERCREDI
+        JEUDI
+        VENDREDI
+        SAMEDI
+        DIMANCHE
+        AUTRE
+    }
+
+    class ClientResourceCore {
+        - urlBase: string
+        + validerRessource(donnees: any): Promise<ResultatValidation>
+        + obtenirCommercant(id: string): Promise<Commercant>
+    }
+
+    class ClientBookingService {
+        - urlBase: string
+        + obtenirReservations(tableId: string, date: Date): Promise<Reservation[]>
+    }
+
+    class ValidateurRestaurant {
+        + validerTypeCuisine(type: string): boolean
+        + validerCapacite(capacite: number): boolean
+        + validerDureeReservation(duree: number): boolean
+    }
+
+    class ValidateurTable {
+        + validerNumeroTable(numero: string): boolean
+        + validerCapacite(min: number, max: number): boolean
+        + validerForme(forme: FormeTable): boolean
+        + validerPosition(x: number, y: number): boolean
+    }
+
+    class GestionnaireCache {
+        - redis: ClientRedis
+        + obtenirDisponibilite(tableId: string, date: Date): Promise<any>
+        + cacherDisponibilite(tableId: string, date: Date, donnees: any): Promise<void>
+        + invaliderCache(tableId: string): Promise<void>
+    }
+
+    class Creneau <<dto>> {
+        + heureDebut: string
+        + heureFin: string
+        + disponible: boolean
+        + tableId: string
+    }
+}
+
+' Relations
+ServeurRestaurant "1" -- "1" ControleurRestaurant : contient >
+ServeurRestaurant "1" -- "1" ControleurTable : contient >
+ServeurRestaurant "1" -- "1" ControleurZone : contient >
+ServeurRestaurant "1" -- "1" ControleurPeriodeService : contient >
+
+ControleurRestaurant "1" -- "1" ServiceRestaurant : utilise >
+ControleurTable "1" -- "1" ServiceTable : utilise >
+ControleurZone "1" -- "1" ServiceZone : utilise >
+ControleurPeriodeService "1" -- "1" ServicePeriodeService : utilise >
+
+ServiceRestaurant "1" -- "1" DepotRestaurant : utilise >
+ServiceRestaurant "1" -- "1" ClientResourceCore : utilise >
+ServiceRestaurant "1" -- "1" ValidateurRestaurant : utilise >
+
+ServiceTable "1" -- "1" DepotTable : utilise >
+ServiceTable "1" -- "1" ServiceDisponibilite : utilise >
+ServiceTable "1" -- "1" ValidateurTable : utilise >
+
+ServiceDisponibilite "1" -- "1" ClientBookingService : utilise >
+ServiceDisponibilite "1" -- "1" GestionnaireCache : utilise >
+
+ServiceZone "1" -- "1" DepotZone : utilise >
+ServicePeriodeService "1" -- "1" DepotPeriodeService : utilise >
+
+DepotRestaurant "1" -- "*" Restaurant : gère >
+DepotTable "1" -- "*" Table : gère >
+DepotZone "1" -- "*" Zone : gère >
+DepotPeriodeService "1" -- "*" PeriodeService : gère >
+
+Restaurant "1" -- "*" Table : possède >
+Restaurant "1" -- "*" Zone : possède >
+Restaurant "1" -- "*" PeriodeService : possède >
+
+Table "1" -- "1" FormeTable : a une >
+Table "1" -- "1" StatutTable : a un >
+Table "1" -- "1" Zone : appartient à >
+
+Zone "1" -- "1" TypeZone : est un >
+
+PeriodeService "1" -- "1" TypePeriode : est un >
+
+ServiceDisponibilite ..> Creneau : retourne >
+
+note right of Restaurant
+  Entité centrale restaurant
+  Lié au commerçant via
+  Resource Core Service
+
+  Réservation complète:
+  - Privatisation totale restaurant
+  - Pour événements (mariages, baptêmes)
+  - Tarif forfaitaire
+  - Capacité max événement
+end note
+
+note right of Table
+  Représente une table physique
+  - Numéro unique par restaurant
+  - Capacité min/max (1-20)
+  - Position pour plan de salle
+  - Statut temps réel
+end note
+
+note bottom of Zone
+  Types de zones:
+  - INTERIEUR: Salle climatisée principale
+  - TERRASSE: Espace extérieur couvert
+  - ESPACE_GRILLADE: Zone méchoui/dibi/poisson braisé
+  - VIP: Espace privé haut de gamme
+  - BAR: Zone comptoir et tabourets
+  - JARDIN: Espace extérieur végétalisé
+  - SALLE_PRIVEE: Salle fermée pour groupes
+
+  Contexte africain:
+  - Terrasses très demandées (climat)
+  - Espaces grillades populaires
+  - Climatisation = valeur ajoutée
+end note
+
+note right of ServiceDisponibilite
+  Service critique:
+  - Vérifie conflits via Booking Service
+  - Cache Redis (5min)
+  - Calcule créneaux disponibles
+  - Gère rotation des tables
+end note
+
+note bottom of PeriodeService
+  Périodes de service restaurant:
+
+  Exemples contexte africain:
+  - Petit-déjeuner: 7h-10h
+  - Déjeuner: 12h-15h
+  - Dîner: 19h-23h
+
+  Permet tarification différenciée
+  et gestion horaires spécifiques
+end note
+
+@enduml

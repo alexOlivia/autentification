@@ -1,0 +1,124 @@
+@startuml API Gateway - Diagramme de Séquence
+
+title API Gateway - Flow de requête complète
+
+actor Client
+participant "API Gateway" as Gateway
+participant "AuthMiddleware" as Auth
+participant "RateLimiter" as Rate
+participant "CircuitBreaker" as CB
+participant "CacheManager" as Cache
+participant "LoadBalancer" as LB
+participant "Auth Service" as AuthService
+participant "Booking Service" as BookingService
+database Redis
+
+== Authentification & Validation ==
+Client -> Gateway : POST /bookings\nAuthorization: Bearer <token>
+activate Gateway
+
+Gateway -> Rate : checkLimit(clientIP)
+activate Rate
+Rate -> Redis : GET rate:limit:<ip>
+Redis --> Rate : current count
+Rate -> Rate : validate count < 100
+Rate --> Gateway : allowed
+deactivate Rate
+
+Gateway -> Auth : validateToken(token)
+activate Auth
+Auth -> Auth : JWT.verify(token, secret)
+Auth -> AuthService : GET /validate-token
+activate AuthService
+AuthService --> Auth : {userId, role, permissions}
+deactivate AuthService
+Auth --> Gateway : TokenPayload
+deactivate Auth
+
+Gateway -> Gateway : checkPermissions(user, "bookings", "create")
+
+== Cache Check ==
+Gateway -> Cache : get("bookings:availability")
+activate Cache
+Cache -> Redis : GET cache:bookings:availability
+Redis --> Cache : null (cache miss)
+Cache --> Gateway : null
+deactivate Cache
+
+== Circuit Breaker Pattern ==
+Gateway -> CB : execute(() => callBookingService())
+activate CB
+
+CB -> CB : isOpen() ? false
+CB -> LB : selectInstance(bookingServiceInstances)
+activate LB
+LB -> LB : roundRobin([instance1, instance2])
+LB --> CB : instance1
+deactivate LB
+
+CB -> BookingService : POST /bookings\n{resourceId, startTime, endTime}
+activate BookingService
+
+alt Service disponible
+    BookingService -> BookingService : validate input
+    BookingService -> BookingService : check conflicts
+    BookingService -> BookingService : create booking
+    BookingService --> CB : 201 Created\n{bookingId, status: "PENDING"}
+    CB -> CB : onSuccess()
+    CB --> Gateway : booking data
+
+else Service indisponible (timeout/error)
+    BookingService --x CB : 503 Service Unavailable
+    CB -> CB : onFailure()
+    CB -> CB : failureCount++
+
+    alt failureCount > threshold
+        CB -> CB : setState(OPEN)
+        CB -> Cache : get("fallback:bookings")
+        Cache --> CB : cached data
+        CB --> Gateway : cached data (degraded mode)
+    else
+        CB --> Gateway : throw ServiceUnavailableError
+    end
+end
+deactivate BookingService
+deactivate CB
+
+== Cache Update ==
+Gateway -> Cache : set("bookings:latest", data, ttl: 300)
+activate Cache
+Cache -> Redis : SETEX cache:bookings:latest 300 <data>
+Redis --> Cache : OK
+deactivate Cache
+
+== Response ==
+Gateway -> Gateway : logResponse(201, duration)
+Gateway --> Client : 201 Created\n{bookingId, message: "Booking created"}
+deactivate Gateway
+
+== Rate Limit Update ==
+Gateway -> Rate : incrementCounter(clientIP)
+activate Rate
+Rate -> Redis : INCR rate:limit:<ip>
+Redis --> Rate : new count
+deactivate Rate
+
+note right of CB
+  Si le circuit est OUVERT:
+  - Requêtes bloquées pendant 30s
+  - Fallback sur cache Redis
+  - Réessai automatique après timeout
+end note
+
+note right of Gateway
+  Rôle de l'API Gateway:
+  1. Point d'entrée unique
+  2. Authentification JWT
+  3. Rate limiting
+  4. Load balancing
+  5. Circuit breaker
+  6. Cache management
+  7. Logging centralisé
+end note
+
+@enduml

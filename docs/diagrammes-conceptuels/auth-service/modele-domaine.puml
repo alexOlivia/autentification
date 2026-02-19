@@ -1,0 +1,371 @@
+@startuml Auth Service - Modèle de Domaine
+
+title Auth Service - Modèle de Domaine Conceptuel
+
+' Styles
+skinparam class {
+    BackgroundColor LightGreen
+    BorderColor DarkGreen
+    ArrowColor DarkGreen
+}
+
+package "Domaine Authentification" {
+
+    ' ========== ENTITÉS ==========
+
+    class Utilisateur <<entité>> {
+        + id: string
+        + email: string
+        + telephone: string
+        + motDePasse: string
+        + prenom: string
+        + nom: string
+        + urlAvatar: string
+        + dateNaissance: Date
+        + role: RoleUtilisateur
+        + statut: StatutUtilisateur
+        + emailVerifie: boolean
+        + telephoneVerifie: boolean
+        + dateCreation: Date
+        + dateMiseAJour: Date
+        + dernierAcces: Date
+    }
+
+    class TokenAcces <<entité>> {
+        + id: string
+        + utilisateurId: string
+        + token: string
+        + typeToken: TypeToken
+        + dateExpiration: Date
+        + estRevoque: boolean
+        + adresseIP: string
+        + userAgent: string
+        + dateCreation: Date
+    }
+
+    class SessionUtilisateur <<entité>> {
+        + id: string
+        + utilisateurId: string
+        + tokenId: string
+        + appareil: string
+        + navigateur: string
+        + systemeExploitation: string
+        + adresseIP: string
+        + localisation: string
+        + dateDebut: Date
+        + dateFin: Date
+        + estActive: boolean
+    }
+
+    class TentativeConnexion <<entité>> {
+        + id: string
+        + email: string
+        + adresseIP: string
+        + reussi: boolean
+        + motifEchec: string
+        + userAgent: string
+        + dateHeure: Date
+    }
+
+    class CodeVerification <<entité>> {
+        + id: string
+        + utilisateurId: string
+        + code: string
+        + typeVerification: TypeVerification
+        + dateExpiration: Date
+        + estUtilise: boolean
+        + dateCreation: Date
+    }
+
+    class Permission <<entité>> {
+        + id: string
+        + categorie: CategoriePermission
+        + ressource: string
+        + action: string
+        + description: string
+    }
+
+    ' ========== ÉNUMÉRATIONS ==========
+
+    enum RoleUtilisateur {
+        CLIENT
+        COMMERCANT
+        ADMIN
+        SUPER_ADMIN
+    }
+
+    enum StatutUtilisateur {
+        ACTIF
+        INACTIF
+        SUSPENDU
+        SUPPRIME
+        EN_ATTENTE_VERIFICATION
+    }
+
+    enum TypeToken {
+        ACCESS
+        REFRESH
+        RESET_PASSWORD
+        EMAIL_VERIFICATION
+    }
+
+    enum TypeVerification {
+        EMAIL
+        TELEPHONE
+        RESET_PASSWORD
+        DOUBLE_AUTHENTIFICATION
+    }
+
+    enum CategoriePermission {
+        GESTION_RESSOURCES
+        GESTION_RESERVATIONS
+        GESTION_PAIEMENTS
+        GESTION_UTILISATEURS
+        ADMINISTRATION_SYSTEME
+        CONSULTATION
+        AUTRE
+    }
+}
+
+' ========== RELATIONS ==========
+
+Utilisateur "1" -- "1" RoleUtilisateur : a un rôle >
+Utilisateur "1" -- "1" StatutUtilisateur : a un statut >
+Utilisateur "1" -- "*" TokenAcces : possède >
+Utilisateur "1" -- "*" SessionUtilisateur : a des sessions >
+Utilisateur "1" -- "*" CodeVerification : reçoit >
+
+TokenAcces "1" -- "1" TypeToken : est de type >
+TokenAcces "*" --> "1" Utilisateur : appartient à >
+
+SessionUtilisateur "*" --> "1" Utilisateur : appartient à >
+SessionUtilisateur "*" --> "1" TokenAcces : utilise >
+
+CodeVerification "1" -- "1" TypeVerification : est de type >
+CodeVerification "*" --> "1" Utilisateur : pour >
+
+Permission "1" -- "1" CategoriePermission : appartient à >
+RoleUtilisateur "*" -- "*" Permission : possède >
+
+' ========== NOTES MÉTIER ==========
+
+note right of Utilisateur
+  **Utilisateur du système**
+
+  **Rôles:**
+
+  - **CLIENT:**
+    Utilisateur final qui réserve
+    (chambres, tables, trajets)
+
+  - **COMMERCANT:**
+    Propriétaire d'établissement
+    (hôtel, restaurant, transport)
+    Gère ses ressources et réservations
+
+  - **ADMIN:**
+    Administrateur plateforme
+    Support client, modération
+
+  - **SUPER_ADMIN:**
+    Administrateur système
+    Accès complet
+
+  **Statuts:**
+  - ACTIF: compte opérationnel
+  - INACTIF: compte non utilisé >90 jours
+  - SUSPENDU: compte bloqué temporairement
+  - SUPPRIME: compte supprimé (soft delete)
+  - EN_ATTENTE_VERIFICATION: email non vérifié
+
+  **Contexte africain:**
+  - Téléphone obligatoire (SMS OTP)
+  - Email optionnel (beaucoup n'ont pas)
+  - Vérification téléphone prioritaire
+end note
+
+note right of TokenAcces
+  **Jeton d'accès JWT**
+
+  **Types:**
+
+  - **ACCESS:**
+    Token court terme (15 minutes)
+    Authentifie chaque requête API
+
+  - **REFRESH:**
+    Token long terme (7 jours)
+    Renouvelle access token sans re-login
+
+  - **RESET_PASSWORD:**
+    Token unique (1h)
+    Réinitialisation mot de passe
+
+  - **EMAIL_VERIFICATION:**
+    Token unique (24h)
+    Validation adresse email
+
+  **Contenu JWT:**
+  - userId, email, role
+  - dateExpiration
+  - issuer, audience
+
+  **Révocation:**
+  Peut être révoqué (logout, sécurité)
+  Liste noire Redis cache
+
+  **Sécurité:**
+  - HMAC-SHA256 signing
+  - Rotation clés régulière
+  - IP + User Agent tracking
+end note
+
+note bottom of SessionUtilisateur
+  **Session active utilisateur**
+
+  Représente une connexion active
+  sur un appareil/navigateur donné.
+
+  **Multi-sessions:**
+  Utilisateur peut avoir plusieurs
+  sessions simultanées:
+  - Mobile (app Flutter)
+  - Web (desktop)
+  - Tablette
+
+  **Informations collectées:**
+  - Appareil: iPhone 13, Samsung Galaxy
+  - Navigateur: Chrome, Safari, Firefox
+  - OS: iOS 17, Android 13, Windows 11
+  - IP: adresse IP publique
+  - Localisation: pays/ville (GeoIP)
+
+  **Gestion:**
+  - Affichage liste sessions actives
+  - Déconnexion session distante
+  - Alerte nouvelle session (sécurité)
+
+  **Durée:**
+  - Début: date connexion
+  - Fin: date logout ou expiration
+  - Active: session en cours
+end note
+
+note bottom of TentativeConnexion
+  **Tentatives de connexion**
+
+  Historique tentatives login
+  pour sécurité et audit.
+
+  **Détection attaques:**
+  - >5 échecs en 15min = blocage temporaire
+  - >10 échecs en 1h = alerte admin
+  - Tentatives depuis IPs multiples = suspect
+
+  **Motifs échec:**
+  - "Mot de passe incorrect"
+  - "Email inexistant"
+  - "Compte suspendu"
+  - "Compte non vérifié"
+  - "Trop de tentatives"
+
+  **Géolocalisation IP:**
+  Si connexion depuis nouveau pays
+  → envoi code vérification SMS
+
+  **RGPD:**
+  Conservation 90 jours maximum
+end note
+
+note right of CodeVerification
+  **Code de vérification**
+
+  **Types:**
+
+  - **EMAIL:**
+    Code 6 chiffres envoyé par email
+    Valide adresse email utilisateur
+
+  - **TELEPHONE:**
+    Code 6 chiffres envoyé par SMS
+    Valide numéro téléphone
+
+  - **RESET_PASSWORD:**
+    Code 6 chiffres pour reset MDP
+    Envoyé par SMS (priorité) ou email
+
+  - **DOUBLE_AUTHENTIFICATION:**
+    Code 2FA pour login sensible
+    (nouveau appareil, changement MDP)
+
+  **Format code:**
+  - 6 chiffres aléatoires: 123456
+  - Unique par utilisateur/type/date
+
+  **Expiration:**
+  - SMS: 5 minutes
+  - Email: 15 minutes
+  - Reset password: 1 heure
+
+  **Sécurité:**
+  - 1 seul code valide à la fois
+  - Max 3 tentatives de vérification
+  - Après 3 échecs: génération nouveau code
+
+  **Contexte africain:**
+  - SMS prioritaire (taux livraison >95%)
+  - Email secondaire (faible usage)
+  - Coût SMS: ~50 XOF/SMS (Twilio)
+end note
+
+note right of Permission
+  **Permission d'accès**
+
+  Définit les actions autorisées
+  pour chaque rôle utilisateur.
+
+  **Catégories:**
+  - GESTION_RESSOURCES: chambres, tables, véhicules
+  - GESTION_RESERVATIONS: créer, modifier, annuler
+  - GESTION_PAIEMENTS: voir transactions, rembourser
+  - GESTION_UTILISATEURS: CRUD utilisateurs
+  - ADMINISTRATION_SYSTEME: config plateforme
+  - CONSULTATION: lecture seule
+
+  **Structure:**
+  - ressource: "reservations", "chambres"
+  - action: "create", "read", "update", "delete"
+
+  **Exemple matrice:**
+  - CLIENT: read:own-bookings, create:bookings
+  - COMMERCANT: read/write:own-resources
+  - ADMIN: read/write:all, moderate:content
+  - SUPER_ADMIN: all permissions
+end note
+
+note as N1
+  **Flux d'authentification**
+
+  **Inscription:**
+  1. Utilisateur crée compte (email/téléphone + MDP)
+  2. Statut = EN_ATTENTE_VERIFICATION
+  3. Code vérification SMS envoyé
+  4. Utilisateur saisit code
+  5. Statut = ACTIF
+
+  **Connexion:**
+  1. Utilisateur saisit email + MDP
+  2. Vérification credentials
+  3. Si OK: génération ACCESS + REFRESH tokens
+  4. Création session utilisateur
+  5. Retour tokens au client
+
+  **Réinitialisation MDP:**
+  1. Utilisateur demande reset (email/téléphone)
+  2. Génération code vérification
+  3. Envoi code par SMS
+  4. Utilisateur saisit code + nouveau MDP
+  5. MDP mis à jour, tous tokens révoqués
+end note
+
+@enduml

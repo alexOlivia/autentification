@@ -1,0 +1,390 @@
+@startuml Interopérabilité Services - Vue Conceptuelle
+
+title Architecture PING - Vue Conceptuelle des Domaines
+
+' Styles
+skinparam component {
+    BackgroundColor<<auth>> LightGreen
+    BackgroundColor<<core>> LightYellow
+    BackgroundColor<<metier>> LightBlue
+    BackgroundColor<<transverse>> LightPink
+}
+
+skinparam note {
+    BackgroundColor WhiteSmoke
+}
+
+' ========== LÉGENDE ==========
+
+legend right
+  |= Couleur |= Type Domaine |
+  |<#LightGreen>| Authentification & Sécurité |
+  |<#LightYellow>| Ressources Centrales |
+  |<#LightBlue>| Domaines Métier |
+  |<#LightPink>| Domaines Transversaux |
+endlegend
+
+' ========== DOMAINES ==========
+
+package "Domaine Authentification" <<auth>> #LightGreen {
+    component [Auth Service] as AUTH {
+        - Utilisateurs
+        - Sessions
+        - Permissions
+    }
+}
+
+package "Domaine Ressources Centrales" <<core>> #LightYellow {
+    component [Resource Core] as CORE {
+        - Commerçants
+        - Horaires
+        - Avis
+    }
+}
+
+package "Domaines Métier" <<metier>> #LightBlue {
+    component [Restaurant] as RESTO {
+        - Restaurants
+        - Tables
+        - Zones
+    }
+
+    component [Accommodation] as ACCOM {
+        - Hébergements
+        - Chambres
+        - Salles
+        - Jardins
+        - Piscines
+    }
+
+    component [Service Provider] as PROVIDER {
+        - Établissements
+        - Prestataires
+        - Services
+    }
+
+    component [Transport] as TRANSPORT {
+        - Véhicules
+        - Trajets
+        - Places
+        - Billets
+    }
+}
+
+package "Domaines Transversaux" <<transverse>> #LightPink {
+    component [Booking] as BOOKING {
+        - Réservations
+        - Participants
+        - Conflits
+    }
+
+    component [Payment] as PAYMENT {
+        - Paiements
+        - Remboursements
+        - Factures
+    }
+
+    component [Notification] as NOTIF {
+        - Notifications
+        - Templates
+        - Préférences
+    }
+}
+
+' ========== RELATIONS CONCEPTUELLES ==========
+
+' Authentification centrale
+AUTH --> CORE : identifie commerçant
+AUTH --> BOOKING : identifie client
+
+' Resource Core alimente les domaines métier
+CORE --> RESTO : infos commerçant
+CORE --> ACCOM : infos commerçant
+CORE --> PROVIDER : infos commerçant
+CORE --> TRANSPORT : infos commerçant
+
+' Domaines métier fournissent disponibilités
+RESTO --> BOOKING : disponibilité tables
+ACCOM --> BOOKING : disponibilité ressources
+PROVIDER --> BOOKING : disponibilité créneaux
+TRANSPORT --> BOOKING : disponibilité places
+
+' Booking orchestre paiement
+BOOKING --> PAYMENT : demande paiement
+PAYMENT --> BOOKING : confirme paiement
+
+' Notification reçoit événements
+AUTH --> NOTIF : codes vérification
+BOOKING --> NOTIF : événements réservation
+PAYMENT --> NOTIF : événements paiement
+
+' ========== NOTES CONCEPTUELLES ==========
+
+note top of AUTH
+  **Domaine Authentification**
+
+  Responsabilités:
+  - Gestion identités utilisateurs
+  - Attribution rôles (Client, Commerçant, Admin)
+  - Validation accès
+  - Vérification SMS/Email
+
+  Point d'entrée sécurisé pour
+  toutes les interactions.
+end note
+
+note top of CORE
+  **Domaine Ressources Centrales**
+
+  Responsabilités:
+  - Profils commerçants
+  - Horaires d'ouverture
+  - Documents légaux
+  - Système d'avis
+
+  Données partagées par tous
+  les domaines métier.
+end note
+
+note right of RESTO
+  **Domaine Restaurant**
+
+  Entités:
+  - Restaurant
+  - Table
+  - Zone (terrasse, grillade, VIP)
+  - PériodeService
+
+  Contexte africain:
+  - Espaces grillades (méchoui, dibi)
+  - Terrasses prisées
+  - Réservation complète événements
+end note
+
+note right of ACCOM
+  **Domaine Hébergement**
+
+  Entités:
+  - Hébergement
+  - Chambre
+  - Salle événement
+  - Jardin
+  - Piscine
+
+  Multi-ressources réservables:
+  - Chambres (nuitées)
+  - Salles (heure/journée)
+  - Jardins (événements)
+  - Piscines (créneaux)
+end note
+
+note right of PROVIDER
+  **Domaine Prestation Services**
+
+  Entités:
+  - Établissement
+  - Prestataire
+  - Service
+  - Créneau
+
+  Services contexte africain:
+  - Coiffure afro, tressage
+  - Spa, massage
+  - Photographie événements
+end note
+
+note right of TRANSPORT
+  **Domaine Transport**
+
+  Entités:
+  - Véhicule
+  - Ligne
+  - Trajet
+  - Place
+  - Billet
+  - Chauffeur VTC
+
+  Multimodal:
+  - Bus, Train, Avion
+  - VTC (Yango, Heetch)
+  - Taxi collectif
+end note
+
+note bottom of BOOKING
+  **Domaine Réservation**
+
+  Orchestrateur central:
+  - Réservations polymorphes
+    (tous types ressources)
+  - Vérification disponibilité
+  - Détection conflits
+  - Suggestions alternatives
+  - Cycle de vie complet
+
+  Centralise TOUTES les
+  réservations plateforme.
+end note
+
+note bottom of PAYMENT
+  **Domaine Paiement**
+
+  Responsabilités:
+  - Paiements (acompte, total, solde)
+  - Remboursements
+  - Facturation
+
+  Méthodes africaines:
+  - Mobile Money (Orange, MTN, Wave)
+  - Cartes bancaires
+  - Espèces
+end note
+
+note bottom of NOTIF
+  **Domaine Notification**
+
+  Canaux:
+  - Email
+  - SMS
+  - Push mobile
+  - In-app
+
+  Événements notifiés:
+  - Confirmation réservation
+  - Rappels
+  - Paiement
+  - Demande avis
+end note
+
+' ========== SCÉNARIOS MÉTIER ==========
+
+note as N1
+  **Scénario: Client réserve une chambre**
+
+  1. **Authentification**
+     Client s'identifie → Auth
+
+  2. **Recherche**
+     Client cherche hébergement → Accommodation
+     Filtre: dates, ville, type, prix
+
+  3. **Sélection**
+     Client choisit chambre + options
+
+  4. **Réservation**
+     Booking vérifie disponibilité → Accommodation
+     Crée réservation EN_ATTENTE_PAIEMENT
+
+  5. **Paiement**
+     Booking demande paiement → Payment
+     Client paie via Mobile Money
+     Payment confirme → Booking
+
+  6. **Confirmation**
+     Booking met statut CONFIRMEE
+     Accommodation bloque chambre
+     Notification envoie SMS + Email
+
+  7. **Rappel**
+     J-1: Notification envoie rappel
+     Avec code confirmation + adresse
+
+  8. **Check-in**
+     Client présente code
+     Commerçant valide
+     Booking: statut → EN_COURS
+
+  9. **Check-out**
+     Fin séjour
+     Booking: statut → TERMINEE
+     Notification: demande avis
+end note
+
+note as N2
+  **Scénario: Commerçant ajoute un établissement**
+
+  1. **Inscription**
+     Commerçant crée compte → Auth
+     Rôle: COMMERCANT
+     Vérification téléphone (SMS)
+
+  2. **Profil établissement**
+     Commerçant remplit infos → Resource Core
+     Nom, adresse, téléphone, photos
+     Documents légaux
+
+  3. **Validation admin**
+     Admin vérifie documents
+     Si OK: statut → ACTIF
+
+  4. **Création ressources**
+     Selon type établissement:
+     - Accommodation: chambres, salles, jardins
+     - Restaurant: tables, zones
+     - Transport: véhicules, lignes
+     - Provider: services, créneaux
+
+  5. **Définition tarifs**
+     Prix de base par ressource
+     Règles tarifaires (weekend, saison)
+     Promotions
+
+  6. **Ouverture réservations**
+     Ressources visibles
+     Clients peuvent réserver
+     Commerçant reçoit notifications
+end note
+
+note as N3
+  **Principes conceptuels**
+
+  **1. Domaines isolés**
+  Chaque domaine gère ses propres
+  entités et règles métier.
+
+  **2. Booking comme orchestrateur**
+  Toutes les réservations passent
+  par le domaine Booking.
+
+  **3. Resource Core partagé**
+  Données commerçant centralisées
+  et partagées entre domaines.
+
+  **4. Auth comme gardien**
+  Toute interaction nécessite
+  authentification préalable.
+
+  **5. Notifications événementielles**
+  Les domaines émettent des événements,
+  Notification les consomme.
+
+  **6. Payment indépendant**
+  Logique paiement isolée,
+  appelée par Booking.
+end note
+
+note as N4
+  **Types de ressources réservables**
+
+  **Accommodation:**
+  - CHAMBRE (nuitée)
+  - SALLE_EVENEMENT (heure/journée)
+  - JARDIN (événement)
+  - PISCINE (créneau)
+
+  **Restaurant:**
+  - TABLE (créneau 2h)
+  - ZONE (privatisation)
+  - RESTAURANT_COMPLET (événement)
+
+  **Transport:**
+  - PLACE (billet numéroté)
+  - VEHICULE_VTC (course)
+
+  **Service Provider:**
+  - CRENEAU (rendez-vous)
+
+  Toutes gérées uniformément
+  par le domaine Booking.
+end note
+
+@enduml

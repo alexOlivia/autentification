@@ -1,0 +1,19 @@
+# <type>(<scope>): <description>
+# 
+# [corps optionnel]
+# 
+# [footer optionnel]
+# 
+# --- RÈGLES ---
+# Type: feat, fix, docs, style, refactor, perf, test, chore, build, ci
+# Scope: auth, booking, accommodation, restaurant, transport, payment, 
+#        notification, resource-core, service-provider, mobile, infra, docs, global
+# Description: max 72 caractères, minuscule, impératif, pas de point final
+# Corps: expliquer POURQUOI, pas COMMENT
+# Footer: Refs: #issue, Closes: #issue, BREAKING CHANGE: description
+# 
+# --- EXEMPLES ---
+# feat(auth): ajout de l'authentification OAuth2
+# fix(booking): correction du calcul de disponibilité
+# docs(readme): mise à jour des instructions d'installation
+# refactor(payment): simplification du traitement des paiements

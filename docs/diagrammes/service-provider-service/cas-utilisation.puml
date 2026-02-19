@@ -1,0 +1,342 @@
+@startuml Service Provider Service - Cas d'Utilisation
+
+title Service Provider Service - Cas d'Utilisation
+
+left to right direction
+
+' Acteurs
+actor "Client" as Client
+actor "Commerçant Prestataire" as Merchant
+actor "Personnel/Staff" as Staff
+actor "Administrateur" as Admin
+actor "Booking Service" as BookingService
+actor "Tâche Planifiée" as Cron
+
+' Package Service Provider Service
+rectangle "Service Provider Service" {
+    ' Cas d'utilisation principaux
+    usecase "Gérer prestataire" as UC1
+    usecase "Gérer personnel" as UC2
+    usecase "Gérer types de services" as UC3
+    usecase "Gérer créneaux" as UC4
+    usecase "Vérifier disponibilités" as UC5
+    usecase "Optimiser planning" as UC6
+    usecase "Gérer absences" as UC7
+
+    ' Sous-cas pour gestion prestataire
+    usecase "Créer prestataire" as UC1_1
+    usecase "Configurer type activité" as UC1_2
+    usecase "Définir spécialisation" as UC1_3
+    usecase "Paramétrer rendez-vous" as UC1_4
+    usecase "Configurer délai annulation" as UC1_5
+
+    ' Sous-cas pour gestion personnel
+    usecase "Ajouter membre équipe" as UC2_1
+    usecase "Modifier membre" as UC2_2
+    usecase "Supprimer membre" as UC2_3
+    usecase "Définir rôle/spécialité" as UC2_4
+    usecase "Gérer photo et bio" as UC2_5
+    usecase "Activer/Désactiver" as UC2_6
+
+    ' Sous-cas pour types services
+    usecase "Créer type service" as UC3_1
+    usecase "Définir durée" as UC3_2
+    usecase "Définir prix" as UC3_3
+    usecase "Définir catégorie" as UC3_4
+    usecase "Lister matériel nécessaire" as UC3_5
+    usecase "Configurer niveau difficulté" as UC3_6
+
+    ' Sous-cas pour créneaux
+    usecase "Créer créneau manuel" as UC4_1
+    usecase "Générer créneaux auto" as UC4_2
+    usecase "Modifier créneau" as UC4_3
+    usecase "Supprimer créneau" as UC4_4
+    usecase "Bloquer créneau" as UC4_5
+    usecase "Débloquer créneau" as UC4_6
+    usecase "Configurer récurrence" as UC4_7
+
+    ' Sous-cas pour disponibilités
+    usecase "Rechercher créneaux libres" as UC5_1
+    usecase "Filtrer par personnel" as UC5_2
+    usecase "Filtrer par service" as UC5_3
+    usecase "Filtrer par date" as UC5_4
+    usecase "Vérifier conflit horaire" as UC5_5
+
+    ' Sous-cas pour optimisation
+    usecase "Analyser taux occupation" as UC6_1
+    usecase "Identifier créneaux populaires" as UC6_2
+    usecase "Suggérer ajustements horaires" as UC6_3
+    usecase "Détecter temps morts" as UC6_4
+
+    ' Sous-cas pour absences
+    usecase "Déclarer absence" as UC7_1
+    usecase "Planifier congés" as UC7_2
+    usecase "Bloquer créneaux absence" as UC7_3
+    usecase "Notifier clients impactés" as UC7_4
+}
+
+' Relations acteurs -> cas d'utilisation
+Merchant --> UC1 : configure prestataire
+Merchant --> UC2 : gère équipe
+Merchant --> UC3 : définit services
+Merchant --> UC4 : gère planning
+Merchant --> UC6 : consulte stats
+
+Staff --> UC7 : déclare absences
+Staff --> UC4 : peut gérer son planning
+
+Client --> UC5 : cherche créneaux
+Client --> UC3 : consulte services
+
+BookingService --> UC5 : vérifie avant réservation
+BookingService --> UC4_5 : bloque créneau réservé
+
+Admin --> UC6 : analyse globale
+Cron --> UC4 : génération automatique
+
+' Inclusions et extensions
+UC1 ..> UC1_1 : <<extend>>
+UC1 ..> UC1_2 : <<include>>
+UC1 ..> UC1_3 : <<extend>>
+UC1 ..> UC1_4 : <<include>>
+UC1 ..> UC1_5 : <<extend>>
+
+UC2 ..> UC2_1 : <<extend>>
+UC2 ..> UC2_2 : <<extend>>
+UC2 ..> UC2_3 : <<extend>>
+UC2 ..> UC2_4 : <<include>>
+UC2 ..> UC2_5 : <<extend>>
+UC2 ..> UC2_6 : <<extend>>
+
+UC3 ..> UC3_1 : <<extend>>
+UC3 ..> UC3_2 : <<include>>
+UC3 ..> UC3_3 : <<include>>
+UC3 ..> UC3_4 : <<include>>
+UC3 ..> UC3_5 : <<extend>>
+UC3 ..> UC3_6 : <<extend>>
+
+UC4 ..> UC4_1 : <<extend>>
+UC4 ..> UC4_2 : <<extend>>
+UC4 ..> UC4_3 : <<extend>>
+UC4 ..> UC4_4 : <<extend>>
+UC4 ..> UC4_5 : <<extend>>
+UC4 ..> UC4_6 : <<extend>>
+UC4 ..> UC4_7 : <<extend>>
+
+UC5 ..> UC5_1 : <<include>>
+UC5 ..> UC5_2 : <<extend>>\n[si filtre]
+UC5 ..> UC5_3 : <<extend>>\n[si filtre]
+UC5 ..> UC5_4 : <<extend>>\n[si filtre]
+UC5 ..> UC5_5 : <<include>>
+
+UC6 ..> UC6_1 : <<include>>
+UC6 ..> UC6_2 : <<extend>>
+UC6 ..> UC6_3 : <<extend>>
+UC6 ..> UC6_4 : <<extend>>
+
+UC7 ..> UC7_1 : <<extend>>
+UC7 ..> UC7_2 : <<extend>>
+UC7 ..> UC7_3 : <<include>>
+UC7 ..> UC7_4 : <<extend>>\n[si réservations]
+
+' Notes explicatives
+note right of UC1
+  Types de prestataires:
+
+  SANTE_BIEN_ETRE:
+  - Médecins, dentistes
+  - Kinésithérapeutes
+  - Psychologues
+
+  BEAUTE:
+  - Salons de coiffure
+  - Instituts beauté
+  - Spas, massages
+
+  SPORT_LOISIRS:
+  - Coachs sportifs
+  - Terrains (tennis, foot)
+  - Salles de sport
+
+  EDUCATION:
+  - Cours particuliers
+  - Formations
+  - Ateliers créatifs
+
+  PROFESSIONNEL:
+  - Consultants
+  - Avocats, notaires
+  - Services techniques
+end note
+
+note right of UC2
+  Gestion personnel:
+
+  Informations:
+  - Nom, prénom, photo
+  - Rôle et spécialité
+  - Années expérience
+  - Biographie courte
+  - Langues parlées
+
+  Exemples:
+  - Dr. Diallo (Médecin généraliste, 15 ans exp)
+  - Fatou Sall (Coiffeuse, spécialiste tresses)
+  - Coach Mamadou (Personal trainer, certifié)
+
+  Chaque membre:
+  - Planning indépendant
+  - Disponibilités propres
+  - Statistiques individuelles
+end note
+
+note bottom of UC3
+  Services couramment proposés:
+
+  Santé:
+  - Consultation: 30min, 5000 XOF
+  - Suivi: 20min, 3000 XOF
+
+  Beauté:
+  - Coupe homme: 30min, 2000 XOF
+  - Coupe femme: 45min, 3000 XOF
+  - Tresses: 2-4h, 8000-15000 XOF
+  - Manucure: 45min, 3000 XOF
+
+  Sport:
+  - Coaching 1h: 60min, 10000 XOF
+  - Cours collectif: 60min, 5000 XOF
+
+  Éducation:
+  - Cours particulier: 60min, 8000 XOF
+  - Atelier groupe: 120min, 15000 XOF
+
+  Caractéristiques:
+  - Durée: 15min à 8h
+  - Prix adapté marché local
+  - Catégorie (consultation, soin, cours)
+  - Matériel nécessaire
+end note
+
+note right of UC4
+  Gestion créneaux:
+
+  Création manuelle:
+  - Pour créneaux ponctuels
+  - Horaires spéciaux
+  - Événements particuliers
+
+  Génération automatique:
+  - Pour planning régulier
+  - Paramètres:
+    * Horaires travail (9h-18h)
+    * Durée créneau (30min)
+    * Pause entre (5min)
+    * Pause déjeuner (13h-14h)
+    * Jours actifs (Lun-Sam)
+  - Génère 1 mois en quelques secondes
+
+  Récurrence:
+  - Quotidien (même horaires)
+  - Hebdomadaire (jours fixes)
+  - Mensuel
+
+  Contraintes:
+  - Alignés sur grille 15min
+  - Pas de chevauchement
+  - Respect horaires travail
+end note
+
+note left of UC5
+  Recherche multi-critères:
+
+  Filtres:
+  - Date (jour précis ou plage)
+  - Personnel spécifique
+  - Type de service
+  - Durée souhaitée
+  - Fourchette prix
+  - Niveau difficulté
+
+  Tri:
+  - Heure croissante (plus tôt d'abord)
+  - Prix croissant
+  - Personnel populaire
+  - Disponibilité immédiate
+
+  Résultat:
+  - Créneaux disponibles uniquement
+  - Avec infos personnel
+  - Avec prix service
+  - Possibilité réservation directe
+
+  Performance:
+  - Cache Redis 10min
+  - Index DB sur (personnel_id, date)
+  - Pagination
+end note
+
+note right of UC6
+  Analyse et optimisation:
+
+  Métriques:
+  - Taux occupation par personnel
+  - Taux occupation par service
+  - Heures les plus demandées
+  - Jours les plus chargés
+  - Revenu par personnel
+  - Revenu par service
+
+  Insights:
+  - "Créneaux 14h-16h peu demandés"
+  - "Service X très populaire, augmenter créneaux"
+  - "Personnel Y sous-utilisé"
+  - "Mardi = jour le plus calme"
+
+  Suggestions:
+  - Ajuster horaires
+  - Réaffecter personnel
+  - Promotions créneaux creux
+  - Formation personnel
+end note
+
+note right of UC7
+  Gestion absences:
+
+  Types:
+  - Congés planifiés (vacances)
+  - Maladie
+  - Formation
+  - Urgence personnelle
+
+  Process:
+  1. Personnel déclare absence
+  2. Système bloque créneaux
+  3. Si réservations existantes:
+     - Notification clients
+     - Proposition alternatives
+     - Réaffectation autre personnel
+     - Annulation avec remboursement
+  4. Validation manager
+  5. Mise à jour planning
+
+  Règles:
+  - Congés: déclaration ≥7 jours avant
+  - Maladie: jour même accepté
+  - Formation: planification mensuelle
+end note
+
+' Contraintes
+note "Personnel ne peut avoir\n2 créneaux simultanés" as N1
+UC4 .. N1
+
+note "Créneaux doivent être alignés\nsur grille 15 minutes" as N2
+UC4 .. N2
+
+note "Type service requis\npour créer créneau" as N3
+UC4 .. N3
+
+note "Absence bloque automatiquement\ntous créneaux de la période" as N4
+UC7 .. N4
+
+@enduml

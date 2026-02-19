@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 22px; font-weight: bold; fill: #1E293B; }
+      .subtitle { font-family: Arial, sans-serif; font-size: 14px; fill: #64748B; }
+      .label { font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #374151; }
+      .value { font-family: Arial, sans-serif; font-size: 14px; fill: #1E293B; }
+      .code { font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; fill: #2563EB; letter-spacing: 4px; }
+      .section { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #1E293B; }
+      .btn-text { font-family: Arial, sans-serif; font-size: 15px; font-weight: 600; fill: #2563EB; }
+      .btn-white { font-family: Arial, sans-serif; font-size: 15px; font-weight: 600; fill: #FFF; }
+      .action-label { font-family: Arial, sans-serif; font-size: 12px; fill: #64748B; font-weight: 500; }
+      .success-text { font-family: Arial, sans-serif; font-size: 16px; fill: #10B981; font-weight: 600; }
+      .info { font-family: Arial, sans-serif; font-size: 13px; fill: #64748B; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="844" fill="#F8FAFC"/>
+
+  <!-- Header -->
+  <rect width="390" height="90" fill="#FFF"/>
+  <text x="195" y="60" class="title" text-anchor="middle">Confirmation</text>
+
+  <!-- Success animation area -->
+  <circle cx="195" cy="170" r="50" fill="#DCFCE7"/>
+  <circle cx="195" cy="170" r="36" fill="#10B981"/>
+  <text x="195" y="180" font-family="Arial, sans-serif" font-size="28" fill="#FFF" text-anchor="middle">✓</text>
+
+  <text x="195" y="244" class="title" text-anchor="middle">Réservation confirmée !</text>
+  <text x="195" y="268" class="subtitle" text-anchor="middle">Votre réservation a bien été enregistrée</text>
+
+  <!-- Booking code card -->
+  <rect x="24" y="292" width="342" height="100" rx="16" fill="#FFF"/>
+  <text x="195" y="320" class="label" text-anchor="middle">Code de réservation</text>
+  <rect x="60" y="332" width="270" height="48" rx="10" fill="#EFF6FF"/>
+  <text x="195" y="363" class="code" text-anchor="middle">PING-2024-0158</text>
+
+  <!-- QR Code placeholder -->
+  <rect x="130" y="410" width="130" height="130" rx="12" fill="#FFF" stroke="#E2E8F0" stroke-width="1"/>
+  <rect x="150" y="430" width="90" height="90" rx="4" fill="#1E293B"/>
+  <text x="195" y="480" font-family="Arial, sans-serif" font-size="11" fill="#FFF" text-anchor="middle">QR CODE</text>
+  <text x="195" y="560" class="info" text-anchor="middle">Présentez ce code à l'établissement</text>
+
+  <!-- Summary card -->
+  <rect x="24" y="582" width="342" height="140" rx="12" fill="#FFF"/>
+  <text x="40" y="608" class="section">Récapitulatif</text>
+  <line x1="40" y1="616" x2="350" y2="616" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="40" y="638" class="label">Établissement</text>
+  <text x="350" y="638" class="value" text-anchor="end">Le Ngor Restaurant</text>
+  <text x="40" y="660" class="label">Date</text>
+  <text x="350" y="660" class="value" text-anchor="end">Lun 15 Jan 2024</text>
+  <text x="40" y="682" class="label">Heure</text>
+  <text x="350" y="682" class="value" text-anchor="end">12:00 - 14:00</text>
+  <text x="40" y="704" class="label">Ressource</text>
+  <text x="350" y="704" class="value" text-anchor="end">Table VIP • 4 pers.</text>
+
+  <!-- Quick actions -->
+  <rect x="24" y="740" width="106" height="44" rx="10" fill="#F1F5F9"/>
+  <text x="77" y="767" class="action-label" text-anchor="middle">📅 Calendrier</text>
+  <rect x="142" y="740" width="106" height="44" rx="10" fill="#F1F5F9"/>
+  <text x="195" y="767" class="action-label" text-anchor="middle">📤 Partager</text>
+  <rect x="260" y="740" width="106" height="44" rx="10" fill="#F1F5F9"/>
+  <text x="313" y="767" class="action-label" text-anchor="middle">📞 Appeler</text>
+
+  <!-- Bottom buttons -->
+  <rect x="24" y="800" width="342" height="30" rx="10"/>
+  <text x="195" y="822" font-family="Arial, sans-serif" font-size="15" font-weight="600" fill="#2563EB" text-anchor="middle">Retour à l'accueil</text>
+</svg>

@@ -1,0 +1,608 @@
+@startuml Transport Service - Diagramme de Classes
+
+title Transport Service - Diagramme de Classes
+
+' Styles
+skinparam class {
+    BackgroundColor LightSkyBlue
+    BorderColor DarkBlue
+    ArrowColor DarkBlue
+}
+
+package "Transport Service" {
+    class ServeurTransport {
+        - application: FastifyInstance
+        - port: number
+        - db: PrismaClient
+        - redis: ClientRedis
+        + demarrer(): Promise<void>
+        + arreter(): Promise<void>
+        + enregistrerRoutes(): void
+    }
+
+    class ControleurVehicule {
+        + creerVehicule(req: Requete, res: Reponse): Promise<void>
+        + obtenirVehicule(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourVehicule(req: Requete, res: Reponse): Promise<void>
+        + supprimerVehicule(req: Requete, res: Reponse): Promise<void>
+        + listerVehicules(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurTrajet {
+        + creerTrajet(req: Requete, res: Reponse): Promise<void>
+        + obtenirTrajet(req: Requete, res: Reponse): Promise<void>
+        + listerTrajets(req: Requete, res: Reponse): Promise<void>
+        + rechercherTrajets(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurPlace {
+        + creerPlaces(req: Requete, res: Reponse): Promise<void>
+        + obtenirPlace(req: Requete, res: Reponse): Promise<void>
+        + verifierDisponibilite(req: Requete, res: Reponse): Promise<void>
+        + bloquerPlace(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurLigne {
+        + creerLigne(req: Requete, res: Reponse): Promise<void>
+        + obtenirLigne(req: Requete, res: Reponse): Promise<void>
+        + listerLignes(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurChauffeur {
+        + ajouterChauffeur(req: Requete, res: Reponse): Promise<void>
+        + obtenirChauffeur(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourDisponibilite(req: Requete, res: Reponse): Promise<void>
+        + listerChauffeurs(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ServiceVehicule {
+        - depotVehicule: DepotVehicule
+        - clientResourceCore: ClientResourceCore
+        - validateur: ValidateurVehicule
+        + creer(commercantId: string, donnees: DonneesVehicule): Promise<Vehicule>
+        + trouverParId(id: string): Promise<Vehicule>
+        + lister(commercantId: string, filtres: any): Promise<Vehicule[]>
+        + mettreAJour(id: string, donnees: any): Promise<Vehicule>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class ServiceTrajet {
+        - depotTrajet: DepotTrajet
+        - depotArret: DepotArret
+        - calculateurItineraire: CalculateurItineraire
+        + creer(vehiculeId: string, ligneId: string, donnees: DonneesTrajet): Promise<Trajet>
+        + trouverParId(id: string): Promise<Trajet>
+        + rechercher(origine: string, destination: string, date: Date): Promise<Trajet[]>
+        + calculerDuree(arrets: Arret[]): number
+    }
+
+    class ServicePlace {
+        - depotPlace: DepotPlace
+        - serviceDisponibilite: ServiceDisponibilite
+        + creerPlaces(vehiculeId: string, config: ConfigPlaces): Promise<Place[]>
+        + trouverParId(id: string): Promise<Place>
+        + lister(vehiculeId: string): Promise<Place[]>
+        + genererNumerotation(typeVehicule: TypeVehicule, capacite: number): string[]
+    }
+
+    class ServiceLigne {
+        - depotLigne: DepotLigne
+        + creer(commercantId: string, donnees: DonneesLigne): Promise<Ligne>
+        + trouverParId(id: string): Promise<Ligne>
+        + lister(typeTransport: TypeTransport): Promise<Ligne[]>
+    }
+
+    class ServiceChauffeur {
+        - depotChauffeur: DepotChauffeur
+        + ajouter(commercantId: string, donnees: DonneesChauffeur): Promise<Chauffeur>
+        + trouverParId(id: string): Promise<Chauffeur>
+        + verifierDisponibilite(chauffeurId: string, dateHeure: Date): Promise<boolean>
+        + attribuerTrajet(chauffeurId: string, trajetId: string): Promise<void>
+    }
+
+    class ServiceDisponibilite {
+        - depotPlace: DepotPlace
+        - clientBookingService: ClientBookingService
+        - cache: GestionnaireCache
+        + verifierDisponibilite(placeId: string, trajetId: string): Promise<boolean>
+        + obtenirPlacesDisponibles(trajetId: string): Promise<Place[]>
+        + bloquerPlace(placeId: string, trajetId: string): Promise<void>
+        + debloquerPlace(placeId: string, trajetId: string): Promise<void>
+    }
+
+    class CalculateurItineraire {
+        + calculerDistance(origine: Coordonnees, destination: Coordonnees): number
+        + calculerDuree(distance: number, vitesseMoyenne: number): number
+        + calculerHeureArrivee(heureDepart: Date, duree: number): Date
+        + optimiserArrets(arrets: Arret[]): Arret[]
+    }
+
+    class DepotVehicule {
+        - db: PrismaClient
+        + creer(donnees: DonneesVehicule): Promise<Vehicule>
+        + trouverParId(id: string): Promise<Vehicule | null>
+        + lister(commercantId: string, filtres: any): Promise<Vehicule[]>
+        + mettreAJour(id: string, donnees: any): Promise<Vehicule>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotTrajet {
+        - db: PrismaClient
+        + creer(donnees: DonneesTrajet): Promise<Trajet>
+        + trouverParId(id: string): Promise<Trajet | null>
+        + rechercher(criteres: CriteresRecherche): Promise<Trajet[]>
+        + lister(vehiculeId: string, date: Date): Promise<Trajet[]>
+    }
+
+    class DepotPlace {
+        - db: PrismaClient
+        + creerMultiple(places: DonneesPlace[]): Promise<Place[]>
+        + trouverParId(id: string): Promise<Place | null>
+        + lister(vehiculeId: string): Promise<Place[]>
+        + mettreAJour(id: string, donnees: any): Promise<Place>
+    }
+
+    class DepotLigne {
+        - db: PrismaClient
+        + creer(donnees: DonneesLigne): Promise<Ligne>
+        + trouverParId(id: string): Promise<Ligne | null>
+        + lister(typeTransport: TypeTransport): Promise<Ligne[]>
+    }
+
+    class DepotArret {
+        - db: PrismaClient
+        + creerMultiple(trajetId: string, arrets: DonneesArret[]): Promise<Arret[]>
+        + lister(trajetId: string): Promise<Arret[]>
+    }
+
+    class DepotChauffeur {
+        - db: PrismaClient
+        + creer(donnees: DonneesChauffeur): Promise<Chauffeur>
+        + trouverParId(id: string): Promise<Chauffeur | null>
+        + lister(commercantId: string): Promise<Chauffeur[]>
+        + mettreAJour(id: string, donnees: any): Promise<Chauffeur>
+    }
+
+    class Vehicule <<entite>> {
+        + id: string
+        + commercantId: string
+        + typeTransport: TypeTransport
+        + immatriculation: string
+        + marque: string
+        + modele: string
+        + compagnie: string
+        + capaciteTotale: number
+        + annee: number
+        + equipements: string[]
+        + estActif: boolean
+        + urlPhoto: string
+        + dateCreation: Date
+    }
+
+    class Trajet <<entite>> {
+        + id: string
+        + vehiculeId: string
+        + ligneId: string
+        + origine: string
+        + destination: string
+        + heureDepart: Date
+        + heureArrivee: Date
+        + dureeEstimee: number
+        + distance: number
+        + statut: StatutTrajet
+        + chauffeurId: string
+        + dateCreation: Date
+    }
+
+    class Place <<entite>> {
+        + id: string
+        + vehiculeId: string
+        + numero: string
+        + classe: ClasseTransport
+        + typeSiege: TypePlace
+        + position: PositionPlace
+        + prixBase: number
+        + caracteristiques: string[]
+        + estDisponible: boolean
+    }
+
+    class Ligne <<entite>> {
+        + id: string
+        + commercantId: string
+        + numero: string
+        + nom: string
+        + typeTransport: TypeTransport
+        + description: string
+        + tempsTrajetMoyen: number
+        + dateCreation: Date
+    }
+
+    class Arret <<entite>> {
+        + id: string
+        + trajetId: string
+        + nomArret: string
+        + ville: string
+        + coordonnees: Coordonnees
+        + ordre: number
+        + heureArrivee: Date
+        + heureDepart: Date
+        + dureeArret: number
+    }
+
+    class Chauffeur <<entite>> {
+        + id: string
+        + commercantId: string
+        + prenom: string
+        + nom: string
+        + telephone: string
+        + numeroPermis: string
+        + dateExpirationPermis: Date
+        + evaluation: number
+        + nombreVoyages: number
+        + estDisponible: boolean
+        + urlPhoto: string
+        + dateCreation: Date
+    }
+
+    class Tarification <<entite>> {
+        + id: string
+        + ligneId: string
+        + arretDepartId: string
+        + arretArriveeId: string
+        + classe: ClasseTransport
+        + prixBase: number
+        + devise: string
+        + estActif: boolean
+        + dateDebutValidite: Date
+        + dateFinValidite: Date
+    }
+
+    class Billet <<entite>> {
+        + id: string
+        + trajetId: string
+        + placeId: string
+        + clientId: string
+        + numeroBillet: string
+        + nomPassager: string
+        + telephonePassager: string
+        + typeDocument: TypeDocument
+        + numeroDocument: string
+        + prixPaye: number
+        + devise: string
+        + statut: StatutBillet
+        + codeQR: string
+        + dateEmission: Date
+        + dateValidation: Date
+    }
+
+    class CourseVTC <<entite>> {
+        + id: string
+        + vehiculeId: string
+        + chauffeurId: string
+        + clientId: string
+        + adresseDepart: string
+        + latitudeDepart: number
+        + longitudeDepart: number
+        + adresseArrivee: string
+        + latitudeArrivee: number
+        + longitudeArrivee: number
+        + distanceEstimeeKm: number
+        + distanceReelleKm: number
+        + prixEstime: number
+        + prixFinal: number
+        + devise: string
+        + statut: StatutCourse
+        + heureDemandee: Date
+        + heurePriseEnCharge: Date
+        + heureArrivee: Date
+        + noteClient: number
+        + noteChauffeur: number
+        + commentaire: string
+    }
+
+    enum TypeTransport {
+        BUS
+        MINIBUS
+        TRAIN
+        AVION
+        METRO
+        VTC
+        TAXI
+        BATEAU
+    }
+
+    enum ClasseTransport {
+        ECONOMIQUE
+        CONFORT
+        BUSINESS
+        PREMIERE
+        VIP
+    }
+
+    enum TypePlace {
+        STANDARD
+        FENETRE
+        COULOIR
+        INCLINABLE
+        COUCHETTE
+    }
+
+    enum StatutTrajet {
+        PROGRAMME
+        EMBARQUEMENT
+        EN_COURS
+        TERMINE
+        ANNULE
+        RETARDE
+    }
+
+    enum StatutBillet {
+        RESERVE
+        PAYE
+        VALIDE
+        UTILISE
+        ANNULE
+        EXPIRE
+        REMBOURSE
+    }
+
+    enum TypeDocument {
+        CNI
+        PASSEPORT
+        PERMIS_CONDUIRE
+        CARTE_RESIDENT
+    }
+
+    enum StatutCourse {
+        DEMANDEE
+        ACCEPTEE
+        CHAUFFEUR_EN_ROUTE
+        ARRIVEE_DEPART
+        EN_COURS
+        TERMINEE
+        ANNULEE
+    }
+
+    enum PositionPlace {
+        AVANT
+        MILIEU
+        ARRIERE
+        SUPERIEUR
+        INFERIEUR
+    }
+
+    class Coordonnees <<value object>> {
+        + latitude: number
+        + longitude: number
+        + calculerDistance(autre: Coordonnees): number
+    }
+
+    class ConfigPlaces <<dto>> {
+        + capacite: number
+        + repartitionClasses: Map<ClasseTransport, number>
+        + typesPlaces: TypePlace[]
+        + prixParClasse: Map<ClasseTransport, number>
+    }
+
+    class CriteresRecherche <<dto>> {
+        + origine: string
+        + destination: string
+        + dateDepart: Date
+        + nombrePassagers: number
+        + classePreferee: ClasseTransport
+        + typeTransport: TypeTransport
+    }
+
+    class ClientResourceCore {
+        - urlBase: string
+        + validerRessource(donnees: any): Promise<ResultatValidation>
+        + obtenirCommercant(id: string): Promise<Commercant>
+    }
+
+    class ClientBookingService {
+        - urlBase: string
+        + obtenirReservations(placeId: string, trajetId: string): Promise<Reservation[]>
+    }
+
+    class ValidateurVehicule {
+        + validerImmatriculation(immatriculation: string): boolean
+        + validerCapacite(capacite: number, type: TypeTransport): boolean
+        + validerCompagnie(nom: string): boolean
+    }
+
+    class GestionnaireCache {
+        - redis: ClientRedis
+        + obtenirDisponibilite(vehiculeId: string, trajetId: string): Promise<any>
+        + cacherDisponibilite(vehiculeId: string, trajetId: string, donnees: any): Promise<void>
+        + invaliderCache(vehiculeId: string): Promise<void>
+    }
+}
+
+' Relations
+ServeurTransport "1" -- "1" ControleurVehicule : contient >
+ServeurTransport "1" -- "1" ControleurTrajet : contient >
+ServeurTransport "1" -- "1" ControleurPlace : contient >
+ServeurTransport "1" -- "1" ControleurLigne : contient >
+ServeurTransport "1" -- "1" ControleurChauffeur : contient >
+
+ControleurVehicule "1" -- "1" ServiceVehicule : utilise >
+ControleurTrajet "1" -- "1" ServiceTrajet : utilise >
+ControleurPlace "1" -- "1" ServicePlace : utilise >
+ControleurLigne "1" -- "1" ServiceLigne : utilise >
+ControleurChauffeur "1" -- "1" ServiceChauffeur : utilise >
+
+ServiceVehicule "1" -- "1" DepotVehicule : utilise >
+ServiceVehicule "1" -- "1" ClientResourceCore : utilise >
+ServiceVehicule "1" -- "1" ValidateurVehicule : utilise >
+
+ServiceTrajet "1" -- "1" DepotTrajet : utilise >
+ServiceTrajet "1" -- "1" DepotArret : utilise >
+ServiceTrajet "1" -- "1" CalculateurItineraire : utilise >
+
+ServicePlace "1" -- "1" DepotPlace : utilise >
+ServicePlace "1" -- "1" ServiceDisponibilite : utilise >
+
+ServiceLigne "1" -- "1" DepotLigne : utilise >
+ServiceChauffeur "1" -- "1" DepotChauffeur : utilise >
+
+ServiceDisponibilite "1" -- "1" ClientBookingService : utilise >
+ServiceDisponibilite "1" -- "1" GestionnaireCache : utilise >
+
+DepotVehicule "1" -- "*" Vehicule : gère >
+DepotTrajet "1" -- "*" Trajet : gère >
+DepotPlace "1" -- "*" Place : gère >
+DepotLigne "1" -- "*" Ligne : gère >
+DepotArret "1" -- "*" Arret : gère >
+DepotChauffeur "1" -- "*" Chauffeur : gère >
+
+Vehicule "1" -- "1" TypeTransport : est un >
+Vehicule "1" -- "*" Place : possède >
+Vehicule "1" -- "*" Trajet : effectue >
+
+Trajet "1" -- "1" StatutTrajet : a un >
+Trajet "1" -- "1" Ligne : suit >
+Trajet "1" -- "*" Arret : possède >
+Trajet "1" -- "1" Chauffeur : est conduit par >
+
+Place "1" -- "1" ClasseTransport : appartient à >
+Place "1" -- "1" TypePlace : est un >
+
+Arret "1" -- "1" Coordonnees : a des >
+
+ServicePlace ..> ConfigPlaces : utilise >
+ServiceTrajet ..> CriteresRecherche : utilise >
+
+note right of Vehicule
+  Véhicule de transport:
+
+  Types supportés:
+  - BUS: Interurbain, urbain, express
+  - TRAIN: Grande ligne, régional
+  - AVION: Domestique, international
+  - METRO: Transport urbain rapide
+  - VTC: Voiture avec chauffeur
+
+  Attributs:
+  - Immatriculation unique
+  - Capacité totale
+  - Équipements (WiFi, AC, TV)
+  - Compagnie exploitante
+end note
+
+note right of Trajet
+  Trajet planifié:
+
+  Informations:
+  - Origine et destination
+  - Horaires départ/arrivée
+  - Liste arrêts intermédiaires
+  - Chauffeur assigné
+  - Statut temps réel
+
+  Statuts:
+  - PLANIFIE (futur)
+  - EN_COURS (en route)
+  - TERMINE (arrivé)
+  - ANNULE (annulation)
+  - RETARDE (retard signalé)
+end note
+
+note bottom of Place
+  Places/Sièges réservables:
+
+  Numérotation:
+  - Bus: 1, 2, 3... (linéaire)
+  - Train: Voiture-Siège (ex: A12, B05)
+  - Avion: Rangée-Lettre (ex: 15A, 23F)
+
+  Classes:
+  - ECONOMIQUE (standard)
+  - BUSINESS (confort+)
+  - PREMIERE_CLASSE (luxe)
+  - VIP (privatif)
+
+  Types:
+  - FENETRE (vue extérieur)
+  - COULOIR (accès facile)
+  - MILIEU (entre deux)
+  - COUCHETTE (train nuit)
+
+  Prix variable selon classe
+end note
+
+note right of ServiceDisponibilite
+  Gestion disponibilité places:
+
+  Vérifications:
+  - Place déjà réservée ?
+  - Trajet encore disponible ?
+  - Capacité véhicule respectée ?
+
+  Cache Redis (10min):
+  - Disponibilités par trajet
+  - Invalidation sur réservation
+  - Performance recherches
+
+  Blocage place:
+  - Lors création réservation
+  - Timeout 15min si pas payé
+  - Déblocage automatique
+end note
+
+note bottom of CalculateurItineraire
+  Calcul itinéraire intelligent:
+
+  Fonctions:
+  - Distance GPS (Haversine formula)
+  - Durée estimée (vitesse moyenne)
+  - Heure arrivée prévue
+  - Optimisation ordre arrêts
+
+  Exemples vitesses moyennes:
+  - Bus: 60 km/h
+  - Train: 120 km/h
+  - Avion: 800 km/h
+  - Métro: 40 km/h
+  - VTC: 50 km/h (urbain)
+
+  Marges:
+  - Trafic urbain: +30%
+  - Arrêts: +5min chacun
+  - Embarquement: +15min
+end note
+
+note right of Ligne
+  Ligne de transport:
+
+  Exemples:
+  - Bus: "Dakar-Thiès" (ligne 101)
+  - Train: "Abidjan-Ouaga" (TER)
+  - Avion: "Lagos-Accra" (AF542)
+  - Métro: "Ligne 1 Rouge"
+
+  Attributs:
+  - Numéro/Nom unique
+  - Type transport
+  - Compagnie
+  - Temps trajet moyen
+  - Tarifs par défaut
+end note
+
+note left of Chauffeur
+  Chauffeur (pour VTC surtout):
+
+  Informations:
+  - Nom, prénom
+  - Permis conduire (numéro)
+  - Téléphone contact
+  - Évaluation (0-5 étoiles)
+  - Nombre voyages effectués
+
+  Disponibilité:
+  - Planning en temps réel
+  - Attribution trajets
+  - Repos obligatoire
+  - Rotation équitable
+end note
+
+@enduml

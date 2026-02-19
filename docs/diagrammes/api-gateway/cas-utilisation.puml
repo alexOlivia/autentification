@@ -1,0 +1,128 @@
+@startuml API Gateway - Cas d'Utilisation
+
+title API Gateway - Cas d'Utilisation
+
+left to right direction
+
+' Acteurs
+actor "Client Mobile" as Client
+actor "Merchant" as Merchant
+actor "Admin" as Admin
+actor "Service Backend" as Backend
+actor "Système de Monitoring" as Monitoring
+
+' Package API Gateway
+rectangle "API Gateway" {
+    ' Cas d'utilisation principaux
+    usecase "Router les requêtes" as UC1
+    usecase "Valider JWT" as UC2
+    usecase "Appliquer Rate Limiting" as UC3
+    usecase "Gérer CORS" as UC4
+    usecase "Logger les requêtes" as UC5
+    usecase "Circuit Breaker" as UC6
+    usecase "Load Balancing" as UC7
+    usecase "Cache les réponses" as UC8
+    usecase "Gérer les erreurs" as UC9
+    usecase "Health Check" as UC10
+
+    ' Sous-cas d'utilisation pour la validation
+    usecase "Vérifier signature JWT" as UC2_1
+    usecase "Valider expiration token" as UC2_2
+    usecase "Vérifier permissions RBAC" as UC2_3
+
+    ' Sous-cas pour Circuit Breaker
+    usecase "Détecter défaillance service" as UC6_1
+    usecase "Ouvrir circuit" as UC6_2
+    usecase "Utiliser fallback cache" as UC6_3
+    usecase "Tenter réinitialisation" as UC6_4
+
+    ' Sous-cas pour Rate Limiting
+    usecase "Compter requêtes par IP" as UC3_1
+    usecase "Bloquer si limite dépassée" as UC3_2
+    usecase "Réinitialiser compteur" as UC3_3
+
+    ' Sous-cas pour Load Balancing
+    usecase "Sélectionner instance service" as UC7_1
+    usecase "Vérifier santé instances" as UC7_2
+    usecase "Appliquer stratégie Round Robin" as UC7_3
+}
+
+' Relations acteurs -> cas d'utilisation
+Client --> UC1 : envoie requête HTTP
+Merchant --> UC1 : envoie requête HTTP
+Admin --> UC1 : envoie requête HTTP
+
+UC1 ..> UC2 : <<include>>
+UC1 ..> UC3 : <<include>>
+UC1 ..> UC4 : <<include>>
+UC1 ..> UC5 : <<include>>
+
+UC1 --> Backend : transfère vers service
+
+UC2 ..> UC2_1 : <<include>>
+UC2 ..> UC2_2 : <<include>>
+UC2 ..> UC2_3 : <<include>>
+
+UC3 ..> UC3_1 : <<include>>
+UC3 ..> UC3_2 : <<extend>>\n[limite dépassée]
+UC3 ..> UC3_3 : <<extend>>\n[fenêtre expirée]
+
+UC6 ..> UC6_1 : <<include>>
+UC6_1 ..> UC6_2 : <<extend>>\n[seuil atteint]
+UC6_2 ..> UC6_3 : <<include>>
+UC6_2 ..> UC6_4 : <<extend>>\n[après timeout]
+
+UC7 ..> UC7_1 : <<include>>
+UC7 ..> UC7_2 : <<include>>
+UC7 ..> UC7_3 : <<include>>
+
+UC1 ..> UC6 : <<include>>
+UC1 ..> UC7 : <<include>>
+UC1 ..> UC8 : <<extend>>\n[cacheable]
+UC1 ..> UC9 : <<extend>>\n[erreur]
+
+Monitoring --> UC10 : vérifie état
+UC10 --> Backend : vérifie services
+
+' Notes explicatives
+note right of UC2
+  JWT validé contre Auth Service
+  Permissions vérifiées selon RBAC
+  Token expire après 15min
+end note
+
+note right of UC3
+  Rate Limit: 100 req/15min par IP
+  Stocké dans Redis
+  Headers X-RateLimit-* retournés
+end note
+
+note right of UC6
+  Circuit ouvert si >50% échecs
+  Fallback sur cache Redis
+  Réessai après 30s
+  Protection des services backend
+end note
+
+note bottom of UC7
+  Round Robin entre instances
+  Health checks réguliers
+  Retire instances malades
+  Répartit charge équitablement
+end note
+
+note left of UC8
+  Cache Redis (TTL 5-15min)
+  Clé: service:method:params
+  Invalidation sur PUT/DELETE
+  Améliore performance
+end note
+
+' Contraintes
+note "Authentification requise\npour toutes les routes\n(sauf /health, /login)" as N1
+UC2 .. N1
+
+note "Rate limiting global + par route\nProtection DoS" as N2
+UC3 .. N2
+
+@enduml

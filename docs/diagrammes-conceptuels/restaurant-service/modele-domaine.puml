@@ -1,0 +1,248 @@
+@startuml Restaurant Service - Modèle de Domaine
+
+title Restaurant Service - Modèle de Domaine Conceptuel
+
+' Styles
+skinparam class {
+    BackgroundColor LightCoral
+    BorderColor DarkRed
+    ArrowColor DarkRed
+}
+
+package "Domaine Restaurant" {
+
+    ' ========== ENTITÉS ==========
+
+    class Restaurant <<entité>> {
+        + id: string
+        + commercantId: string
+        + typeCuisine: string
+        + capaciteTotale: number
+        + accepteReservations: boolean
+        + accepteReservationComplete: boolean
+        + tarifReservationComplete: number
+        + capaciteMaxEvenement: number
+        + dureeReservationMoyenne: number
+        + tempsRotationTable: number
+        + dateCreation: Date
+    }
+
+    class Table <<entité>> {
+        + id: string
+        + restaurantId: string
+        + numeroTable: string
+        + capaciteMin: number
+        + capaciteMax: number
+        + zoneId: string
+        + forme: FormeTable
+        + statut: StatutTable
+        + estFumeur: boolean
+        + positionX: number
+        + positionY: number
+    }
+
+    class Zone <<entité>> {
+        + id: string
+        + restaurantId: string
+        + nomZone: string
+        + typeZone: TypeZone
+        + description: string
+        + capacite: number
+        + ordre: number
+        + estExterieure: boolean
+        + aClimatisation: boolean
+    }
+
+    class PeriodeService <<entité>> {
+        + id: string
+        + restaurantId: string
+        + typePeriode: TypePeriode
+        + heureDebut: string
+        + heureFin: string
+        + joursActifs: JourSemaine[]
+    }
+
+    ' ========== ÉNUMÉRATIONS ==========
+
+    enum FormeTable {
+        RONDE
+        CARREE
+        RECTANGULAIRE
+        OVALE
+        HAUTE
+        AUTRE
+    }
+
+    enum StatutTable {
+        DISPONIBLE
+        OCCUPEE
+        RESERVEE
+        HORS_SERVICE
+        AUTRE
+    }
+
+    enum TypeZone {
+        INTERIEUR
+        TERRASSE
+        ESPACE_GRILLADE
+        VIP
+        BAR
+        JARDIN
+        SALLE_PRIVEE
+        AUTRE
+    }
+
+    enum TypePeriode {
+        PETIT_DEJEUNER
+        DEJEUNER
+        GOUTER
+        DINER
+        BRUNCH
+        AUTRE
+    }
+
+    enum JourSemaine {
+        LUNDI
+        MARDI
+        MERCREDI
+        JEUDI
+        VENDREDI
+        SAMEDI
+        DIMANCHE
+        AUTRE
+    }
+}
+
+' ========== RELATIONS ==========
+
+Restaurant "1" *-- "*" Table : possède >
+Restaurant "1" *-- "*" Zone : possède >
+Restaurant "1" *-- "*" PeriodeService : définit >
+
+Table "*" --> "1" Zone : appartient à >
+Table "1" -- "1" FormeTable : a une forme >
+Table "1" -- "1" StatutTable : a un statut >
+
+Zone "1" -- "1" TypeZone : est de type >
+
+PeriodeService "1" -- "1" TypePeriode : est de type >
+PeriodeService "1" -- "*" JourSemaine : actif les jours >
+
+' ========== NOTES MÉTIER ==========
+
+note right of Restaurant
+  **Entité centrale du domaine**
+
+  Représente un établissement de restauration
+  avec ses caractéristiques et capacités.
+
+  **Réservation complète:**
+  - Privatisation totale du restaurant
+  - Pour événements (mariages, baptêmes)
+  - Tarif forfaitaire négocié
+  - Capacité maximale pour événements
+
+  **Contexte africain:**
+  - Grands événements familiaux fréquents
+  - Nombre d'invités élevé (100-300)
+  - Animations traditionnelles
+end note
+
+note right of Table
+  **Table physique du restaurant**
+
+  Caractéristiques:
+  - Numéro unique par restaurant (A1, B2, etc.)
+  - Capacité modulable (min-max)
+  - Position (x,y) pour plan de salle interactif
+  - Statut temps réel (disponible/occupée)
+
+  **Règles métier:**
+  - 2 personnes minimum pour réservation
+  - Capacité max: 20 personnes (tables assemblées)
+  - Rotation moyenne: 90-120 minutes
+  - Tolérance retard: 15 minutes
+end note
+
+note bottom of Zone
+  **Zones du restaurant**
+
+  Types contexte africain:
+
+  **INTERIEUR:**
+  - Salle climatisée principale
+  - Protection chaleur et poussière
+  - Valeur ajoutée importante
+
+  **TERRASSE:**
+  - Espace extérieur couvert
+  - Très demandé (climat agréable le soir)
+  - Ambiance conviviale
+
+  **ESPACE_GRILLADE:**
+  - Zone dédiée méchoui, dibi, poisson braisé
+  - Grillades à la vue des clients
+  - Expérience culinaire immersive
+
+  **VIP:**
+  - Espace privé haut de gamme
+  - Service personnalisé
+  - Intimité garantie
+
+  **BAR:**
+  - Zone comptoir et tabourets hauts
+  - Consommation rapide
+  - Ambiance décontractée
+
+  **JARDIN:**
+  - Espace extérieur végétalisé
+  - Événements en plein air
+  - Capacité importante
+
+  **SALLE_PRIVEE:**
+  - Salle fermée pour groupes
+  - Réunions familiales/professionnelles
+  - 10-50 personnes
+end note
+
+note bottom of PeriodeService
+  **Périodes de service restaurant**
+
+  Exemples contexte africain:
+
+  - **Petit-déjeuner:** 7h-10h
+    (Café touba, tapalapa, omelette)
+
+  - **Déjeuner:** 12h-15h
+    (Thiéboudienne, yassa, mafé)
+
+  - **Goûter:** 16h-18h
+    (Pâtisseries, jus naturels)
+
+  - **Dîner:** 19h-23h
+    (Service complet, animations)
+
+  - **Brunch:** 10h-14h (weekend)
+    (Buffet continental + plats locaux)
+
+  **Utilité:**
+  - Tarification différenciée par période
+  - Gestion horaires équipes
+  - Adaptation offre selon moment
+end note
+
+note as N1
+  **Règles de disponibilité**
+
+  Une table est considérée disponible si:
+  - Statut = DISPONIBLE
+  - Restaurant ouvert (période service active)
+  - Aucune réservation confirmée sur créneau
+  - Pas en maintenance (HORS_SERVICE)
+
+  **Réservation complète restaurant:**
+  Bloque TOUTES les tables, toutes zones confondues.
+  Priorité sur réservations individuelles.
+end note
+
+@enduml

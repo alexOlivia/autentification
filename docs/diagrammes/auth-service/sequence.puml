@@ -1,0 +1,229 @@
+@startuml Auth Service - Diagramme de Séquence
+
+title Auth Service - Processus d'inscription et de connexion
+
+actor Client
+participant "API Gateway" as Gateway
+participant "ControleurAuth" as Controleur
+participant "ValidateurAuth" as Validateur
+participant "ServiceAuth" as Service
+participant "ServiceHash" as Hash
+participant "DepotUtilisateur" as Depot
+participant "ServiceJWT" as JWT
+participant "DepotTokenRefresh" as DepotToken
+database "PostgreSQL" as DB
+
+== Inscription d'un nouvel utilisateur ==
+Client -> Gateway : POST /auth/register\n{email, password, role, firstName, lastName}
+activate Gateway
+
+Gateway -> Controleur : inscription(req, res)
+activate Controleur
+
+Controleur -> Validateur : validerDonneesInscription(donnees)
+activate Validateur
+Validateur -> Validateur : validerEmail(email)
+Validateur -> Validateur : validerMotDePasse(password)
+Validateur --> Controleur : {valide: true}
+deactivate Validateur
+
+Controleur -> Service : inscrireUtilisateur(donnees)
+activate Service
+
+Service -> Depot : trouverParEmail(email)
+activate Depot
+Depot -> DB : SELECT * FROM users WHERE email = ?
+DB --> Depot : null (utilisateur n'existe pas)
+Depot --> Service : null
+deactivate Depot
+
+Service -> Hash : hacher(motDePasse)
+activate Hash
+Hash -> Hash : bcrypt.hash(motDePasse, 10)
+Hash --> Service : hashMotDePasse
+deactivate Hash
+
+Service -> Depot : creer({email, motDePasseHash, role})
+activate Depot
+Depot -> DB : INSERT INTO users (email, password_hash, role)
+DB --> Depot : utilisateur créé
+Depot --> Service : utilisateur
+deactivate Depot
+
+Service -> JWT : genererTokenAcces(utilisateur)
+activate JWT
+JWT -> JWT : jwt.sign({sub, email, role}, secret, {expiresIn: '15m'})
+JWT --> Service : tokenAcces
+deactivate JWT
+
+Service -> JWT : genererTokenRefresh(utilisateur)
+activate JWT
+JWT -> JWT : jwt.sign({sub}, secret, {expiresIn: '7d'})
+JWT --> Service : tokenRefresh
+deactivate JWT
+
+Service -> Hash : hacher(tokenRefresh)
+activate Hash
+Hash --> Service : tokenRefreshHash
+deactivate Hash
+
+Service -> DepotToken : creer(utilisateur.id, tokenRefreshHash)
+activate DepotToken
+DepotToken -> DB : INSERT INTO refresh_tokens
+DB --> DepotToken : token créé
+DepotToken --> Service : tokenRefresh
+deactivate DepotToken
+
+Service --> Controleur : {tokenAcces, tokenRefresh}
+deactivate Service
+
+Controleur --> Gateway : 201 Created\n{tokenAcces, tokenRefresh, utilisateur}
+deactivate Controleur
+
+Gateway --> Client : 201 Created\n{accessToken, refreshToken, user}
+deactivate Gateway
+
+== Connexion d'un utilisateur existant ==
+Client -> Gateway : POST /auth/login\n{email, password}
+activate Gateway
+
+Gateway -> Controleur : connexion(req, res)
+activate Controleur
+
+Controleur -> Validateur : validerDonneesConnexion({email, password})
+activate Validateur
+Validateur --> Controleur : {valide: true}
+deactivate Validateur
+
+Controleur -> Service : authentifierUtilisateur(email, password)
+activate Service
+
+Service -> Depot : trouverParEmail(email)
+activate Depot
+Depot -> DB : SELECT * FROM users WHERE email = ?
+DB --> Depot : utilisateur
+Depot --> Service : utilisateur
+deactivate Depot
+
+alt Utilisateur trouvé
+    Service -> Hash : comparer(password, utilisateur.motDePasseHash)
+    activate Hash
+    Hash -> Hash : bcrypt.compare(password, hash)
+    Hash --> Service : true
+    deactivate Hash
+
+    alt Mot de passe correct
+        Service -> JWT : genererTokenAcces(utilisateur)
+        activate JWT
+        JWT --> Service : tokenAcces
+        deactivate JWT
+
+        Service -> JWT : genererTokenRefresh(utilisateur)
+        activate JWT
+        JWT --> Service : tokenRefresh
+        deactivate JWT
+
+        Service -> Hash : hacher(tokenRefresh)
+        activate Hash
+        Hash --> Service : tokenRefreshHash
+        deactivate Hash
+
+        Service -> DepotToken : creer(utilisateur.id, tokenRefreshHash)
+        activate DepotToken
+        DepotToken -> DB : INSERT INTO refresh_tokens
+        DB --> DepotToken : token créé
+        DepotToken --> Service : tokenRefresh
+        deactivate DepotToken
+
+        Service --> Controleur : {tokenAcces, tokenRefresh}
+        Controleur --> Gateway : 200 OK\n{tokenAcces, tokenRefresh, utilisateur}
+        Gateway --> Client : 200 OK\n{accessToken, refreshToken, user}
+
+    else Mot de passe incorrect
+        Service --> Controleur : throw UnauthorizedError
+        Controleur --> Gateway : 401 Unauthorized\n{message: "Identifiants invalides"}
+        Gateway --> Client : 401 Unauthorized
+    end
+
+else Utilisateur non trouvé
+    Service --> Controleur : throw UnauthorizedError
+    Controleur --> Gateway : 401 Unauthorized\n{message: "Identifiants invalides"}
+    Gateway --> Client : 401 Unauthorized
+end
+
+deactivate Service
+deactivate Controleur
+deactivate Gateway
+
+== Rafraîchissement du token ==
+Client -> Gateway : POST /auth/refresh\nAuthorization: Bearer <refresh_token>
+activate Gateway
+
+Gateway -> Controleur : rafraichirToken(req, res)
+activate Controleur
+
+Controleur -> Service : rafraichirTokenAcces(tokenRefresh)
+activate Service
+
+Service -> JWT : verifier(tokenRefresh)
+activate JWT
+JWT -> JWT : jwt.verify(token, secret)
+JWT --> Service : {sub: utilisateurId}
+deactivate JWT
+
+Service -> Hash : hacher(tokenRefresh)
+activate Hash
+Hash --> Service : tokenHash
+deactivate Hash
+
+Service -> DepotToken : trouverParToken(tokenHash)
+activate DepotToken
+DepotToken -> DB : SELECT * FROM refresh_tokens WHERE token_hash = ?
+DB --> DepotToken : tokenRefresh
+
+alt Token valide et non expiré
+    DepotToken --> Service : tokenRefresh
+    deactivate DepotToken
+
+    Service -> Depot : trouverParId(utilisateurId)
+    activate Depot
+    Depot -> DB : SELECT * FROM users WHERE id = ?
+    DB --> Depot : utilisateur
+    Depot --> Service : utilisateur
+    deactivate Depot
+
+    Service -> JWT : genererTokenAcces(utilisateur)
+    activate JWT
+    JWT --> Service : nouveauTokenAcces
+    deactivate JWT
+
+    Service --> Controleur : {tokenAcces: nouveauTokenAcces}
+    Controleur --> Gateway : 200 OK\n{accessToken}
+    Gateway --> Client : 200 OK\n{accessToken}
+
+else Token invalide ou expiré
+    DepotToken --> Service : null
+    Service --> Controleur : throw UnauthorizedError
+    Controleur --> Gateway : 401 Unauthorized
+    Gateway --> Client : 401 Unauthorized\n(réauthentification requise)
+end
+
+deactivate Service
+deactivate Controleur
+deactivate Gateway
+
+note right of ServiceHash
+  Bcrypt assure:
+  - Salt aléatoire
+  - Résistance brute force
+  - Temps constant (timing attack)
+end note
+
+note right of JWT
+  JWT Structure:
+  Header: {alg: "HS256", typ: "JWT"}
+  Payload: {sub, email, role, iat, exp}
+  Signature: HMACSHA256(header+payload, secret)
+end note
+
+@enduml

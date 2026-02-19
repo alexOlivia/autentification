@@ -1,0 +1,302 @@
+@startuml Accommodation Service - Cas d'Utilisation
+
+title Accommodation Service - Cas d'Utilisation
+
+left to right direction
+
+' Acteurs
+actor "Client" as Client
+actor "Commerçant Hôtelier" as Merchant
+actor "Personnel Hôtel" as Staff
+actor "Administrateur" as Admin
+actor "Booking Service" as BookingService
+actor "Payment Service" as PaymentService
+
+' Package Accommodation Service
+rectangle "Accommodation Service" {
+    ' Cas d'utilisation principaux
+    usecase "Gérer hébergement" as UC1
+    usecase "Gérer chambres" as UC2
+    usecase "Gérer équipements" as UC3
+    usecase "Gérer tarification" as UC4
+    usecase "Vérifier disponibilités" as UC5
+    usecase "Calculer statistiques" as UC6
+    usecase "Gérer maintenance" as UC7
+
+    ' Sous-cas pour gestion hébergement
+    usecase "Créer hébergement" as UC1_1
+    usecase "Configurer type établissement" as UC1_2
+    usecase "Définir classement étoiles" as UC1_3
+    usecase "Configurer check-in/out" as UC1_4
+    usecase "Paramétrer petit-déjeuner" as UC1_5
+
+    ' Sous-cas pour gestion chambres
+    usecase "Ajouter chambre" as UC2_1
+    usecase "Modifier chambre" as UC2_2
+    usecase "Supprimer chambre" as UC2_3
+    usecase "Définir type chambre" as UC2_4
+    usecase "Configurer lits" as UC2_5
+    usecase "Définir superficie" as UC2_6
+    usecase "Assigner étage" as UC2_7
+    usecase "Définir vue" as UC2_8
+
+    ' Sous-cas pour équipements
+    usecase "Ajouter équipement" as UC3_1
+    usecase "Retirer équipement" as UC3_2
+    usecase "Marquer équipement défectueux" as UC3_3
+    usecase "Lister équipements disponibles" as UC3_4
+
+    ' Sous-cas pour tarification
+    usecase "Définir prix base" as UC4_1
+    usecase "Définir majoration weekend" as UC4_2
+    usecase "Configurer haute saison" as UC4_3
+    usecase "Définir réductions long séjour" as UC4_4
+    usecase "Calculer prix séjour" as UC4_5
+    usecase "Appliquer tarif dynamique" as UC4_6
+
+    ' Sous-cas pour disponibilités
+    usecase "Chercher chambres disponibles" as UC5_1
+    usecase "Vérifier période spécifique" as UC5_2
+    usecase "Filtrer par type chambre" as UC5_3
+    usecase "Filtrer par équipements" as UC5_4
+    usecase "Filtrer par prix" as UC5_5
+    usecase "Afficher calendrier occupation" as UC5_6
+
+    ' Sous-cas pour statistiques
+    usecase "Calculer taux occupation" as UC6_1
+    usecase "Calculer revenu mensuel" as UC6_2
+    usecase "Identifier chambres populaires" as UC6_3
+    usecase "Analyser durée séjour moyenne" as UC6_4
+    usecase "Exporter rapport" as UC6_5
+
+    ' Sous-cas pour maintenance
+    usecase "Mettre chambre en maintenance" as UC7_1
+    usecase "Planifier nettoyage" as UC7_2
+    usecase "Signaler problème technique" as UC7_3
+    usecase "Réactiver chambre" as UC7_4
+}
+
+' Relations acteurs -> cas d'utilisation
+Merchant --> UC1 : configure hébergement
+Merchant --> UC2 : gère chambres
+Merchant --> UC3 : configure équipements
+Merchant --> UC4 : définit prix
+Merchant --> UC6 : consulte stats
+
+Staff --> UC7 : gère maintenance
+Staff --> UC7_2 : planifie nettoyages
+
+Client --> UC5 : cherche chambres
+Client --> UC4_5 : voit prix
+
+BookingService --> UC5 : vérifie avant réservation
+PaymentService --> UC4_5 : calcule montant
+Admin --> UC6 : consulte toutes stats
+
+' Inclusions et extensions
+UC1 ..> UC1_1 : <<extend>>
+UC1 ..> UC1_2 : <<include>>
+UC1 ..> UC1_3 : <<extend>>
+UC1 ..> UC1_4 : <<include>>
+UC1 ..> UC1_5 : <<extend>>
+
+UC2 ..> UC2_1 : <<extend>>
+UC2 ..> UC2_2 : <<extend>>
+UC2 ..> UC2_3 : <<extend>>
+UC2 ..> UC2_4 : <<include>>
+UC2 ..> UC2_5 : <<include>>
+UC2 ..> UC2_6 : <<extend>>
+UC2 ..> UC2_7 : <<extend>>
+UC2 ..> UC2_8 : <<extend>>
+
+UC3 ..> UC3_1 : <<extend>>
+UC3 ..> UC3_2 : <<extend>>
+UC3 ..> UC3_3 : <<extend>>
+UC3 ..> UC3_4 : <<extend>>
+
+UC4 ..> UC4_1 : <<include>>
+UC4 ..> UC4_2 : <<extend>>
+UC4 ..> UC4_3 : <<extend>>
+UC4 ..> UC4_4 : <<extend>>
+UC4 ..> UC4_5 : <<include>>
+UC4 ..> UC4_6 : <<extend>>\n[si activé]
+
+UC5 ..> UC5_1 : <<include>>
+UC5 ..> UC5_2 : <<include>>
+UC5 ..> UC5_3 : <<extend>>\n[si filtre]
+UC5 ..> UC5_4 : <<extend>>\n[si filtre]
+UC5 ..> UC5_5 : <<extend>>\n[si filtre]
+UC5 ..> UC5_6 : <<extend>>
+
+UC6 ..> UC6_1 : <<include>>
+UC6 ..> UC6_2 : <<include>>
+UC6 ..> UC6_3 : <<extend>>
+UC6 ..> UC6_4 : <<extend>>
+UC6 ..> UC6_5 : <<extend>>
+
+UC7 ..> UC7_1 : <<extend>>
+UC7 ..> UC7_2 : <<extend>>
+UC7 ..> UC7_3 : <<extend>>
+UC7 ..> UC7_4 : <<extend>>
+
+' Notes explicatives
+note right of UC2
+  Types de chambres standards:
+
+  SIMPLE (1 personne):
+  - 1 lit simple
+  - Superficie: 12-15 m²
+  - Prix: 15000-20000 XOF/nuit
+
+  DOUBLE (2 personnes):
+  - 1 lit double ou 2 lits simples
+  - Superficie: 18-25 m²
+  - Prix: 25000-35000 XOF/nuit
+
+  SUITE (2-4 personnes):
+  - Chambre + salon
+  - Superficie: 35-50 m²
+  - Prix: 50000-80000 XOF/nuit
+
+  FAMILIALE (4-6 personnes):
+  - Plusieurs lits
+  - Superficie: 30-40 m²
+  - Prix: 40000-60000 XOF/nuit
+end note
+
+note right of UC3
+  Équipements prioritaires Afrique:
+
+  Essentiels:
+  ✓ Climatisation (zones chaudes)
+  ✓ Eau chaude (pas toujours dispo)
+  ✓ Moustiquaire (paludisme)
+  ✓ Ventilateur (backup)
+  ✓ Générateur (coupures électriques)
+
+  Confort:
+  ✓ WiFi (connectivité)
+  ✓ TV satellite
+  ✓ Salle bain privée
+  ✓ Coffre-fort
+  ✓ Minibar
+
+  Filtrage:
+  Client peut filtrer chambres
+  selon équipements souhaités
+end note
+
+note bottom of UC4
+  Règles de tarification:
+
+  Prix base par type chambre:
+  - SIMPLE: 15000 XOF
+  - DOUBLE: 25000 XOF
+  - TWIN: 28000 XOF
+  - SUITE: 60000 XOF
+  - FAMILIALE: 45000 XOF
+
+  Majorations:
+  - Weekend (Ven-Sam): +20%
+  - Haute saison: +30-50%
+  - Événements: +40-100%
+
+  Réductions:
+  - 7-13 nuits: -10%
+  - 14-29 nuits: -15%
+  - 30+ nuits: -20%
+  - Paiement anticipé: -5%
+
+  Inclusions:
+  - Petit-déjeuner: +3000 XOF/pers
+  - Taxe séjour: 500 XOF/nuit
+end note
+
+note right of UC5
+  Recherche multi-critères:
+
+  Filtres disponibles:
+  - Dates (arrivée-départ)
+  - Nombre personnes
+  - Type chambre (Simple, Double, etc.)
+  - Prix max/min
+  - Équipements requis
+  - Vue souhaitée
+  - Étage
+  - Petit-déjeuner inclus
+
+  Tri:
+  - Prix croissant/décroissant
+  - Popularité (nb réservations)
+  - Note moyenne (si avis)
+  - Disponibilité immédiate
+
+  Performance:
+  - Index DB sur dates
+  - Cache Redis 15min
+  - Pagination (20 résultats/page)
+end note
+
+note left of UC6
+  KPIs hébergement:
+
+  Occupation:
+  - Taux occupation global
+  - Taux par type chambre
+  - Tendances mensuelles
+
+  Revenus:
+  - Revenu mensuel total
+  - Revenu moyen/nuit
+  - RevPAR (Revenue Per Available Room)
+
+  Comportement clients:
+  - Durée séjour moyenne
+  - Taux annulation
+  - Taux no-show
+  - Délai réservation moyen
+
+  Chambres:
+  - Plus réservées
+  - Moins réservées
+  - Temps moyen occupation
+end note
+
+note right of UC7
+  Gestion maintenance:
+
+  Statuts chambre:
+  - DISPONIBLE (réservable)
+  - OCCUPEE (client présent)
+  - RESERVEE (confirmée future)
+  - MAINTENANCE (réparations)
+  - NETTOYAGE (en cours)
+
+  Workflow nettoyage:
+  1. Client check-out (12h max)
+  2. Chambre → NETTOYAGE
+  3. Personnel nettoie (30-60min)
+  4. Inspection qualité
+  5. Chambre → DISPONIBLE
+
+  Maintenance planifiée:
+  - Bloquer dates maintenance
+  - Pas de réservations acceptées
+  - Notification automatique si
+    annulation réservations existantes
+end note
+
+' Contraintes
+note "Chambre ne peut être supprimée\nsi réservations futures existent" as N1
+UC2_3 .. N1
+
+note "Check-in uniquement\nsi chambre DISPONIBLE" as N2
+UC5 .. N2
+
+note "Durée séjour min: 1 nuit\nDurée max: 30 nuits" as N3
+UC5 .. N3
+
+note "Tarif dynamique recalculé\nquotidiennement selon occupation" as N4
+UC4_6 .. N4
+
+@enduml

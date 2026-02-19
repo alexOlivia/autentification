@@ -1,0 +1,449 @@
+@startuml Auth Service - Diagramme de Classes
+
+title Auth Service - Diagramme de Classes
+
+' Styles
+skinparam class {
+    BackgroundColor LightGreen
+    BorderColor DarkGreen
+    ArrowColor DarkGreen
+}
+
+package "Auth Service" {
+    class ServeurAuth {
+        - application: FastifyInstance
+        - port: number
+        - db: PrismaClient
+        + demarrer(): Promise<void>
+        + arreter(): Promise<void>
+        + enregistrerRoutes(): void
+    }
+
+    class ControleurAuth {
+        + inscription(req: Requete, res: Reponse): Promise<void>
+        + connexion(req: Requete, res: Reponse): Promise<void>
+        + deconnexion(req: Requete, res: Reponse): Promise<void>
+        + rafraichirToken(req: Requete, res: Reponse): Promise<void>
+        + validerToken(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ControleurProfil {
+        + obtenirProfil(req: Requete, res: Reponse): Promise<void>
+        + mettreAJourProfil(req: Requete, res: Reponse): Promise<void>
+        + supprimerCompte(req: Requete, res: Reponse): Promise<void>
+        + changerMotDePasse(req: Requete, res: Reponse): Promise<void>
+    }
+
+    class ServiceAuth {
+        - depotUtilisateur: DepotUtilisateur
+        - depotTokenAcces: DepotTokenAcces
+        - depotSessionUtilisateur: DepotSessionUtilisateur
+        - depotTentativeConnexion: DepotTentativeConnexion
+        - depotCodeVerification: DepotCodeVerification
+        - serviceJWT: ServiceJWT
+        - serviceHash: ServiceHash
+        - serviceRBAC: ServiceRBAC
+        + inscrireUtilisateur(donnees: DonneesInscription): Promise<Utilisateur>
+        + authentifierUtilisateur(email: string, motDePasse: string, metadata: MetadataConnexion): Promise<TokensAuth>
+        + rafraichirTokenAcces(tokenRefresh: string): Promise<TokensAuth>
+        + validerTokenAcces(token: string): Promise<PayloadToken>
+        + revoquerToken(tokenId: string): Promise<void>
+        + revoquerTousTokensUtilisateur(utilisateurId: string): Promise<void>
+        + genererCodeVerification(utilisateurId: string, type: TypeVerification): Promise<CodeVerification>
+        + verifierCode(code: string, type: TypeVerification): Promise<boolean>
+    }
+
+    class ServiceJWT {
+        - secret: string
+        - dureeExpiration: string
+        + genererTokenAcces(utilisateur: Utilisateur): string
+        + genererTokenRefresh(utilisateur: Utilisateur): string
+        + verifier(token: string): Promise<PayloadToken>
+        + decoder(token: string): any
+    }
+
+    class ServiceHash {
+        - toursDeHachage: number
+        + hacher(motDePasse: string): Promise<string>
+        + comparer(motDePasse: string, hash: string): Promise<boolean>
+    }
+
+    class ServiceRBAC {
+        - depotPermission: DepotPermission
+        + verifierPermission(role: RoleUtilisateur, ressource: string, action: string): Promise<boolean>
+        + obtenirPermissions(role: RoleUtilisateur): Promise<Permission[]>
+        + attribuerRole(utilisateurId: string, role: RoleUtilisateur): Promise<void>
+        + changerStatutUtilisateur(utilisateurId: string, statut: StatutUtilisateur): Promise<void>
+    }
+
+    class ServiceSession {
+        - depotSessionUtilisateur: DepotSessionUtilisateur
+        + creerSession(utilisateurId: string, tokenId: string, metadata: MetadataConnexion): Promise<SessionUtilisateur>
+        + obtenirSessionsActives(utilisateurId: string): Promise<SessionUtilisateur[]>
+        + terminerSession(sessionId: string): Promise<void>
+        + terminerToutesSessions(utilisateurId: string): Promise<void>
+    }
+
+    class ServiceVerification {
+        - depotCodeVerification: DepotCodeVerification
+        - serviceSMS: ServiceSMS
+        - serviceEmail: ServiceEmail
+        + envoyerCodeSMS(utilisateurId: string, telephone: string): Promise<void>
+        + envoyerCodeEmail(utilisateurId: string, email: string): Promise<void>
+        + verifierCode(utilisateurId: string, code: string, type: TypeVerification): Promise<boolean>
+    }
+
+    class ServiceSMS {
+        - apiKey: string
+        - provider: string
+        + envoyerSMS(telephone: string, message: string): Promise<void>
+    }
+
+    class ServiceEmail {
+        - transporteur: any
+        + envoyerEmail(destinataire: string, sujet: string, contenu: string): Promise<void>
+    }
+
+    class DepotUtilisateur {
+        - db: PrismaClient
+        + creer(donnees: DonneesUtilisateur): Promise<Utilisateur>
+        + trouverParEmail(email: string): Promise<Utilisateur | null>
+        + trouverParId(id: string): Promise<Utilisateur | null>
+        + mettreAJour(id: string, donnees: any): Promise<Utilisateur>
+        + supprimer(id: string): Promise<void>
+    }
+
+    class DepotTokenAcces {
+        - db: PrismaClient
+        + creer(utilisateurId: string, donnees: DonneesToken): Promise<TokenAcces>
+        + trouverParToken(token: string): Promise<TokenAcces | null>
+        + revoquer(tokenId: string): Promise<void>
+        + revoquerTousParUtilisateur(utilisateurId: string): Promise<void>
+        + nettoyerExpires(): Promise<void>
+    }
+
+    class DepotSessionUtilisateur {
+        - db: PrismaClient
+        + creer(donnees: DonneesSession): Promise<SessionUtilisateur>
+        + trouverParUtilisateurId(utilisateurId: string): Promise<SessionUtilisateur[]>
+        + terminerSession(sessionId: string): Promise<void>
+        + terminerToutesSessionsUtilisateur(utilisateurId: string): Promise<void>
+    }
+
+    class DepotTentativeConnexion {
+        - db: PrismaClient
+        + enregistrer(donnees: DonneesTentative): Promise<TentativeConnexion>
+        + compterEchecsRecents(email: string, minutes: number): Promise<number>
+        + nettoyerAnciennes(): Promise<void>
+    }
+
+    class DepotCodeVerification {
+        - db: PrismaClient
+        + creer(utilisateurId: string, donnees: DonneesCode): Promise<CodeVerification>
+        + trouverParCode(code: string, type: TypeVerification): Promise<CodeVerification | null>
+        + marquerUtilise(codeId: string): Promise<void>
+        + invaliderCodesUtilisateur(utilisateurId: string, type: TypeVerification): Promise<void>
+    }
+
+    class DepotPermission {
+        - db: PrismaClient
+        + trouverParRole(role: RoleUtilisateur): Promise<Permission[]>
+        + verifier(role: RoleUtilisateur, ressource: string, action: string): Promise<boolean>
+    }
+
+    class Utilisateur <<entite>> {
+        + id: string
+        + email: string
+        + telephone: string
+        + motDePasseHash: string
+        + prenom: string
+        + nom: string
+        + urlAvatar: string
+        + dateNaissance: Date
+        + role: RoleUtilisateur
+        + statut: StatutUtilisateur
+        + emailVerifie: boolean
+        + telephoneVerifie: boolean
+        + dateCreation: Date
+        + dateMiseAJour: Date
+        + dernierAcces: Date
+    }
+
+    class TokenAcces <<entite>> {
+        + id: string
+        + utilisateurId: string
+        + token: string
+        + typeToken: TypeToken
+        + dateExpiration: Date
+        + estRevoque: boolean
+        + adresseIP: string
+        + userAgent: string
+        + dateCreation: Date
+    }
+
+    class SessionUtilisateur <<entite>> {
+        + id: string
+        + utilisateurId: string
+        + tokenId: string
+        + appareil: string
+        + navigateur: string
+        + systemeExploitation: string
+        + adresseIP: string
+        + localisation: string
+        + dateDebut: Date
+        + dateFin: Date
+        + estActive: boolean
+    }
+
+    class TentativeConnexion <<entite>> {
+        + id: string
+        + email: string
+        + adresseIP: string
+        + reussi: boolean
+        + motifEchec: string
+        + userAgent: string
+        + dateHeure: Date
+    }
+
+    class CodeVerification <<entite>> {
+        + id: string
+        + utilisateurId: string
+        + code: string
+        + typeVerification: TypeVerification
+        + dateExpiration: Date
+        + estUtilise: boolean
+        + dateCreation: Date
+    }
+
+    enum RoleUtilisateur {
+        CLIENT
+        COMMERCANT
+        ADMIN
+        SUPER_ADMIN
+    }
+
+    enum StatutUtilisateur {
+        ACTIF
+        INACTIF
+        SUSPENDU
+        SUPPRIME
+        EN_ATTENTE_VERIFICATION
+    }
+
+    enum TypeToken {
+        ACCESS
+        REFRESH
+        RESET_PASSWORD
+        EMAIL_VERIFICATION
+    }
+
+    enum TypeVerification {
+        EMAIL
+        TELEPHONE
+        RESET_PASSWORD
+        DOUBLE_AUTHENTIFICATION
+    }
+
+    enum CategoriePermission {
+        GESTION_RESSOURCES
+        GESTION_RESERVATIONS
+        GESTION_PAIEMENTS
+        GESTION_UTILISATEURS
+        ADMINISTRATION_SYSTEME
+        CONSULTATION
+        AUTRE
+    }
+
+    class Permission <<entite>> {
+        + id: string
+        + categorie: CategoriePermission
+        + ressource: string
+        + action: string
+        + description: string
+    }
+
+    class TokensAuth <<dto>> {
+        + tokenAcces: string
+        + tokenRefresh: string
+        + dureeExpiration: number
+    }
+
+    class PayloadToken <<dto>> {
+        + sub: string
+        + email: string
+        + telephone: string
+        + role: RoleUtilisateur
+        + statut: StatutUtilisateur
+        + permissions: string[]
+        + iat: number
+        + exp: number
+    }
+
+    class DonneesInscription <<dto>> {
+        + email: string
+        + telephone: string
+        + motDePasse: string
+        + prenom: string
+        + nom: string
+        + role: RoleUtilisateur
+    }
+
+    class MetadataConnexion <<dto>> {
+        + adresseIP: string
+        + userAgent: string
+        + appareil: string
+        + navigateur: string
+        + systemeExploitation: string
+    }
+
+    class ValidateurAuth {
+        + validerEmail(email: string): boolean
+        + validerMotDePasse(motDePasse: string): ResultatValidation
+        + validerDonneesInscription(donnees: any): ResultatValidation
+        + validerDonneesConnexion(donnees: any): ResultatValidation
+    }
+}
+
+' Relations
+ServeurAuth "1" -- "1" ControleurAuth : contient >
+ServeurAuth "1" -- "1" ControleurProfil : contient >
+
+ControleurAuth "1" -- "1" ServiceAuth : utilise >
+ControleurAuth "1" -- "1" ValidateurAuth : utilise >
+ControleurProfil "1" -- "1" ServiceAuth : utilise >
+
+ServiceAuth "1" -- "1" DepotUtilisateur : utilise >
+ServiceAuth "1" -- "1" DepotTokenAcces : utilise >
+ServiceAuth "1" -- "1" DepotSessionUtilisateur : utilise >
+ServiceAuth "1" -- "1" DepotTentativeConnexion : utilise >
+ServiceAuth "1" -- "1" DepotCodeVerification : utilise >
+ServiceAuth "1" -- "1" ServiceJWT : utilise >
+ServiceAuth "1" -- "1" ServiceHash : utilise >
+ServiceAuth "1" -- "1" ServiceRBAC : utilise >
+ServiceAuth "1" -- "1" ServiceSession : utilise >
+ServiceAuth "1" -- "1" ServiceVerification : utilise >
+
+ServiceRBAC "1" -- "1" DepotPermission : utilise >
+ServiceSession "1" -- "1" DepotSessionUtilisateur : utilise >
+ServiceVerification "1" -- "1" DepotCodeVerification : utilise >
+ServiceVerification "1" -- "1" ServiceSMS : utilise >
+ServiceVerification "1" -- "1" ServiceEmail : utilise >
+
+DepotUtilisateur "1" -- "*" Utilisateur : gère >
+DepotTokenAcces "1" -- "*" TokenAcces : gère >
+DepotSessionUtilisateur "1" -- "*" SessionUtilisateur : gère >
+DepotTentativeConnexion "1" -- "*" TentativeConnexion : gère >
+DepotCodeVerification "1" -- "*" CodeVerification : gère >
+DepotPermission "1" -- "*" Permission : gère >
+
+Utilisateur "1" -- "1" RoleUtilisateur : possède >
+Utilisateur "1" -- "1" StatutUtilisateur : a un statut >
+Utilisateur "1" -- "*" TokenAcces : possède >
+Utilisateur "1" -- "*" SessionUtilisateur : a des sessions >
+Utilisateur "1" -- "*" CodeVerification : reçoit >
+
+TokenAcces "1" -- "1" TypeToken : est de type >
+TokenAcces "*" --> "1" Utilisateur : appartient à >
+
+SessionUtilisateur "*" --> "1" Utilisateur : appartient à >
+SessionUtilisateur "*" --> "1" TokenAcces : utilise >
+
+CodeVerification "1" -- "1" TypeVerification : est de type >
+CodeVerification "*" --> "1" Utilisateur : pour >
+
+Permission "1" -- "1" CategoriePermission : appartient à >
+RoleUtilisateur "*" -- "*" Permission : possède >
+
+ServiceJWT ..> TokensAuth : crée >
+ServiceJWT ..> PayloadToken : crée >
+ServiceAuth ..> DonneesInscription : utilise >
+
+note right of ServiceHash
+  **Hachage mot de passe**
+
+  Bcrypt avec 10 tours
+  Pour sécuriser les mots de passe
+end note
+
+note right of ServiceJWT
+  **Tokens JWT**
+
+  Token ACCESS: 15min
+  Token REFRESH: 7 jours
+  Token RESET_PASSWORD: 1h
+  Token EMAIL_VERIFICATION: 24h
+
+  Algorithme: HS256
+  Révocation via Redis cache
+end note
+
+note right of ServiceRBAC
+  **RBAC - Permissions**
+
+  Matrice de permissions:
+  - CLIENT: read:own-bookings, create:bookings
+  - COMMERCANT: read/write:own-resources
+  - ADMIN: read/write:all, moderate:content
+  - SUPER_ADMIN: all permissions
+
+  Vérification à chaque requête API
+end note
+
+note right of ServiceSession
+  **Gestion sessions**
+
+  Multi-sessions:
+  - Mobile (Flutter app)
+  - Web (desktop/tablet)
+  - Tracking appareil/IP/localisation
+
+  Fonctionnalités:
+  - Liste sessions actives
+  - Déconnexion session distante
+  - Alerte nouvelle session
+end note
+
+note right of ServiceVerification
+  **Codes vérification**
+
+  Types:
+  - EMAIL: 6 chiffres (15min)
+  - TELEPHONE: 6 chiffres (5min)
+  - RESET_PASSWORD: 6 chiffres (1h)
+  - DOUBLE_AUTHENTIFICATION: 6 chiffres
+
+  Contexte africain:
+  - SMS prioritaire (>95% livraison)
+  - Coût: ~50 XOF/SMS (Twilio)
+end note
+
+note right of ServiceSMS
+  **Service SMS**
+
+  Provider: Twilio
+  Pays supportés: Afrique de l'Ouest
+  (Sénégal, Côte d'Ivoire, Mali, etc.)
+
+  Format E.164: +221XXXXXXXXX
+end note
+
+note bottom of ValidateurAuth
+  **Validation données**
+
+  - Email: format RFC 5322
+  - Téléphone: format E.164
+  - Mot de passe: min 8 chars,
+    1 maj, 1 min, 1 chiffre, 1 spécial
+end note
+
+note bottom of TentativeConnexion
+  **Sécurité - Détection attaques**
+
+  Rate limiting:
+  - >5 échecs en 15min = blocage temporaire
+  - >10 échecs en 1h = alerte admin
+
+  Conservation: 90 jours (RGPD)
+end note
+
+@enduml

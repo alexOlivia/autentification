@@ -1,0 +1,252 @@
+@startuml Restaurant Service - Cas d'Utilisation
+
+title Restaurant Service - Cas d'Utilisation
+
+left to right direction
+
+' Acteurs
+actor "Client" as Client
+actor "Commerçant Restaurateur" as Merchant
+actor "Administrateur" as Admin
+actor "Booking Service" as BookingService
+actor "Système de Cache" as CacheSystem
+
+' Package Restaurant Service
+rectangle "Restaurant Service" {
+    ' Cas d'utilisation principaux
+    usecase "Gérer restaurant" as UC1
+    usecase "Gérer tables" as UC2
+    usecase "Gérer zones de salle" as UC3
+    usecase "Gérer périodes de service" as UC4
+    usecase "Vérifier disponibilités" as UC5
+    usecase "Optimiser occupation" as UC6
+    usecase "Gérer plan de salle" as UC7
+
+    ' Sous-cas pour gestion restaurant
+    usecase "Créer restaurant" as UC1_1
+    usecase "Configurer type cuisine" as UC1_2
+    usecase "Définir capacité totale" as UC1_3
+    usecase "Activer/Désactiver réservations" as UC1_4
+    usecase "Configurer durée moyenne repas" as UC1_5
+
+    ' Sous-cas pour gestion tables
+    usecase "Ajouter table" as UC2_1
+    usecase "Modifier table" as UC2_2
+    usecase "Supprimer table" as UC2_3
+    usecase "Assigner zone" as UC2_4
+    usecase "Définir forme table" as UC2_5
+    usecase "Mettre hors service" as UC2_6
+    usecase "Lister tables" as UC2_7
+
+    ' Sous-cas pour zones
+    usecase "Créer zone" as UC3_1
+    usecase "Nommer zone" as UC3_2
+    usecase "Définir capacité zone" as UC3_3
+    usecase "Réorganiser zones" as UC3_4
+
+    ' Sous-cas pour périodes service
+    usecase "Définir déjeuner" as UC4_1
+    usecase "Définir dîner" as UC4_2
+    usecase "Définir petit-déjeuner" as UC4_3
+    usecase "Configurer horaires période" as UC4_4
+
+    ' Sous-cas pour disponibilités
+    usecase "Chercher table disponible" as UC5_1
+    usecase "Vérifier chevauchement" as UC5_2
+    usecase "Calculer créneaux libres" as UC5_3
+    usecase "Filtrer par capacité" as UC5_4
+    usecase "Filtrer par zone" as UC5_5
+
+    ' Sous-cas pour optimisation
+    usecase "Suggérer tables similaires" as UC6_1
+    usecase "Proposer créneaux alternatifs" as UC6_2
+    usecase "Combiner tables" as UC6_3
+    usecase "Maximiser rotation" as UC6_4
+
+    ' Sous-cas pour plan de salle
+    usecase "Positionner tables (x,y)" as UC7_1
+    usecase "Visualiser occupation" as UC7_2
+    usecase "Réorganiser salle" as UC7_3
+}
+
+' Relations acteurs -> cas d'utilisation
+Merchant --> UC1 : configure son restaurant
+Merchant --> UC2 : gère ses tables
+Merchant --> UC3 : organise sa salle
+Merchant --> UC4 : définit services
+Merchant --> UC7 : configure plan
+
+Client --> UC5 : cherche table
+BookingService --> UC5 : vérifie avant réservation
+BookingService --> UC6 : demande alternatives
+
+Admin --> UC1 : peut consulter tous
+CacheSystem --> UC5 : accélère recherches
+
+' Inclusions et extensions
+UC1 ..> UC1_1 : <<extend>>
+UC1 ..> UC1_2 : <<extend>>
+UC1 ..> UC1_3 : <<include>>
+UC1 ..> UC1_4 : <<extend>>
+UC1 ..> UC1_5 : <<extend>>
+
+UC2 ..> UC2_1 : <<extend>>
+UC2 ..> UC2_2 : <<extend>>
+UC2 ..> UC2_3 : <<extend>>
+UC2 ..> UC2_4 : <<include>>
+UC2 ..> UC2_5 : <<extend>>
+UC2 ..> UC2_6 : <<extend>>
+UC2 ..> UC2_7 : <<extend>>
+
+UC3 ..> UC3_1 : <<extend>>
+UC3 ..> UC3_2 : <<include>>
+UC3 ..> UC3_3 : <<include>>
+UC3 ..> UC3_4 : <<extend>>
+
+UC4 ..> UC4_1 : <<extend>>
+UC4 ..> UC4_2 : <<extend>>
+UC4 ..> UC4_3 : <<extend>>
+UC4 ..> UC4_4 : <<include>>
+
+UC5 ..> UC5_1 : <<include>>
+UC5 ..> UC5_2 : <<include>>
+UC5 ..> UC5_3 : <<include>>
+UC5 ..> UC5_4 : <<extend>>\n[si filtre capacité]
+UC5 ..> UC5_5 : <<extend>>\n[si filtre zone]
+
+UC6 ..> UC6_1 : <<include>>
+UC6 ..> UC6_2 : <<include>>
+UC6 ..> UC6_3 : <<extend>>\n[si possible]
+UC6 ..> UC6_4 : <<include>>
+
+UC7 ..> UC7_1 : <<include>>
+UC7 ..> UC7_2 : <<extend>>
+UC7 ..> UC7_3 : <<extend>>
+
+' Notes explicatives
+note right of UC2
+  Gestion complète des tables:
+
+  Attributs:
+  - Numéro unique (T1, T2, A5, etc.)
+  - Capacité min-max (ex: 2-6 pers)
+  - Zone (Terrasse, VIP, Intérieur)
+  - Forme (Ronde, Carrée, etc.)
+  - Position plan de salle (x, y)
+  - Statut (Disponible, Occupée,
+    Réservée, Hors service)
+
+  Validations:
+  - Numéro unique par restaurant
+  - Capacité cohérente (min ≤ max)
+  - Zone doit exister
+end note
+
+note right of UC3
+  Zones de salle courantes:
+
+  Contexte africain:
+  - Terrasse (très demandé)
+  - Climatisé (important climat chaud)
+  - VIP / Privatif
+  - Jardin / Extérieur
+  - Bar / Comptoir
+  - Salle principale
+
+  Chaque zone:
+  - Nom descriptif
+  - Capacité max
+  - Ordre affichage
+end note
+
+note bottom of UC4
+  Périodes de service adaptées:
+
+  Restaurant classique:
+  - Déjeuner: 12h00-15h00
+  - Dîner: 19h00-23h00
+
+  Restaurant rapide:
+  - Service continu: 11h00-22h00
+
+  Hôtel-restaurant:
+  - Petit-déj: 7h00-10h00
+  - Déjeuner: 12h00-15h00
+  - Dîner: 19h00-22h00
+
+  Permet:
+  - Tarification différenciée
+  - Menus spécifiques
+  - Gestion staff par période
+end note
+
+note right of UC5
+  Vérification disponibilité:
+
+  Algorithme:
+  1. Récupérer table et capacité
+  2. Vérifier capacité adaptée
+  3. Interroger Booking Service
+     pour réservations du jour
+  4. Calculer chevauchements
+  5. Retourner créneaux libres
+
+  Marges de sécurité:
+  - 15min avant (nettoyage)
+  - 15min après (retard clients)
+
+  Cache:
+  - Redis 5min par table/date
+  - Invalidé sur nouvelle réservation
+end note
+
+note left of UC6
+  Optimisation occupation:
+
+  Stratégies:
+  1. Suggérer tables similaires
+     (±2 personnes capacité)
+
+  2. Créneaux proches (±1h):
+     19h00 indispo → 17h30, 20h30
+
+  3. Zones alternatives:
+     Terrasse pleine → Intérieur
+
+  4. Combinaison tables:
+     Groupe 8 pers → Tables T1(4)+T2(4)
+
+  5. Rotation optimisée:
+     Durée repas moyenne: 1h30
+     Rotation max: 3 services/soir
+end note
+
+note right of UC7
+  Plan de salle interactif:
+
+  Fonctionnalités:
+  - Drag & drop tables (x, y)
+  - Visualisation temps réel
+  - Couleurs par statut:
+    * Vert: Disponible
+    * Jaune: Réservée
+    * Rouge: Occupée
+    * Gris: Hors service
+
+  Utile pour:
+  - Organisation efficace
+  - Gestion hôtes/hôtesses
+  - Optimisation espace
+end note
+
+' Contraintes
+note "Table ne peut être supprimée\nsi réservations futures existent" as N1
+UC2_3 .. N1
+
+note "Zones ne peuvent être supprimées\nsi tables y sont assignées" as N2
+UC3 .. N2
+
+note "Périodes de service\nne doivent pas se chevaucher" as N3
+UC4 .. N3
+
+@enduml

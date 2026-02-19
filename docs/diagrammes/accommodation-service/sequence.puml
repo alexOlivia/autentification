@@ -1,0 +1,203 @@
+@startuml Accommodation Service - Diagramme de Séquence
+
+title Accommodation Service - Recherche et réservation chambre
+
+actor "Client" as Client
+participant "API Gateway" as Gateway
+participant "ControleurChambre" as Controleur
+participant "ServiceChambre" as ServiceChambre
+participant "ServiceDisponibilite" as ServiceDispo
+participant "ServiceTarification" as ServiceTarif
+participant "ClientBookingService" as BookingClient
+participant "DepotChambre" as Depot
+participant "DepotRegleTarif" as DepotTarif
+participant "GestionnaireCache" as Cache
+database "PostgreSQL" as DB
+database "Redis" as Redis
+
+== Recherche de disponibilité chambre ==
+Client -> Gateway : GET /rooms/:chambreId/availability\n?dateArrivee=2026-03-15&dateDepart=2026-03-18&personnes=2
+activate Gateway
+
+Gateway -> Controleur : verifierDisponibilite(req, res)
+activate Controleur
+
+Controleur -> ServiceChambre : trouverParId(chambreId)
+activate ServiceChambre
+ServiceChambre -> Depot : trouverParId(chambreId)
+activate Depot
+Depot -> DB : SELECT * FROM rooms WHERE id = ?
+DB --> Depot : chambre {type: DOUBLE, capacite: 2}
+Depot --> ServiceChambre : chambre
+deactivate Depot
+
+ServiceChambre -> ServiceChambre : verifierCapaciteAdaptee(personnes: 2, chambre)
+
+alt Capacité adaptée
+    ServiceChambre -> ServiceDispo : verifierDisponibilite(chambreId, dateArrivee, dateDepart)
+    activate ServiceDispo
+
+    ServiceDispo -> Cache : obtenirDisponibilite(chambreId, dates)
+    activate Cache
+    Cache -> Redis : GET "availability:room:" + chambreId + ":2026-03-15:2026-03-18"
+    Redis --> Cache : null (cache miss)
+    Cache --> ServiceDispo : null
+    deactivate Cache
+
+    ServiceDispo -> BookingClient : GET /bookings?chambreId=&dateArrivee=&dateDepart=&status=CONFIRMED,PENDING
+    activate BookingClient
+    BookingClient --> ServiceDispo : [reservations existantes]
+    deactivate BookingClient
+
+    ServiceDispo -> ServiceDispo : verifierChevauchementDates(dateArrivee, dateDepart, reservations)
+
+    alt Aucune réservation chevauchante
+        ServiceDispo -> ServiceTarif : calculerTarif(chambreId, dateArrivee, dateDepart, personnes)
+        activate ServiceTarif
+
+        ServiceTarif -> DepotTarif : trouverPourChambre(chambreId, typeChambre)
+        activate DepotTarif
+        DepotTarif -> DB : SELECT * FROM pricing_rules\nWHERE accommodation_id = ? AND room_type = ?
+        DB --> DepotTarif : regleTarif {prixBase: 25000, prixWeekend: 30000}
+        DepotTarif --> ServiceTarif : regleTarif
+        deactivate DepotTarif
+
+        ServiceTarif -> ServiceTarif : calculerNombreNuits(dateArrivee, dateDepart)
+        note right: 3 nuits (15, 16, 17 mars)
+
+        ServiceTarif -> ServiceTarif : identifierWeekends([15, 16, 17])
+        note right: 15-16 mars = samedi-dimanche
+
+        ServiceTarif -> ServiceTarif : calculerTotal()
+        note right
+          Samedi 15: 30000 XOF
+          Dimanche 16: 30000 XOF
+          Lundi 17: 25000 XOF
+          Total: 85000 XOF
+        end note
+
+        ServiceTarif -> ServiceTarif : appliquerPromotions(sejour)
+        note right: Pas de promotion (séjour court)
+
+        ServiceTarif --> ServiceDispo : {prixTotal: 85000, prixParNuit: 28333, nombreNuits: 3}
+        deactivate ServiceTarif
+
+        ServiceDispo -> Cache : cacherDisponibilite(chambreId, dates, resultat)
+        activate Cache
+        Cache -> Redis : SETEX "availability:..." 900 {...}
+        note right: TTL 15 minutes
+        Redis --> Cache : OK
+        deactivate Cache
+
+        ServiceDispo --> ServiceChambre : {disponible: true, tarif: 85000}
+        ServiceChambre --> Controleur : {disponible: true, chambre, tarif}
+        Controleur --> Gateway : 200 OK\n{disponible: true, prixTotal: 85000, detail: [...]}
+        Gateway --> Client : 200 OK\n{available: true, totalPrice: 85000 XOF}
+
+    else Chevauchement détecté (chambre occupée)
+        ServiceDispo -> ServiceDispo : trouverDatesAlternatives(dateArrivee, dateDepart)
+
+        ServiceDispo -> BookingClient : GET /bookings?chambreId=&mois=03&annee=2026
+        activate BookingClient
+        BookingClient --> ServiceDispo : [toutes réservations mars 2026]
+        deactivate BookingClient
+
+        ServiceDispo -> ServiceDispo : calculerPlagesLibres(reservations)
+        note right
+          Suggestions:
+          - 12-15 mars (3 nuits)
+          - 18-21 mars (3 nuits)
+          - 22-25 mars (3 nuits)
+        end note
+
+        ServiceDispo --> ServiceChambre : {disponible: false, suggestions: [...]}
+        ServiceChambre --> Controleur : {disponible: false, alternatives}
+        Controleur --> Gateway : 200 OK\n{disponible: false, suggestions: [...]}
+        Gateway --> Client : 200 OK\n{available: false, alternatives}
+    end
+
+    deactivate ServiceDispo
+
+else Capacité inadaptée
+    ServiceChambre --> Controleur : {disponible: false, raison: "Chambre pour max 2 pers"}
+    Controleur --> Gateway : 200 OK\n{disponible: false}
+    Gateway --> Client : 200 OK\n{available: false}
+end
+
+deactivate ServiceChambre
+deactivate Controleur
+deactivate Gateway
+
+== Calcul statistiques occupation ==
+Merchant -> Gateway : GET /accommodations/:id/stats?mois=02&annee=2026
+activate Gateway
+
+Gateway -> Controleur : obtenirStatistiques(req, res)
+activate Controleur
+
+Controleur -> ServiceDispo : calculerOccupation(hebergementId, periode)
+activate ServiceDispo
+
+ServiceDispo -> Depot : lister(hebergementId)
+activate Depot
+Depot -> DB : SELECT * FROM rooms WHERE accommodation_id = ?
+DB --> Depot : [10 chambres]
+Depot --> ServiceDispo : chambres
+deactivate Depot
+
+ServiceDispo -> BookingClient : GET /bookings?hebergementId=&mois=02&status=CONFIRMED,COMPLETED
+activate BookingClient
+BookingClient --> ServiceDispo : [45 réservations]
+deactivate BookingClient
+
+ServiceDispo -> ServiceDispo : calculerNuitsReservees(reservations)
+note right: 135 nuits réservées
+
+ServiceDispo -> ServiceDispo : calculerNuitsDisponibles(chambres, joursEnFevrier)
+note right: 280 nuits disponibles (10 chambres × 28 jours)
+
+ServiceDispo -> ServiceDispo : calculerTaux(135 / 280)
+note right: Taux = 48.2%
+
+ServiceDispo --> Controleur : {tauxOccupation: 48.2%, nombreNuitsReservees: 135, ...}
+deactivate ServiceDispo
+
+Controleur --> Gateway : 200 OK\n{stats}
+deactivate Controleur
+
+Gateway --> Merchant : 200 OK\n{occupationRate: 48.2%, revenue: 3500000 XOF}
+deactivate Gateway
+
+note right of ServiceDispo
+  Algorithme chevauchement dates:
+
+  Conflit SI:
+  (reservation.dateArrivee < dateDepart) ET
+  (reservation.dateDepart > dateArrivee)
+
+  Attention:
+  - Check-out jour J ne bloque pas
+  - Check-in jour J possible si
+    check-out avant 12h
+end note
+
+note bottom of ServiceTarif
+  Tarification dynamique:
+
+  Facteurs prix:
+  1. Tarif base (type chambre)
+  2. Majoration weekend (+20%)
+  3. Haute saison (+30-50%)
+  4. Réduction long séjour:
+     - 7-13 nuits: -10%
+     - 14-29 nuits: -15%
+     - 30+ nuits: -20%
+
+  Devise: XOF (Franc CFA)
+  Exemple:
+  - Simple: 15000-20000 XOF
+  - Double: 25000-35000 XOF
+  - Suite: 50000-80000 XOF
+end note
+
+@enduml
