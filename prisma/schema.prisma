@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===================== ENUMS =====================
+
+enum RoleUtilisateur {
+  CLIENT
+  COMMERCANT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum StatutUtilisateur {
+  ACTIF
+  INACTIF
+  SUSPENDU
+  SUPPRIME
+  EN_ATTENTE_VERIFICATION
+}
+
+enum TypeToken {
+  ACCESS
+  REFRESH
+  RESET_PASSWORD
+  EMAIL_VERIFICATION
+}
+
+enum TypeVerification {
+  EMAIL
+  TELEPHONE
+  RESET_PASSWORD
+  DOUBLE_AUTHENTIFICATION
+}
+
+enum CategoriePermission {
+  GESTION_RESSOURCES
+  GESTION_RESERVATIONS
+  GESTION_PAIEMENTS
+  GESTION_UTILISATEURS
+  ADMINISTRATION_SYSTEME
+  CONSULTATION
+  AUTRE
+}
+
+// ===================== MODELS =====================
+
+model Utilisateur {
+  id               String            @id @default(uuid())
+  email            String?           @unique
+  telephone        String            @unique
+  motDePasse       String
+  prenom           String
+  nom              String
+  urlAvatar        String?
+  dateNaissance    DateTime?
+  role             RoleUtilisateur   @default(CLIENT)
+  statut           StatutUtilisateur @default(EN_ATTENTE_VERIFICATION)
+  emailVerifie     Boolean           @default(false)
+  telephoneVerifie Boolean           @default(false)
+  dernierAcces     DateTime?
+  dateSuppression  DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  tokens            TokenAcces[]
+  sessions          SessionUtilisateur[]
+  codesVerification CodeVerification[]
+
+  @@map("utilisateurs")
+}
+
+model TokenAcces {
+  id             String    @id @default(uuid())
+  utilisateurId  String
+  token          String    @unique
+  typeToken      TypeToken
+  dateExpiration DateTime
+  estRevoque     Boolean   @default(false)
+  adresseIP      String?
+  userAgent      String?
+  createdAt      DateTime  @default(now())
+
+  utilisateur Utilisateur          @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  session     SessionUtilisateur?
+
+  @@index([utilisateurId])
+  @@index([token])
+  @@index([typeToken, estRevoque])
+  @@map("tokens_acces")
+}
+
+model SessionUtilisateur {
+  id                  String   @id @default(uuid())
+  utilisateurId       String
+  tokenId             String   @unique
+  appareil            String?
+  navigateur          String?
+  systemeExploitation String?
+  adresseIP           String?
+  localisation        String?
+  dateDebut           DateTime @default(now())
+  dateFin             DateTime?
+  estActive           Boolean  @default(true)
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  token       TokenAcces  @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  @@index([utilisateurId])
+  @@index([estActive])
+  @@map("sessions_utilisateur")
+}
+
+model TentativeConnexion {
+  id         String   @id @default(uuid())
+  email      String?
+  telephone  String?
+  adresseIP  String
+  reussi     Boolean
+  motifEchec String?
+  userAgent  String?
+  dateHeure  DateTime @default(now())
+
+  @@index([email, dateHeure])
+  @@index([telephone, dateHeure])
+  @@index([adresseIP, dateHeure])
+  @@map("tentatives_connexion")
+}
+
+model CodeVerification {
+  id               String           @id @default(uuid())
+  utilisateurId    String
+  code             String
+  typeVerification TypeVerification
+  dateExpiration   DateTime
+  estUtilise       Boolean          @default(false)
+  nombreTentatives Int              @default(0)
+  createdAt        DateTime         @default(now())
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+
+  @@index([utilisateurId, typeVerification])
+  @@index([code, typeVerification])
+  @@map("codes_verification")
+}
+
+model Permission {
+  id          String              @id @default(uuid())
+  categorie   CategoriePermission
+  ressource   String
+  action      String
+  description String?
+  createdAt   DateTime            @default(now())
+
+  roles RolePermission[]
+
+  @@unique([ressource, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String          @id @default(uuid())
+  role         RoleUtilisateur
+  permissionId String
+  createdAt    DateTime        @default(now())
+
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([role, permissionId])
+  @@index([role])
+  @@map("role_permissions")
+}
